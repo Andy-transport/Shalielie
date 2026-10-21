@@ -1,4 +1,4 @@
-"""Draw the Shalielie app icon: the Photographic Styles pad as a square of dots on a gradient.
+"""Draw the Palettify app icon: the Photographic Styles pad as a square of dots on a gradient.
 
 Writes the 1024 px iOS icon and the About-screen copy. Needs Pillow:
 python tools/generate_app_icon.py
@@ -12,8 +12,8 @@ SS = 4  # supersampling for smooth dots
 GRID = 5
 ROOT = Path(__file__).resolve().parent.parent / "Resources" / "Assets.xcassets"
 
-# Diagonal gradient, top-left to bottom-right: sky blue through system blue to deep indigo.
-STOPS = [(0.0, (100, 210, 255)), (0.5, (10, 122, 255)), (1.0, (40, 40, 170))]
+# Diagonal gradient, top-left to bottom-right: muted cool gray, a hint of blue at the top and purple below.
+STOPS = [(0.0, (182, 193, 207)), (0.5, (138, 144, 158)), (1.0, (102, 99, 113))]
 
 
 def gradient(t: float):
