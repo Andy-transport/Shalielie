@@ -16,6 +16,8 @@ struct AssetDetailView: View {
     @EnvironmentObject private var queue: PortQueue
     @AppStorage(AppSettings.replaceOriginalsKey) private var replaceOriginals = false
     @State private var selectedIdentifier: String
+    @State private var pagerID: String?
+    @State private var heicTick = 0
     @State private var asset: PHAsset?
     @State private var loaded = false
     @State private var eligibility: StylePorter.Eligibility?
@@ -36,6 +38,7 @@ struct AssetDetailView: View {
         self.identifier = identifier
         self.assets = assets
         _selectedIdentifier = State(initialValue: identifier)
+        _pagerID = State(initialValue: identifier)
     }
 
     private enum InfoEditor: String, Identifiable {
@@ -47,7 +50,8 @@ struct AssetDetailView: View {
     private var running: Bool { job.map { !$0.isFinished } ?? false }
     private var blocked: Bool {
         guard let asset else { return true }
-        return !PhotoLibraryService.isHEIC(asset) || eligibility == .alreadyStyled || eligibility == .unsupported
+        _ = heicTick
+        return !(HEICCache.peek(asset) ?? true) || eligibility == .alreadyStyled || eligibility == .unsupported
     }
 
     var body: some View {
@@ -65,8 +69,20 @@ struct AssetDetailView: View {
         .toolbar(showingControls ? .visible : .hidden, for: .navigationBar)
         .toolbarBackground(.hidden, for: .navigationBar)
         .toolbar { viewerToolbar }
-        .task(id: "\(selectedIdentifier)-\(jobState)") { await refresh() }
+        .task(id: "\(selectedIdentifier)-\(jobState)") {
+            // Wait for a swipe to settle before reading the original or its info.
+            if asset != nil {
+                do { try await Task.sleep(for: .milliseconds(250)) } catch { return }
+            }
+            await refresh()
+        }
         .task(id: selectedIdentifier) { await loadPlace() }
+        .onChange(of: pagerID) { _, id in
+            if let id, id != selectedIdentifier { choose(id) }
+        }
+        .onChange(of: selectedIdentifier) { _, id in
+            if pagerID != id { pagerID = id }
+        }
         .task(id: "\(selectedIdentifier)-\(showingInfo)") {
             guard showingInfo, let asset else { return }
             let info = await PhotoCameraInfo.load(asset)
@@ -147,15 +163,8 @@ struct AssetDetailView: View {
 
     private func media(_ asset: PHAsset) -> some View {
         GeometryReader { geometry in
-            let ratio = CGFloat(max(asset.pixelWidth, 1)) / CGFloat(max(asset.pixelHeight, 1))
-            let width = min(geometry.size.width, geometry.size.height * ratio)
-            let height = width / ratio
             ZStack(alignment: .topLeading) {
-                AssetMedia(asset: asset)
-                    .id(asset.localIdentifier)
-                    .transition(.opacity)
-                    .frame(width: width, height: height)
-                    .frame(width: geometry.size.width, height: geometry.size.height)
+                pager(current: asset, size: geometry.size)
                 if showingControls, asset.mediaSubtypes.contains(.photoLive) {
                     Label("Live", systemImage: "livephoto")
                         .font(.caption.weight(.semibold))
@@ -165,17 +174,54 @@ struct AssetDetailView: View {
             }
             .contentShape(Rectangle())
             .onTapGesture { withAnimation(motion) { showingControls.toggle(); if !showingControls { showingInfo = false } } }
+            // Horizontal paging belongs to the scroll view; this only opens and closes the info.
             .simultaneousGesture(DragGesture(minimumDistance: 28).onEnded { value in
                 let delta = value.translation
-                if abs(delta.width) > abs(delta.height), abs(delta.width) > 60 {
-                    movePhoto(delta.width < 0 ? 1 : -1)
-                } else if delta.height < -45 {
+                guard abs(delta.height) > abs(delta.width) else { return }
+                if delta.height < -45 {
                     withAnimation(motion) { showingControls = true; showingInfo = true }
                 } else if delta.height > 60, showingInfo {
                     withAnimation(motion) { showingInfo = false }
                 }
             })
+            .task(id: selectedIdentifier) { prefetchNeighbors(size: geometry.size) }
         }
+    }
+
+    /// The photos side by side: the one being swiped to moves with the finger, and the
+    /// neighbours are already loading.
+    @ViewBuilder
+    private func pager(current: PHAsset, size: CGSize) -> some View {
+        if assets.isEmpty {
+            page(current, size: size)
+        } else {
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 0) {
+                    ForEach(assets, id: \.localIdentifier) { item in
+                        page(item, size: size).id(item.localIdentifier)
+                    }
+                }
+                .scrollTargetLayout()
+            }
+            .scrollTargetBehavior(.paging)
+            .scrollPosition(id: $pagerID)
+        }
+    }
+
+    private func page(_ item: PHAsset, size: CGSize) -> some View {
+        let ratio = CGFloat(max(item.pixelWidth, 1)) / CGFloat(max(item.pixelHeight, 1))
+        let width = min(size.width, size.height * ratio)
+        return AssetMedia(asset: item)
+            .frame(width: width, height: width / ratio)
+            .frame(width: size.width, height: size.height)
+    }
+
+    private func prefetchNeighbors(size: CGSize) {
+        guard let index = assets.firstIndex(where: { $0.localIdentifier == selectedIdentifier }) else { return }
+        let range = max(0, index - 2)...min(assets.count - 1, index + 2)
+        let scale = UIScreen.main.scale
+        let neighbours = range.filter { $0 != index }.map { assets[$0] }
+        ThumbnailLoader.prefetch(neighbours, size: CGSize(width: size.width * scale, height: size.height * scale), contentMode: .fit)
     }
 
     private var filmstrip: some View {
@@ -274,7 +320,7 @@ struct AssetDetailView: View {
                 HStack {
                     Text(cameraInfo?.camera ?? L("Photo")).font(.subheadline.weight(.medium))
                     Spacer()
-                    Text(PhotoLibraryService.isHEIC(asset) ? "HEIF" : L("Image")).font(.caption)
+                    Text((HEICCache.peek(asset) ?? true) ? "HEIF" : L("Image")).font(.caption)
                         .padding(.horizontal, 8).padding(.vertical, 4).background(.quaternary, in: Capsule())
                 }
                 if let lens = cameraInfo?.lens { Text(lens).font(.subheadline).foregroundStyle(.secondary) }
@@ -318,6 +364,10 @@ struct AssetDetailView: View {
         let id = selectedIdentifier
         asset = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject
         loaded = true
+        if let asset, HEICCache.peek(asset) == nil {
+            _ = await HEICCache.isHEIC(asset)
+            heicTick += 1
+        }
         if let asset, !eligibilityChecked || jobState == "done" {
             let result = await PhotoLibraryService().eligibility(of: asset)
             guard !Task.isCancelled, id == selectedIdentifier else { return }
@@ -328,10 +378,8 @@ struct AssetDetailView: View {
     private func choose(_ id: String) {
         guard id != selectedIdentifier else { return }
         eligibility = nil; eligibilityChecked = false; cameraInfo = nil; placeName = nil
-        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.18)) {
-            asset = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject
-            selectedIdentifier = id
-        }
+        asset = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject
+        selectedIdentifier = id
     }
 
     private func movePhoto(_ offset: Int) {
@@ -342,6 +390,7 @@ struct AssetDetailView: View {
     private func loadPlace() async {
         placeName = nil
         let id = selectedIdentifier
+        do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
         guard let location = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject?.location else { return }
         let places = try? await CLGeocoder().reverseGeocodeLocation(location)
         guard !Task.isCancelled, id == selectedIdentifier else { return }
@@ -400,7 +449,7 @@ struct AssetDetailView: View {
         return L("\(mp.formatted(.number.precision(.fractionLength(0)))) MP · \(asset.pixelWidth) × \(asset.pixelHeight)") + size
     }
     private func styleStatus(_ asset: PHAsset) -> String {
-        if !PhotoLibraryService.isHEIC(asset) { return L("Not available: not a HEIC") }
+        if !(HEICCache.peek(asset) ?? true) { return L("Not available: not a HEIC") }
         switch eligibility {
         case .port: return L("Can be added")
         case .addTexture: return L("Has a style; Texture & Grain can be added")

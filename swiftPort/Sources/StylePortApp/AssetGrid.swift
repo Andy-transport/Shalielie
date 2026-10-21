@@ -543,6 +543,11 @@ final class ScrollAnchorBox {
 enum HEICCache {
     private static let cache = NSCache<NSString, NSNumber>()
 
+    /// The cached answer, if known; safe to call while a view builds its body.
+    static func peek(_ asset: PHAsset) -> Bool? {
+        cache.object(forKey: asset.localIdentifier as NSString)?.boolValue
+    }
+
     static func isHEIC(_ asset: PHAsset) async -> Bool {
         let key = asset.localIdentifier as NSString
         if let known = cache.object(forKey: key) { return known.boolValue }
@@ -617,6 +622,22 @@ enum ThumbnailLoader {
 
     /// Photos' own thumbnail, delivered fast first (`preview`) and sharp after. The PhotoKit
     /// request is cancelled with the task, so tiles scrolled past never queue stale work.
+    /// Warm the cache for photos the person is about to swipe to.
+    @MainActor
+    static func prefetch(_ assets: [PHAsset], size: CGSize, contentMode: ContentMode) {
+        guard !assets.isEmpty, size.width > 0, size.height > 0 else { return }
+        let options = PHImageRequestOptions()
+        options.deliveryMode = .opportunistic
+        options.resizeMode = .fast
+        options.isNetworkAccessAllowed = true
+        manager.startCachingImages(
+            for: assets,
+            targetSize: size,
+            contentMode: contentMode == .fill ? .aspectFill : .aspectFit,
+            options: options
+        )
+    }
+
     @MainActor
     static func image(
         for asset: PHAsset,
