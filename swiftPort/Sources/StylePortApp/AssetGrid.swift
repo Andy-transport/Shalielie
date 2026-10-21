@@ -269,6 +269,7 @@ struct AssetGridView<Empty: View>: View {
     @State private var scrollAnchor = ScrollAnchorBox()
     @State private var tileTapsBlocked = false
     @State private var tapUnlockTask: Task<Void, Never>?
+    @State private var gridWidth = UIScreen.main.bounds.width
 
     private func boundedTileSize(_ size: Double) -> Double { min(320, max(32, size)) }
 
@@ -316,20 +317,25 @@ struct AssetGridView<Empty: View>: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            let count = columnCount(for: geometry.size.width)
-            let width = max(0, geometry.size.width - CGFloat(count - 1) * 2) / CGFloat(count)
-            ZStack {
-                gallery(columns: count, compact: width < 80, tile: width)
-                    .scaleEffect(liveZoomScale, anchor: .center)
-                    // Never animate grid positions, thumbnail sizes or finger movement.
-                    .transaction { $0.animation = nil }
-                    .id(layoutRevision)
-                    .transition(.opacity.animation(reduceMotion ? nil : .easeInOut(duration: 0.16)))
-            }
+        // No GeometryReader or ZStack around the scroll view: wrapped, it is no longer the
+        // navigation bar's scroll view, and the large title stops collapsing as you swipe up.
+        let count = columnCount(for: gridWidth)
+        let width = max(0, gridWidth - CGFloat(count - 1) * 2) / CGFloat(count)
+        gallery(columns: count, compact: width < 80, tile: width)
+            .scaleEffect(liveZoomScale, anchor: .center)
+            // Never animate grid positions, thumbnail sizes or finger movement.
+            .transaction { $0.animation = nil }
+            .id(layoutRevision)
+            .transition(.opacity.animation(reduceMotion ? nil : .easeInOut(duration: 0.16)))
             .clipped()
             .simultaneousGesture(gridZoom)
-        }
+            .background {
+                GeometryReader { geometry in
+                    Color.clear
+                        .onAppear { gridWidth = geometry.size.width }
+                        .onChange(of: geometry.size.width) { _, new in gridWidth = new }
+                }
+            }
         .onChange(of: isPinching) { _, active in
             // Cancellation resets gesture state too; commit the last visible size.
             if !active { finishZoom() }

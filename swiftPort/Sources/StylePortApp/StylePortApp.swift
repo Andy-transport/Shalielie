@@ -32,37 +32,61 @@ extension EnvironmentValues {
     }
 }
 
+enum AppTab: Int, CaseIterable {
+    case library, albums, backups, me
+}
+
+private struct SwitchTabKey: EnvironmentKey {
+    static let defaultValue: ((Int) -> Void)? = nil
+}
+
+extension EnvironmentValues {
+    /// Move by an offset through the tabs: +1 next, -1 previous.
+    var switchTab: ((Int) -> Void)? {
+        get { self[SwitchTabKey.self] }
+        set { self[SwitchTabKey.self] = newValue }
+    }
+}
+
 struct RootView: View {
     @EnvironmentObject private var queue: PortQueue
     @State private var showingActivity = false
+    @State private var tab = AppTab.library
 
     /// "Me" sits apart from the other tabs, at the bottom right, on iOS 26 (the search role is
     /// the system's detached trailing tab); earlier systems show it as a normal tab.
     @ViewBuilder
     private var tabs: some View {
         if #available(iOS 18.0, *) {
-            TabView {
-                Tab("Library", systemImage: "photo.on.rectangle") { LibraryTab() }
-                Tab("Albums", systemImage: "rectangle.stack") { AlbumsTab() }
-                Tab("Backup Bin", systemImage: "archivebox") { BackupBinTab() }
-                Tab("Palettify", systemImage: "person.crop.circle", role: .search) { SettingsTab() }
+            TabView(selection: $tab) {
+                Tab("Library", systemImage: "photo.on.rectangle", value: AppTab.library) { LibraryTab() }
+                Tab("Albums", systemImage: "rectangle.stack", value: AppTab.albums) { AlbumsTab() }
+                Tab("Backup Bin", systemImage: "archivebox", value: AppTab.backups) { BackupBinTab() }
+                Tab("Palettify", systemImage: "person.crop.circle", value: AppTab.me, role: .search) { SettingsTab() }
             }
         } else {
-            TabView {
+            TabView(selection: $tab) {
                 LibraryTab()
                     .tabItem { Label("Library", systemImage: "photo.on.rectangle") }
+                    .tag(AppTab.library)
                 AlbumsTab()
                     .tabItem { Label("Albums", systemImage: "rectangle.stack") }
+                    .tag(AppTab.albums)
                 BackupBinTab()
                     .tabItem { Label("Backup Bin", systemImage: "archivebox") }
+                    .tag(AppTab.backups)
                 SettingsTab()
                     .tabItem { Label("Palettify", systemImage: "person.crop.circle") }
+                    .tag(AppTab.me)
             }
         }
     }
 
     var body: some View {
         tabs
+        .environment(\.switchTab, { offset in
+            if let next = AppTab(rawValue: tab.rawValue + offset) { tab = next }
+        })
         .modernTabBar()
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if let status = queue.statusLine {

@@ -21,6 +21,7 @@ struct LibraryTab: View {
     var body: some View {
         NavigationStack {
             content
+                .tabSwipe()
                 .navigationTitle("Library")
                 .toolbar {
                     ToolbarItemGroup(placement: .topBarLeading) {

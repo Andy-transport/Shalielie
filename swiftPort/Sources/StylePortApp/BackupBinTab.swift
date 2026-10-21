@@ -67,6 +67,7 @@ struct BackupBinTab: View {
                     ContentUnavailableView("No Matching Originals", systemImage: "line.3.horizontal.decrease.circle")
                 }
             }
+            .tabSwipe()
             .navigationTitle("Backup Bin")
             .navigationDestination(for: UUID.self) { id in
                 if let entry = store.entries.first(where: { $0.id == id }) {

@@ -132,6 +132,7 @@ struct AlbumsTab: View {
                     }
                 }
             }
+            .tabSwipe()
             .navigationTitle("Albums")
             .toolbar {
                 if status == .authorized || status == .limited {
