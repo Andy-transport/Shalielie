@@ -217,7 +217,7 @@ private struct AlbumActionSheet: View {
     }
 }
 
-private struct DateActionSheet: View {
+struct DateActionSheet: View {
     let assets: [PHAsset]
     let completed: () -> Void
     @Environment(\.dismiss) private var dismiss
@@ -262,7 +262,7 @@ private struct DateActionSheet: View {
     }
 }
 
-private struct LocationActionSheet: View {
+struct LocationActionSheet: View {
     let assets: [PHAsset]
     let completed: () -> Void
     @Environment(\.dismiss) private var dismiss

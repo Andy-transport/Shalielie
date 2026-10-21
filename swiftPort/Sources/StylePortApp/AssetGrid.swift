@@ -257,7 +257,7 @@ struct AssetGridView<Empty: View>: View {
             if selecting { selectionBar }
         }
         .navigationDestination(for: AssetRoute.self) { route in
-            AssetDetailView(identifier: route.identifier)
+            AssetDetailView(identifier: route.identifier, assets: model.assets)
         }
         .confirmationDialog(
             replaceTitle,

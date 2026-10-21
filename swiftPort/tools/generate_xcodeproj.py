@@ -196,7 +196,7 @@ settings("600000000000000000000002", "Release", [
     ("GCC_C_LANGUAGE_STANDARD", "gnu17"), ("SWIFT_COMPILATION_MODE", "wholemodule"),
     ("SWIFT_OPTIMIZATION_LEVEL", q("-O")), ("VALIDATE_PRODUCT", "YES")])
 core_settings = [
-    ("CODE_SIGN_STYLE", "Automatic"), ("CURRENT_PROJECT_VERSION", "3"), ("DEFINES_MODULE", "YES"),
+    ("CODE_SIGN_STYLE", "Automatic"), ("CURRENT_PROJECT_VERSION", "4"), ("DEFINES_MODULE", "YES"),
     ("DYLIB_INSTALL_NAME_BASE", q("@rpath")), ("INSTALL_PATH", q("$(LOCAL_LIBRARY_DIR)/Frameworks")),
     ("LD_RUNPATH_SEARCH_PATHS", q("$(inherited) @executable_path/Frameworks @loader_path/Frameworks")),
     ("GENERATE_INFOPLIST_FILE", "YES"), ("IPHONEOS_DEPLOYMENT_TARGET", "17.0"), ("MACOSX_DEPLOYMENT_TARGET", "14.0"),
@@ -210,7 +210,7 @@ app_settings = [
     ("ASSETCATALOG_COMPILER_APPICON_NAME", "AppIcon"),
     ("ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME", "AccentColor"),
     ("CODE_SIGN_STYLE", "Automatic"),
-    ("CURRENT_PROJECT_VERSION", "3"),
+    ("CURRENT_PROJECT_VERSION", "4"),
     ("GENERATE_INFOPLIST_FILE", "YES"),
     ("INFOPLIST_FILE", "Sources/StylePortApp/Info.plist"),
     ("INFOPLIST_KEY_CFBundleDisplayName", "Palettify"),

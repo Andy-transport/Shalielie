@@ -1,117 +1,404 @@
+import CoreLocation
+import ImageIO
+import MapKit
 import Photos
 import PhotosUI
 import StylePortCore
 import SwiftUI
+import UIKit
 
-/// One photo: the picture (playing as a Live Photo when it is one), what the port would do
-/// with it, and the Add Style action.
+/// A photo-first viewer. Information slides up without leaving the photo.
 struct AssetDetailView: View {
     let identifier: String
-
+    let assets: [PHAsset]
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @EnvironmentObject private var queue: PortQueue
     @AppStorage(AppSettings.replaceOriginalsKey) private var replaceOriginals = false
+    @State private var selectedIdentifier: String
     @State private var asset: PHAsset?
     @State private var loaded = false
     @State private var eligibility: StylePorter.Eligibility?
     @State private var eligibilityChecked = false
+    @State private var showingInfo = false
+    @State private var showingControls = true
     @State private var confirmingReplace = false
+    @State private var confirmingDelete = false
+    @State private var busy = false
+    @State private var message: String?
+    @State private var editor: InfoEditor?
+    @State private var share: PhotoShare?
+    @State private var shareFiles: [URL] = []
+    @State private var cameraInfo: PhotoCameraInfo?
+    @State private var placeName: String?
 
-    private var job: PortJob? { queue.job(forAsset: identifier) }
+    init(identifier: String, assets: [PHAsset] = []) {
+        self.identifier = identifier
+        self.assets = assets
+        _selectedIdentifier = State(initialValue: identifier)
+    }
+
+    private enum InfoEditor: String, Identifiable {
+        case date, location
+        var id: String { rawValue }
+    }
+    private var job: PortJob? { queue.job(forAsset: selectedIdentifier) }
+    private var motion: Animation? { reduceMotion ? nil : .spring(duration: 0.32, bounce: 0.08) }
+    private var running: Bool { job.map { !$0.isFinished } ?? false }
+    private var blocked: Bool {
+        guard let asset else { return true }
+        return !PhotoLibraryService.isHEIC(asset) || eligibility == .alreadyStyled || eligibility == .unsupported
+    }
 
     var body: some View {
         Group {
+            if let asset { viewer(asset) }
+            else if loaded {
+                ContentUnavailableView("Photo Unavailable", systemImage: "photo",
+                    description: Text("This photo is no longer in your library."))
+            } else { ProgressView() }
+        }
+        .background(Color(uiColor: .systemBackground))
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden()
+        .toolbar(.hidden, for: .tabBar)
+        .toolbar(showingControls ? .visible : .hidden, for: .navigationBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
+        .toolbar { viewerToolbar }
+        .task(id: "\(selectedIdentifier)-\(jobState)") { await refresh() }
+        .task(id: selectedIdentifier) { await loadPlace() }
+        .task(id: "\(selectedIdentifier)-\(showingInfo)") {
+            guard showingInfo, let asset else { return }
+            let info = await PhotoCameraInfo.load(asset)
+            if !Task.isCancelled { cameraInfo = info }
+        }
+        .sheet(item: $editor) { editor in
             if let asset {
-                details(asset)
-            } else if loaded {
-                ContentUnavailableView {
-                    Label(
-                        job.map { _ in "Replaced" } ?? "Photo Unavailable",
-                        systemImage: job == nil ? "photo" : "checkmark.seal"
-                    )
-                } description: {
-                    Text(job == nil
-                         ? "This photo is no longer in your library."
-                         : "The styled version took its place. The original is in the Backup Bin.")
+                switch editor {
+                case .date: DateActionSheet(assets: [asset]) { Task { await refresh() } }
+                case .location: LocationActionSheet(assets: [asset]) { Task { await refresh(); await loadPlace() } }
                 }
-            } else {
-                ProgressView()
             }
         }
-        .navigationBarTitleDisplayMode(.inline)
-        .task(id: jobState) { await refresh() }
+        .sheet(item: $share, onDismiss: clearShareFiles) { payload in PhotoShareSheet(urls: payload.urls) }
+        .alert("Photo", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {
+            Button("OK") { message = nil }
+        } message: { Text(message ?? "") }
+        .confirmationDialog("Delete this photo?", isPresented: $confirmingDelete, titleVisibility: .visible) {
+            Button("Delete Photo", role: .destructive) { deletePhoto() }
+        } message: { Text("The photo moves to Recently Deleted in Photos.") }
+        .confirmationDialog("Replace this photo with its styled version?", isPresented: $confirmingReplace, titleVisibility: .visible) {
+            Button("Replace", role: .destructive) { if let asset { queue.port([asset]) } }
+        } message: { Text("The original is kept in the Backup Bin, and iOS asks you to confirm deleting it from your library.") }
     }
 
-    /// Changes whenever the job for this photo moves on, so the view re-reads the asset.
+    @ToolbarContentBuilder
+    private var viewerToolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            Button { dismiss() } label: { Image(systemName: "chevron.left").font(.headline) }
+                .accessibilityLabel("Back")
+        }
+        ToolbarItem(placement: .principal) {
+            if let asset {
+                VStack(spacing: 1) {
+                    if let placeName { Text(placeName).font(.subheadline.weight(.semibold)).lineLimit(1) }
+                    if let date = asset.creationDate {
+                        Text(date.formatted(date: .abbreviated, time: .shortened))
+                            .font(placeName == nil ? .subheadline.weight(.semibold) : .caption)
+                    } else { Text("Photo").font(.subheadline.weight(.semibold)) }
+                }
+                .padding(.horizontal, 16).padding(.vertical, 6)
+                .floatingGlass()
+            }
+        }
+        ToolbarItem(placement: .topBarTrailing) {
+            if let asset {
+                LibrarySelectionActions(assets: [asset], sourceAlbum: nil) { Task { await refresh() } }
+            }
+        }
+    }
+
+    private func viewer(_ asset: PHAsset) -> some View {
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                media(asset)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .clipped()
+                if showingInfo {
+                    ScrollView {
+                        infoPanel(asset).padding(.horizontal, 16).padding(.bottom, 16)
+                    }
+                    .frame(height: geometry.size.height * 0.53)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .animation(motion, value: showingInfo)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 8) {
+            if showingControls {
+                VStack(spacing: 12) {
+                    if !showingInfo, !assets.isEmpty { filmstrip }
+                    controls(asset)
+                }
+                .padding(.horizontal, 16).padding(.bottom, 8)
+            }
+        }
+    }
+
+    private func media(_ asset: PHAsset) -> some View {
+        GeometryReader { geometry in
+            let ratio = CGFloat(max(asset.pixelWidth, 1)) / CGFloat(max(asset.pixelHeight, 1))
+            let width = min(geometry.size.width, geometry.size.height * ratio)
+            let height = width / ratio
+            ZStack(alignment: .topLeading) {
+                AssetMedia(asset: asset)
+                    .id(asset.localIdentifier)
+                    .transition(.opacity)
+                    .frame(width: width, height: height)
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                if showingControls, asset.mediaSubtypes.contains(.photoLive) {
+                    Label("Live", systemImage: "livephoto")
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .floatingGlass().padding(12)
+                }
+            }
+            .contentShape(Rectangle())
+            .onTapGesture { withAnimation(motion) { showingControls.toggle(); if !showingControls { showingInfo = false } } }
+            .simultaneousGesture(DragGesture(minimumDistance: 28).onEnded { value in
+                let delta = value.translation
+                if abs(delta.width) > abs(delta.height), abs(delta.width) > 60 {
+                    movePhoto(delta.width < 0 ? 1 : -1)
+                } else if delta.height < -45 {
+                    withAnimation(motion) { showingControls = true; showingInfo = true }
+                } else if delta.height > 60, showingInfo {
+                    withAnimation(motion) { showingInfo = false }
+                }
+            })
+        }
+    }
+
+    private var filmstrip: some View {
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 4) {
+                    ForEach(assets, id: \.localIdentifier) { item in
+                        Button { choose(item.localIdentifier) } label: {
+                            AssetImage(asset: item)
+                                .frame(width: item.localIdentifier == selectedIdentifier ? 40 : 25, height: 46)
+                                .clipped().clipShape(RoundedRectangle(cornerRadius: 4))
+                                .overlay { if item.localIdentifier == selectedIdentifier {
+                                    RoundedRectangle(cornerRadius: 4).strokeBorder(Color.accentColor, lineWidth: 2)
+                                } }
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(PhotoLibraryService.filename(of: item))
+                        .accessibilityAddTraits(item.localIdentifier == selectedIdentifier ? .isSelected : [])
+                        .id(item.localIdentifier)
+                    }
+                }
+                .padding(.horizontal, 8)
+            }
+            .frame(height: 48)
+            .onAppear { proxy.scrollTo(selectedIdentifier, anchor: .center) }
+            .onChange(of: selectedIdentifier) { _, id in withAnimation(motion) { proxy.scrollTo(id, anchor: .center) } }
+        }
+    }
+
+    private func controls(_ asset: PHAsset) -> some View {
+        VStack(spacing: 10) {
+            styleButton
+            HStack(spacing: 12) {
+                Button { prepareShare(asset) } label: {
+                    if busy { ProgressView().frame(width: 44, height: 48) }
+                    else { controlIcon("square.and.arrow.up") }
+                }
+                .floatingGlass().accessibilityLabel("Share").disabled(busy)
+                Spacer(minLength: 0)
+                HStack(spacing: 4) {
+                    Button { favorite(asset) } label: { controlIcon(asset.isFavorite ? "heart.fill" : "heart") }
+                        .foregroundStyle(asset.isFavorite ? .red : .primary)
+                        .accessibilityLabel(asset.isFavorite ? "Remove from Favorites" : "Favorite")
+                    Button { withAnimation(motion) { showingInfo.toggle() } } label: {
+                        controlIcon(showingInfo ? "info.circle.fill" : "info.circle")
+                    }.accessibilityLabel("Info")
+                    Menu {
+                        Button("Adjust Date & Time…") { editor = .date }
+                        Button("Adjust Location…") { editor = .location }
+                    } label: { controlIcon("slider.horizontal.3") }.accessibilityLabel("Adjust Info")
+                }
+                .padding(.horizontal, 8).floatingGlass()
+                Spacer(minLength: 0)
+                Button { confirmingDelete = true } label: { controlIcon("trash") }
+                    .floatingGlass().accessibilityLabel("Delete Photo").disabled(busy || running)
+            }
+            .foregroundStyle(.primary)
+        }
+    }
+
+    private func controlIcon(_ name: String) -> some View {
+        Image(systemName: name).font(.title3).frame(width: 44, height: 48).contentShape(Rectangle())
+    }
+
+    private var styleButton: some View {
+        Button {
+            guard let asset else { return }
+            if replaceOriginals { confirmingReplace = true } else { queue.port([asset]) }
+        } label: {
+            HStack(spacing: 8) {
+                if running { ProgressView() }
+                else { Image(systemName: "camera.filters") }
+                Text(running ? progressText : actionTitle).lineLimit(1)
+            }
+            .font(.subheadline.weight(.semibold)).padding(.horizontal, 16).padding(.vertical, 10)
+        }
+        .modernProminentButton().disabled(running || blocked)
+    }
+
+    private func infoPanel(_ asset: PHAsset) -> some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Capsule().fill(.tertiary).frame(width: 34, height: 4).frame(maxWidth: .infinity).padding(.top, 6)
+                .accessibilityHidden(true)
+                .onTapGesture { withAnimation(motion) { showingInfo = false } }
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(asset.creationDate?.formatted(date: .complete, time: .shortened) ?? "Unknown")
+                            .font(.subheadline.weight(.medium))
+                        Text(PhotoLibraryService.filename(of: asset)).font(.subheadline).foregroundStyle(.secondary).textSelection(.enabled)
+                    }
+                    Spacer()
+                    Button("Adjust") { editor = .date }.font(.subheadline)
+                }
+                Divider()
+                HStack {
+                    Text(cameraInfo?.camera ?? "Photo").font(.subheadline.weight(.medium))
+                    Spacer()
+                    Text(PhotoLibraryService.isHEIC(asset) ? "HEIF" : "Image").font(.caption)
+                        .padding(.horizontal, 8).padding(.vertical, 4).background(.quaternary, in: Capsule())
+                }
+                if let lens = cameraInfo?.lens { Text(lens).font(.subheadline).foregroundStyle(.secondary) }
+                Text(resolution(asset)).font(.subheadline).foregroundStyle(.secondary)
+                if let exposure = cameraInfo?.exposure { Divider(); Text(exposure).font(.caption).foregroundStyle(.secondary) }
+                Divider()
+                HStack {
+                    Label("Live Photo", systemImage: "livephoto")
+                    Spacer(); Text(asset.mediaSubtypes.contains(.photoLive) ? "Yes" : "No")
+                }.font(.subheadline)
+                HStack(alignment: .top) {
+                    Text("Photographic Style"); Spacer(); Text(styleStatus(asset)).multilineTextAlignment(.trailing)
+                }.font(.subheadline)
+            }
+            .padding(16).background(Color(uiColor: .secondarySystemBackground), in: RoundedRectangle(cornerRadius: 22))
+            if let location = asset.location {
+                VStack(alignment: .leading, spacing: 8) {
+                    Map(initialPosition: .region(MKCoordinateRegion(center: location.coordinate, span: MKCoordinateSpan(latitudeDelta: 0.008, longitudeDelta: 0.008)))) {
+                        Marker(placeName ?? "Photo", coordinate: location.coordinate)
+                    }
+                    .frame(height: 180).clipShape(RoundedRectangle(cornerRadius: 22))
+                    .id(selectedIdentifier)
+                    HStack {
+                        Text(placeName ?? "Location").font(.subheadline)
+                        Spacer(); Button("Adjust") { editor = .location }.font(.subheadline)
+                    }.padding(.horizontal, 4)
+                }
+            } else {
+                Button { editor = .location } label: { Label("Add Location…", systemImage: "mappin.and.ellipse") }
+            }
+            if let job, !job.warnings.isEmpty || job.isFailed { JobNotes(job: job) }
+        }
+    }
+
     private var jobState: String {
         guard let job else { return "none" }
-        switch job.phase {
-        case .done: return "done"
-        case .failed: return "failed"
-        default: return "running"
-        }
+        switch job.phase { case .done: return "done"; case .failed: return "failed"; default: return "running" }
     }
 
     private func refresh() async {
-        asset = PHAsset.fetchAssets(withLocalIdentifiers: [identifier], options: nil).firstObject
+        let id = selectedIdentifier
+        asset = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject
         loaded = true
         if let asset, !eligibilityChecked || jobState == "done" {
-            eligibility = await PhotoLibraryService().eligibility(of: asset)
-            eligibilityChecked = true
+            let result = await PhotoLibraryService().eligibility(of: asset)
+            guard !Task.isCancelled, id == selectedIdentifier else { return }
+            eligibility = result; eligibilityChecked = true
         }
     }
 
-    private func details(_ asset: PHAsset) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                AssetMedia(asset: asset)
-                    .aspectRatio(
-                        CGFloat(max(asset.pixelWidth, 1)) / CGFloat(max(asset.pixelHeight, 1)),
-                        contentMode: .fit
-                    )
-                    .frame(maxWidth: .infinity)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+    private func choose(_ id: String) {
+        guard id != selectedIdentifier else { return }
+        eligibility = nil; eligibilityChecked = false; cameraInfo = nil; placeName = nil
+        withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.18)) {
+            asset = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject
+            selectedIdentifier = id
+        }
+    }
 
-                infoList(asset)
-                    .padding(.horizontal)
+    private func movePhoto(_ offset: Int) {
+        guard let index = assets.firstIndex(where: { $0.localIdentifier == selectedIdentifier }), assets.indices.contains(index + offset) else { return }
+        choose(assets[index + offset].localIdentifier)
+    }
 
-                if let job, !job.warnings.isEmpty || job.isFailed {
-                    JobNotes(job: job)
-                        .padding(.horizontal)
+    private func loadPlace() async {
+        placeName = nil
+        let id = selectedIdentifier
+        guard let location = PHAsset.fetchAssets(withLocalIdentifiers: [id], options: nil).firstObject?.location else { return }
+        let places = try? await CLGeocoder().reverseGeocodeLocation(location)
+        guard !Task.isCancelled, id == selectedIdentifier else { return }
+        placeName = places?.first?.name ?? places?.first?.locality
+    }
+
+    private func favorite(_ asset: PHAsset) {
+        let value = !asset.isFavorite
+        Task { @MainActor in
+            do { try await LibraryActions.update([asset]) { request, _ in request.isFavorite = value }; await refresh() }
+            catch { message = error.localizedDescription }
+        }
+    }
+
+    private func deletePhoto() {
+        guard let asset else { return }
+        busy = true
+        Task { @MainActor in
+            defer { busy = false }
+            do {
+                try await PhotoLibraryService().requireReadWriteAccess()
+                try await PHPhotoLibrary.shared().performChanges { PHAssetChangeRequest.deleteAssets([asset] as NSArray) }
+                dismiss()
+            } catch { message = error.localizedDescription }
+        }
+    }
+
+    private func prepareShare(_ asset: PHAsset) {
+        busy = true
+        Task { @MainActor in
+            defer { busy = false }
+            var files: [URL] = []
+            do {
+                let resources = PHAssetResource.assetResources(for: asset)
+                guard let photo = resources.first(where: { $0.type == .fullSizePhoto }) ?? resources.first(where: { $0.type == .photo }) else { throw LibraryError.assetUnavailable }
+                files.append(try await PhotoLibraryService.temporaryCopy(of: photo))
+                if let video = resources.first(where: { $0.type == .fullSizePairedVideo }) ?? resources.first(where: { $0.type == .pairedVideo }) {
+                    files.append(try await PhotoLibraryService.temporaryCopy(of: video))
                 }
+                shareFiles = files; share = PhotoShare(urls: files)
+            } catch {
+                for file in files { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+                message = error.localizedDescription
             }
-            .padding(.vertical)
-            .padding(.bottom, 80)
-        }
-        .navigationTitle(PhotoLibraryService.filename(of: asset))
-        .safeAreaInset(edge: .bottom) { actionBar(asset) }
-        .confirmationDialog(
-            "Replace this photo with its styled version?",
-            isPresented: $confirmingReplace,
-            titleVisibility: .visible
-        ) {
-            Button("Replace", role: .destructive) { queue.port([asset]) }
-        } message: {
-            Text("The original is kept in the Backup Bin, and iOS asks you to confirm deleting it from your library.")
         }
     }
 
-    private func infoList(_ asset: PHAsset) -> some View {
-        VStack(spacing: 0) {
-            InfoRow(title: "Captured", value: asset.creationDate?.formatted(date: .abbreviated, time: .shortened) ?? "Unknown")
-            Divider()
-            InfoRow(title: "Size", value: "\(asset.pixelWidth) × \(asset.pixelHeight)")
-            Divider()
-            InfoRow(title: "Live Photo", value: liveStatus(asset))
-            Divider()
-            InfoRow(title: "Photographic Style", value: styleStatus(asset))
-        }
-        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 12))
+    private func clearShareFiles() {
+        for file in shareFiles { try? FileManager.default.removeItem(at: file.deletingLastPathComponent()) }
+        shareFiles = []
     }
 
-    private func liveStatus(_ asset: PHAsset) -> String {
-        asset.mediaSubtypes.contains(.photoLive) ? "Yes" : "No"
+    private func resolution(_ asset: PHAsset) -> String {
+        let mp = Double(asset.pixelWidth) * Double(asset.pixelHeight) / 1_000_000
+        let size = cameraInfo?.bytes.map { " · " + ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) } ?? ""
+        return "\(mp.formatted(.number.precision(.fractionLength(0)))) MP · \(asset.pixelWidth) × \(asset.pixelHeight)\(size)"
     }
-
     private func styleStatus(_ asset: PHAsset) -> String {
         if !PhotoLibraryService.isHEIC(asset) { return "Not available: not a HEIC" }
         switch eligibility {
@@ -122,38 +409,11 @@ struct AssetDetailView: View {
         case nil: return eligibilityChecked ? "Checked when you add it (in iCloud)" : "Checking…"
         }
     }
-
-    @ViewBuilder
-    private func actionBar(_ asset: PHAsset) -> some View {
-        let running = job.map { !$0.isFinished } ?? false
-        let blocked = !PhotoLibraryService.isHEIC(asset)
-            || eligibility == .alreadyStyled || eligibility == .unsupported
-        Button {
-            if replaceOriginals { confirmingReplace = true } else { queue.port([asset]) }
-        } label: {
-            HStack {
-                if running {
-                    ProgressView().tint(.white)
-                    Text(progressText)
-                } else {
-                    Label(actionTitle, systemImage: replaceOriginals ? "arrow.triangle.2.circlepath" : "camera.filters")
-                }
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .modernProminentButton()
-        .controlSize(.large)
-        .disabled(running || blocked)
-        .padding(.horizontal, 20)
-        .padding(.vertical, 12)
-    }
-
     private var actionTitle: String {
         let what = eligibility == .addTexture ? "Texture & Grain" : "Photographic Style"
         if case .done = job?.phase { return replaceOriginals ? "Replace Again" : "Add \(what) Again" }
         return replaceOriginals ? "Replace with \(what)" : "Add \(what)"
     }
-
     private var progressText: String {
         switch job?.phase {
         case .reading: return "Reading original…"
@@ -164,21 +424,47 @@ struct AssetDetailView: View {
     }
 }
 
-private struct InfoRow: View {
-    let title: String
-    let value: String
+private struct PhotoShare: Identifiable { let id = UUID(); let urls: [URL] }
+private struct PhotoShareSheet: UIViewControllerRepresentable {
+    let urls: [URL]
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: urls, applicationActivities: nil)
+    }
+    func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
+}
 
-    var body: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(title)
-                .foregroundStyle(.secondary)
-            Spacer(minLength: 16)
-            Text(value)
-                .multilineTextAlignment(.trailing)
+private struct PhotoCameraInfo {
+    let camera: String?
+    let lens: String?
+    let exposure: String?
+    let bytes: Int64?
+    static func load(_ asset: PHAsset) async -> PhotoCameraInfo? {
+        let options = PHContentEditingInputRequestOptions()
+        options.isNetworkAccessAllowed = false
+        let input: PHContentEditingInput? = await withCheckedContinuation { continuation in
+            asset.requestContentEditingInput(with: options) { input, _ in continuation.resume(returning: input) }
         }
-        .font(.subheadline)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 11)
+        guard !Task.isCancelled, let url = input?.fullSizeImageURL else { return nil }
+        return await Task.detached(priority: .utility) { () -> PhotoCameraInfo? in
+            guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+                  let props = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [String: Any] else { return nil }
+            let tiff = props[kCGImagePropertyTIFFDictionary as String] as? [String: Any] ?? [:]
+            let exif = props[kCGImagePropertyExifDictionary as String] as? [String: Any] ?? [:]
+            let model = tiff[kCGImagePropertyTIFFModel as String] as? String
+            let make = tiff[kCGImagePropertyTIFFMake as String] as? String
+            let camera = [make, model].compactMap { $0 }.joined(separator: " ")
+            let lens = exif[kCGImagePropertyExifLensModel as String] as? String
+            var exposure: [String] = []
+            if let iso = (exif[kCGImagePropertyExifISOSpeedRatings as String] as? [NSNumber])?.first { exposure.append("ISO \(iso)") }
+            if let focal = exif[kCGImagePropertyExifFocalLength as String] as? NSNumber { exposure.append("\(focal) mm") }
+            if let aperture = exif[kCGImagePropertyExifFNumber as String] as? NSNumber { exposure.append("ƒ/\(aperture)") }
+            if let time = exif[kCGImagePropertyExifExposureTime as String] as? NSNumber {
+                exposure.append(time.doubleValue > 0 && time.doubleValue < 1 ? "1/\(Int((1 / time.doubleValue).rounded())) s" : "\(time) s")
+            }
+            let bytes = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size]) as? NSNumber
+            return PhotoCameraInfo(camera: camera.isEmpty ? nil : camera, lens: lens,
+                                   exposure: exposure.isEmpty ? nil : exposure.joined(separator: "   ·   "), bytes: bytes?.int64Value)
+        }.value
     }
 }
 
@@ -220,37 +506,44 @@ private struct LivePhotoPlayer: UIViewRepresentable {
     func makeUIView(context: Context) -> PHLivePhotoView {
         let view = PHLivePhotoView()
         view.contentMode = .scaleAspectFit
-        let badge = UIImageView(image: PHLivePhotoView.livePhotoBadgeImage(options: .overContent))
-        badge.translatesAutoresizingMaskIntoConstraints = false
-        view.addSubview(badge)
-        NSLayoutConstraint.activate([
-            badge.topAnchor.constraint(equalTo: view.topAnchor, constant: 8),
-            badge.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8)
-        ])
         return view
     }
 
     func updateUIView(_ view: PHLivePhotoView, context: Context) {
         guard context.coordinator.identifier != asset.localIdentifier else { return }
+        if let request = context.coordinator.request {
+            PHImageManager.default().cancelImageRequest(request)
+        }
         context.coordinator.identifier = asset.localIdentifier
+        view.livePhoto = nil
+        let id = asset.localIdentifier
+        let coordinator = context.coordinator
         let options = PHLivePhotoRequestOptions()
         options.deliveryMode = .opportunistic
         options.isNetworkAccessAllowed = true
         let scale = view.window?.screen.scale ?? 3
         let size = CGSize(width: max(view.bounds.width, 400) * scale, height: max(view.bounds.height, 400) * scale)
-        PHImageManager.default().requestLivePhoto(
+        context.coordinator.request = PHImageManager.default().requestLivePhoto(
             for: asset,
             targetSize: size,
             contentMode: .aspectFit,
             options: options
-        ) { livePhoto, _ in
-            if let livePhoto { view.livePhoto = livePhoto }
+        ) { [weak view, weak coordinator] livePhoto, _ in
+            guard coordinator?.identifier == id else { return }
+            if let livePhoto { view?.livePhoto = livePhoto }
         }
     }
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
+    static func dismantleUIView(_ view: PHLivePhotoView, coordinator: Coordinator) {
+        coordinator.identifier = nil
+        if let request = coordinator.request { PHImageManager.default().cancelImageRequest(request) }
+        view.livePhoto = nil
+    }
+
     final class Coordinator {
         var identifier: String?
+        var request: PHImageRequestID?
     }
 }
