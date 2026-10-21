@@ -151,6 +151,8 @@ struct AssetGridView<Empty: View>: View {
     @GestureState private var isPinching = false
     @State private var pinchStartSize: Double?
     @State private var zoomSize: Double?
+    @State private var tileTapsBlocked = false
+    @State private var tapUnlockTask: Task<Void, Never>?
 
     private func boundedTileSize(_ size: Double) -> Double { min(320, max(32, size)) }
 
@@ -161,18 +163,28 @@ struct AssetGridView<Empty: View>: View {
     }
 
     private func finishZoom() {
-        guard let zoomSize else { return }
-        // Keep the displayed size identical while moving it into persistent storage.
-        // A gesture-state scale would reset to 1 before the stored size catches up.
-        tileSize = zoomSize
-        self.zoomSize = nil
+        if let zoomSize {
+            // Keep the displayed size identical while moving it into persistent storage.
+            tileSize = zoomSize
+            self.zoomSize = nil
+        }
         pinchStartSize = nil
+        guard tileTapsBlocked else { return }
+        // A finger lifting after the pinch must not become a photo/selection tap.
+        tapUnlockTask?.cancel()
+        tapUnlockTask = Task { @MainActor in
+            do { try await Task.sleep(for: .milliseconds(250)) } catch { return }
+            guard !Task.isCancelled, !isPinching else { return }
+            tileTapsBlocked = false
+        }
     }
 
     private var gridZoom: some Gesture {
         MagnificationGesture()
             .updating($isPinching) { _, active, _ in active = true }
             .onChanged { value in
+                tapUnlockTask?.cancel()
+                tileTapsBlocked = true
                 if pinchStartSize == nil { pinchStartSize = tileSize }
                 zoomSize = boundedTileSize((pinchStartSize ?? tileSize) * value)
             }
@@ -286,6 +298,7 @@ struct AssetGridView<Empty: View>: View {
         )
         if selecting {
             tile.onTapGesture {
+                guard !isPinching, !tileTapsBlocked else { return }
                 if isSelected {
                     selection.remove(asset.localIdentifier)
                 } else {
@@ -295,6 +308,7 @@ struct AssetGridView<Empty: View>: View {
         } else {
             NavigationLink(value: AssetRoute(identifier: asset.localIdentifier)) { tile }
                 .buttonStyle(.plain)
+                .disabled(isPinching || tileTapsBlocked)
         }
     }
 
@@ -354,15 +368,30 @@ struct AssetTile: View {
     var body: some View {
         Color.clear
             .aspectRatio(1, contentMode: .fit)
-            .overlay { AssetImage(asset: asset, contentMode: .fill) }
+            .overlay {
+                GeometryReader { geometry in
+                    thumbnail(compact: geometry.size.width < 80)
+                }
+            }
+            .clipped()
+            .contentShape(Rectangle())
+            .task(id: asset.localIdentifier) {
+                isHEIC = PhotoLibraryService.isHEIC(asset)
+            }
+            .accessibilityElement(children: .combine)
+            .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private func thumbnail(compact: Bool) -> some View {
+        AssetImage(asset: asset, contentMode: .fill)
             .clipped()
             .overlay(alignment: .topLeading) {
                 if asset.mediaSubtypes.contains(.photoLive) {
-                    badge("livephoto")
+                    badge("livephoto", compact: compact)
                 }
             }
             .overlay(alignment: .bottomLeading) {
-                if !isHEIC {
+                if !compact, !isHEIC {
                     Text("Not HEIC")
                         .font(.caption2.weight(.semibold))
                         .padding(.horizontal, 5)
@@ -372,16 +401,11 @@ struct AssetTile: View {
                         .padding(4)
                 }
             }
-            .overlay(alignment: .bottomTrailing) { status }
+            .overlay(alignment: .bottomTrailing) { if !compact { status } }
             .overlay {
+                // A tint retains selection feedback without adding a marker on small tiles.
                 if isSelected { Color.white.opacity(0.2) }
             }
-            .contentShape(Rectangle())
-            .task(id: asset.localIdentifier) {
-                isHEIC = PhotoLibraryService.isHEIC(asset)
-            }
-            .accessibilityElement(children: .combine)
-            .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     @ViewBuilder
@@ -409,12 +433,12 @@ struct AssetTile: View {
         }
     }
 
-    private func badge(_ symbol: String) -> some View {
+    private func badge(_ symbol: String, compact: Bool = false) -> some View {
         Image(systemName: symbol)
-            .font(.footnote.weight(.semibold))
+            .font(compact ? .system(size: 10, weight: .semibold) : .footnote.weight(.semibold))
             .foregroundStyle(.white)
             .shadow(color: .black.opacity(0.5), radius: 2)
-            .padding(6)
+            .padding(compact ? 3 : 6)
     }
 }
 
