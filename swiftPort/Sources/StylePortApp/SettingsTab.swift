@@ -1,14 +1,39 @@
+import Photos
 import StylePortCore
 import SwiftUI
 
 struct SettingsTab: View {
+    @EnvironmentObject private var backups: BackupStore
     @AppStorage(AppSettings.replaceOriginalsKey) private var replaceOriginals = false
     @AppStorage(AppSettings.analyzePhotoKey) private var analyzePhoto = true
     @AppStorage(AppSettings.textureKey) private var texture = true
+    @State private var access = PhotoLibraryService.status
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    NavigationLink {
+                        AboutView()
+                    } label: {
+                        HStack(spacing: 14) {
+                            Image("AboutIcon")
+                                .resizable()
+                                .frame(width: 56, height: 56)
+                                .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+                                .accessibilityHidden(true)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(AppSettings.displayName).font(.title3.bold())
+                                Text(L("Version") + " " + AppSettings.appVersion)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+
                 Section {
                     Picker("When Styling a Photo", selection: $replaceOriginals) {
                         Text("Save as New").tag(false)
@@ -36,15 +61,56 @@ struct SettingsTab: View {
                     Text("Analyzing measures the photo's own tones for the palette instead of using the reference photo's. Texture & Grain adds the iOS 27 controls, and Soft Skin when the photo has the face data for it.")
                 }
 
+                Section("Photos & Backups") {
+                    LabeledContent {
+                        Text(accessTitle)
+                    } label: {
+                        Label("Photo Access", systemImage: "photo.on.rectangle")
+                    }
+                    if access == .limited {
+                        Button {
+                            LimitedLibrary.presentPicker()
+                        } label: {
+                            Label("Select More Photos…", systemImage: "photo.badge.plus")
+                        }
+                    } else if access != .authorized {
+                        Button {
+                            LimitedLibrary.openSettings()
+                        } label: {
+                            Label("Open Settings", systemImage: "gearshape")
+                        }
+                    }
+                    LabeledContent {
+                        Text(backupSummary)
+                    } label: {
+                        Label("Backup Bin", systemImage: "archivebox")
+                    }
+                }
+
                 Section {
                     Label("The Add Photographic Style action always saves a new photo and never replaces one.", systemImage: "square.2.layers.3d")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                    if let url = URL(string: "shortcuts://") {
+                        Link(destination: url) {
+                            Label("Open Shortcuts", systemImage: "arrow.up.forward.app")
+                        }
+                    }
                 } header: {
                     Text("Shortcuts")
                 }
 
                 Section {
+                    NavigationLink {
+                        FeaturesView()
+                    } label: {
+                        Label("Features", systemImage: "sparkles")
+                    }
+                    NavigationLink {
+                        PrivacyView()
+                    } label: {
+                        Label("Privacy", systemImage: "lock.shield")
+                    }
                     NavigationLink {
                         AboutView()
                     } label: {
@@ -53,11 +119,32 @@ struct SettingsTab: View {
                     Link(destination: AppSettings.repositoryURL) {
                         Label("Source Code on GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
                     }
-                    LabeledContent("Version", value: AppSettings.appVersion)
+                } header: {
+                    Text("About")
                 }
             }
             .navigationTitle("Palettify")
         }
+        .onChange(of: scenePhase) { _, phase in
+            // Access can change in Settings while the app is in the background.
+            if phase == .active { access = PhotoLibraryService.status }
+        }
+    }
+
+    private var accessTitle: String {
+        switch access {
+        case .authorized: return L("Full Access")
+        case .limited: return L("Limited Access")
+        case .notDetermined: return L("Not Determined")
+        default: return L("No Access")
+        }
+    }
+
+    private var backupSummary: String {
+        guard !backups.entries.isEmpty else { return L("No originals") }
+        let count = backups.entries.count == 1 ? L("1 original") : L("\(backups.entries.count) originals")
+        let size = ByteCountFormatter.string(fromByteCount: backups.totalBytes, countStyle: .file)
+        return count + ", " + size
     }
 }
 
@@ -85,7 +172,24 @@ struct AboutView: View {
                 .listRowBackground(Color.clear)
             }
 
-            Section("Features") {
+            Section {
+                Text("Experimental, unofficial software, not affiliated with Apple. Keep your original photos.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Link(destination: AppSettings.repositoryURL) {
+                    Label("github.com/nathanatgit/Shalielie", systemImage: "link")
+                }
+            }
+        }
+        .navigationTitle("About")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+struct FeaturesView: View {
+    var body: some View {
+        List {
+            Section {
                 Feature(
                     symbol: "camera.filters",
                     title: "Photographic Styles palette",
@@ -117,8 +221,16 @@ struct AboutView: View {
                     text: "Add a style from any shortcut with the Add Photographic Style action."
                 )
             }
+        }
+        .navigationTitle("Features")
+        .navigationBarTitleDisplayMode(.inline)
+    }
+}
 
-            Section("Privacy") {
+struct PrivacyView: View {
+    var body: some View {
+        List {
+            Section {
                 Feature(
                     symbol: "iphone",
                     title: "Everything stays on this device",
@@ -135,17 +247,8 @@ struct AboutView: View {
                     text: "The Backup Bin lives in the app's own storage on this device and is deleted with the app."
                 )
             }
-
-            Section {
-                Text("Experimental, unofficial software, not affiliated with Apple. Keep your original photos.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                Link(destination: AppSettings.repositoryURL) {
-                    Label("github.com/nathanatgit/Shalielie", systemImage: "link")
-                }
-            }
         }
-        .navigationTitle("About")
+        .navigationTitle("Privacy")
         .navigationBarTitleDisplayMode(.inline)
     }
 }
