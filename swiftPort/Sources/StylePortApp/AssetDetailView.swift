@@ -37,9 +37,13 @@ struct AssetDetailView: View {
     @State private var cameraInfo: PhotoCameraInfo?
     @State private var placeName: String?
 
-    init(identifier: String, assets: [PHAsset] = []) {
+    /// Told which photo is showing, so closing zooms back into the right tile.
+    var onShow: ((String) -> Void)?
+
+    init(identifier: String, assets: [PHAsset] = [], onShow: ((String) -> Void)? = nil) {
         self.identifier = identifier
         self.assets = assets
+        self.onShow = onShow
         _selectedIdentifier = State(initialValue: identifier)
         _pagerID = State(initialValue: identifier)
     }
@@ -49,6 +53,10 @@ struct AssetDetailView: View {
         var id: String { rawValue }
     }
     private var job: PortJob? { queue.job(forAsset: selectedIdentifier) }
+    private static var systemZoom: Bool {
+        if #available(iOS 18.0, *) { return true }
+        return false
+    }
     private var motion: Animation? { reduceMotion ? nil : .spring(duration: 0.32, bounce: 0.08) }
     private var running: Bool { job.map { !$0.isFinished } ?? false }
     private var blocked: Bool {
@@ -91,6 +99,7 @@ struct AssetDetailView: View {
         }
         .onChange(of: selectedIdentifier) { _, id in
             if pagerID != id { pagerID = id }
+            onShow?(id)
         }
         .task(id: "\(selectedIdentifier)-\(showingInfo)") {
             guard showingInfo, let asset else { return }
@@ -211,6 +220,8 @@ struct AssetDetailView: View {
             // info, or, with the info closed, goes back to the grid the photo came from.
             .simultaneousGesture(DragGesture(minimumDistance: 28)
                 .onChanged { value in
+                    // iOS 18+ closes with the system zoom, which follows the finger itself.
+                    guard !Self.systemZoom else { return }
                     let delta = value.translation
                     guard !showingInfo, delta.height > 0, delta.height > abs(delta.width) else { return }
                     dismissOffset = delta.height
@@ -222,7 +233,8 @@ struct AssetDetailView: View {
                         withAnimation(motion) { showingControls = true; showingInfo = true }
                     } else if vertical, delta.height > 60, showingInfo {
                         withAnimation(motion) { showingInfo = false }
-                    } else if vertical, !showingInfo, delta.height > 110 || value.predictedEndTranslation.height > 300 {
+                    } else if !Self.systemZoom, vertical, !showingInfo,
+                              delta.height > 110 || value.predictedEndTranslation.height > 300 {
                         dismiss()
                         return
                     }

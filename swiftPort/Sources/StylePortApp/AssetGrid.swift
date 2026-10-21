@@ -259,6 +259,9 @@ struct AssetGridView<Empty: View>: View {
     @State private var searchText = ""
     @State private var searchPresented = false
     @State private var previewRoute: AssetRoute?
+    /// The photo the viewer shows now; closing zooms back into its tile.
+    @State private var zoomID: String?
+    @Namespace private var zoomNamespace
 
     @AppStorage(AppSettings.gridTileSizeKey) private var tileSize = 100.0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -391,7 +394,8 @@ struct AssetGridView<Empty: View>: View {
             if selecting { selectionBar }
         }
         .navigationDestination(item: $previewRoute) { route in
-            AssetDetailView(identifier: route.identifier, assets: model.assets)
+            AssetDetailView(identifier: route.identifier, assets: model.assets) { zoomID = $0 }
+                .zoomTransition(id: zoomID ?? route.identifier, in: zoomNamespace)
         }
         .confirmationDialog(
             replaceTitle,
@@ -465,9 +469,11 @@ struct AssetGridView<Empty: View>: View {
         } else {
             Button {
                 guard !isPinching, !tileTapsBlocked else { return }
+                zoomID = asset.localIdentifier
                 previewRoute = AssetRoute(identifier: asset.localIdentifier)
             } label: { tile }
             .buttonStyle(GalleryTileButtonStyle())
+            .zoomSource(id: asset.localIdentifier, in: zoomNamespace)
         }
     }
 
