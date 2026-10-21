@@ -124,7 +124,6 @@ struct SettingsTab: View {
                 }
             }
             .readableWidth()
-            .tabSwipe()
             .navigationTitle("Palettify")
         }
         .onChange(of: scenePhase) { _, phase in

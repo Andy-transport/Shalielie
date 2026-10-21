@@ -40,40 +40,20 @@ struct RootView: View {
     @EnvironmentObject private var queue: PortQueue
     @State private var showingActivity = false
     @State private var tab = AppTab.library
-    @State private var tabDirection = 0
-    @State private var tabToken = 0
-
-    /// Tapping the tab bar and swiping go through here, so both slide the same way.
-    private var selection: Binding<AppTab> {
-        Binding(get: { tab }, set: { select($0) })
-    }
-
-    private func select(_ new: AppTab) {
-        guard new != tab else { return }
-        tabDirection = new.rawValue > tab.rawValue ? 1 : -1
-        tabToken += 1
-        tab = new
-    }
-
-    private var pager: TabPager {
-        TabPager(index: tab.rawValue, count: AppTab.allCases.count, direction: tabDirection, token: tabToken) { step in
-            if let next = AppTab(rawValue: tab.rawValue + step) { select(next) }
-        }
-    }
 
     /// "Me" sits apart from the other tabs, at the bottom right, on iOS 26 (the search role is
     /// the system's detached trailing tab); earlier systems show it as a normal tab.
     @ViewBuilder
     private var tabs: some View {
         if #available(iOS 18.0, *) {
-            TabView(selection: selection) {
+            TabView(selection: $tab) {
                 Tab("Library", systemImage: "photo.on.rectangle", value: AppTab.library) { LibraryTab() }
                 Tab("Albums", systemImage: "rectangle.stack", value: AppTab.albums) { AlbumsTab() }
                 Tab("Backup Bin", systemImage: "archivebox", value: AppTab.backups) { BackupBinTab() }
                 Tab("Palettify", systemImage: "person.crop.circle", value: AppTab.me, role: .search) { SettingsTab() }
             }
         } else {
-            TabView(selection: selection) {
+            TabView(selection: $tab) {
                 LibraryTab()
                     .tabItem { Label("Library", systemImage: "photo.on.rectangle") }
                     .tag(AppTab.library)
@@ -92,7 +72,6 @@ struct RootView: View {
 
     var body: some View {
         tabs
-        .environment(\.tabPager, pager)
         .modernTabBar()
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if let status = queue.statusLine {
