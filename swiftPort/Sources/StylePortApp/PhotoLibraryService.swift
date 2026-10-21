@@ -382,7 +382,7 @@ private extension PhotoLibraryService {
         return albums
     }
 
-    static func data(for resource: PHAssetResource, allowNetwork: Bool = true) async throws -> Data {
+    internal static func data(for resource: PHAssetResource, allowNetwork: Bool = true) async throws -> Data {
         let options = PHAssetResourceRequestOptions()
         options.isNetworkAccessAllowed = allowNetwork
         let buffer = Collector<Data>()

@@ -13,12 +13,12 @@ SOURCE = ROOT / "IconSources" / "Palettify.icon"
 ACCENT = (1, 3)  # second row, fourth column; keep its original size
 DOT_RADIUS = 0.022
 ACCENT_RADIUS = 0.036
-# Broad, overlapping aurora washes: pale mist, coral, lavender and blue over deep teal.
+# Broad, overlapping aurora washes: pale mist, coral, soft gold and teal over deep teal.
 WASHES = [
     (0.05, 0.02, 0.58, 0.42, (213, 221, 209), 0.94),
-    (0.96, 0.02, 0.48, 0.32, (243, 112, 133), 0.96),
-    (0.63, 0.29, 0.36, 0.33, (171, 153, 188), 0.30),
-    (0.27, 0.58, 0.43, 0.26, (109, 166, 179), 0.38),
+    (0.96, 0.02, 0.48, 0.32, (247, 102, 111), 0.98),
+    (0.55, 0.28, 0.32, 0.28, (237, 210, 154), 0.52),
+    (0.22, 0.54, 0.43, 0.27, (106, 180, 179), 0.55),
 ]
 
 
