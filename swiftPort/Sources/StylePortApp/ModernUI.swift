@@ -65,11 +65,10 @@ extension View {
         }
     }
 
-    /// A floating bar of controls: solid enough to read over photos, and it takes every tap on
-    /// it, so a tap between its buttons never reaches the grid behind.
+    /// A floating bar of controls: see-through glass like the rest of the immersive grid, but it
+    /// takes every tap on it, so a tap between its buttons never reaches the photos behind.
     func floatingBar() -> some View {
-        background(.thickMaterial, in: Capsule())
-            .floatingGlass()
+        floatingGlass()
             .contentShape(Capsule())
             .onTapGesture {}
     }
