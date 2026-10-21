@@ -19,6 +19,8 @@ struct AssetDetailView: View {
     @State private var pagerID: String?
     @State private var heicTick = 0
     @State private var commitTask: Task<Void, Never>?
+    /// How far the photo has been pulled down to close the viewer.
+    @State private var dismissOffset: CGFloat = 0
     @State private var asset: PHAsset?
     @State private var loaded = false
     @State private var eligibility: StylePorter.Eligibility?
@@ -200,18 +202,34 @@ struct AssetDetailView: View {
                         .floatingGlass().padding(12)
                 }
             }
+            // Pulled down, the photo follows the finger and shrinks a little, as in Photos.
+            .offset(y: dismissOffset)
+            .scaleEffect(1 - min(dismissOffset, 400) / 1600)
             .contentShape(Rectangle())
             .onTapGesture { withAnimation(motion) { showingControls.toggle(); if !showingControls { showingInfo = false } } }
-            // Horizontal paging belongs to the scroll view; this only opens and closes the info.
-            .simultaneousGesture(DragGesture(minimumDistance: 28).onEnded { value in
-                let delta = value.translation
-                guard abs(delta.height) > abs(delta.width) else { return }
-                if delta.height < -45 {
-                    withAnimation(motion) { showingControls = true; showingInfo = true }
-                } else if delta.height > 60, showingInfo {
-                    withAnimation(motion) { showingInfo = false }
+            // Horizontal paging belongs to the scroll view. Up opens the info; down closes the
+            // info, or, with the info closed, goes back to the grid the photo came from.
+            .simultaneousGesture(DragGesture(minimumDistance: 28)
+                .onChanged { value in
+                    let delta = value.translation
+                    guard !showingInfo, delta.height > 0, delta.height > abs(delta.width) else { return }
+                    dismissOffset = delta.height
                 }
-            })
+                .onEnded { value in
+                    let delta = value.translation
+                    let vertical = abs(delta.height) > abs(delta.width)
+                    if vertical, delta.height < -45 {
+                        withAnimation(motion) { showingControls = true; showingInfo = true }
+                    } else if vertical, delta.height > 60, showingInfo {
+                        withAnimation(motion) { showingInfo = false }
+                    } else if vertical, !showingInfo, delta.height > 110 || value.predictedEndTranslation.height > 300 {
+                        dismiss()
+                        return
+                    }
+                    if dismissOffset != 0 {
+                        withAnimation(reduceMotion ? nil : .spring(duration: 0.3)) { dismissOffset = 0 }
+                    }
+                })
             .task(id: selectedIdentifier) { prefetchNeighbors(size: geometry.size) }
         }
     }
