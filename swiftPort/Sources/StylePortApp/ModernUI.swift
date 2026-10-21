@@ -74,6 +74,18 @@ extension View {
             .onTapGesture {}
     }
 
+    /// Photos-style bars over a photo grid: no solid bar, the photos run underneath, and on
+    /// iOS 26 only a soft fade sits behind the title and buttons.
+    @ViewBuilder
+    func immersiveBars() -> some View {
+        let bars = self.toolbarBackground(.hidden, for: .navigationBar)
+        if #available(iOS 26.0, *) {
+            bars.scrollEdgeEffectStyle(.soft, for: .all)
+        } else {
+            bars
+        }
+    }
+
     /// Use the system's Liquid Glass on iOS 26+, with material fallbacks on older devices.
     @ViewBuilder
     func floatingGlass() -> some View {

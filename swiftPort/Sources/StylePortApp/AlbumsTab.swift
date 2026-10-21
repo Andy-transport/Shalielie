@@ -334,7 +334,7 @@ private struct AlbumScreen: View {
             ContentUnavailableView("No Photos", systemImage: "photo")
         }
         .navigationTitle(album.title)
-        .navigationBarTitleDisplayMode(.inline)
+        .toolbarTitleDisplayMode(.inlineLarge)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { SortMenu() }
         }

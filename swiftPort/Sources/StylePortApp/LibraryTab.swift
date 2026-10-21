@@ -22,8 +22,10 @@ struct LibraryTab: View {
         NavigationStack {
             content
                 .navigationTitle("Library")
+                // Large title in the button row, as in Photos, instead of a band of its own.
+                .toolbarTitleDisplayMode(.inlineLarge)
                 .toolbar {
-                    ToolbarItemGroup(placement: .topBarLeading) {
+                    ToolbarItemGroup(placement: .topBarTrailing) {
                         if status == .authorized || status == .limited {
                             SortMenu()
                         }

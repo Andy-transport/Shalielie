@@ -342,6 +342,7 @@ struct AssetGridView<Empty: View>: View {
                         .onChange(of: geometry.size.width) { _, new in gridWidth = new }
                 }
             }
+            .immersiveBars()
         .onChange(of: isPinching) { _, active in
             // Cancellation resets gesture state too; commit the last visible size.
             if !active { finishZoom() }
