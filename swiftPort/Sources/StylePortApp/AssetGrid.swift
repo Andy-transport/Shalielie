@@ -572,9 +572,21 @@ struct AssetTile: View {
                         .padding(4)
                 }
             }
-            .overlay(alignment: .bottomTrailing) { if !compact { status } }
+            .overlay(alignment: .bottomTrailing) {
+                if !compact {
+                    status
+                } else if isSelecting, isSelected {
+                    // Small tiles have no room for the empty circles, but a selected one still
+                    // needs a mark: the tint alone is easy to miss.
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                        .symbolRenderingMode(.palette)
+                        .foregroundStyle(.white, Color.accentColor)
+                        .shadow(color: .black.opacity(0.4), radius: 1)
+                        .padding(2)
+                }
+            }
             .overlay {
-                // A tint retains selection feedback without adding a marker on small tiles.
                 if isSelected { Color.white.opacity(0.2) }
             }
     }
