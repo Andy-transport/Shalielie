@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="1024" height="1024" viewBox="0 0 1024 1024">
+<title>Palettify continuous aurora background</title>
+<desc>Editable full-canvas washes. No strips, band boundaries, dots or shadows. Global saturation is 0.90; change it between 0 and 1.</desc>
+<defs>
+  <filter id="color-strength" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feColorMatrix type="saturate" values="0.90"/>
+  </filter>
+  <linearGradient id="teal-base" x1="0" y1="0" x2="160" y2="1024" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#a8bab4"/>
+    <stop offset="0.48" stop-color="#639e9f"/>
+    <stop offset="1" stop-color="#193739"/>
+  </linearGradient>
+  <radialGradient id="mist" cx="0" cy="0" r="800" gradientUnits="userSpaceOnUse" gradientTransform="translate(120 10) scale(1 0.9)">
+    <stop offset="0" stop-color="#dce1ce" stop-opacity="0.85"/>
+    <stop offset="0.52" stop-color="#dce1ce" stop-opacity="0.35"/>
+    <stop offset="1" stop-color="#dce1ce" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="coral" cx="0" cy="0" r="870" gradientUnits="userSpaceOnUse" gradientTransform="translate(1040 -20) scale(1 0.9)">
+    <stop offset="0" stop-color="#f16f7b" stop-opacity="0.98"/>
+    <stop offset="0.48" stop-color="#e99785" stop-opacity="0.55"/>
+    <stop offset="1" stop-color="#e9bca0" stop-opacity="0"/>
+  </radialGradient>
+  <radialGradient id="warm-bridge" cx="0" cy="0" r="560" gradientUnits="userSpaceOnUse" gradientTransform="translate(560 200) scale(1 0.9)">
+    <stop offset="0" stop-color="#e3d1a1" stop-opacity="0.30"/>
+    <stop offset="0.52" stop-color="#e3d1a1" stop-opacity="0.16"/>
+    <stop offset="1" stop-color="#e3d1a1" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+<g id="aurora" filter="url(#color-strength)">
+  <g inkscape:groupmode="layer" inkscape:label="1 Teal base" id="teal-layer"><rect width="1024" height="1024" fill="url(#teal-base)"/></g>
+  <g inkscape:groupmode="layer" inkscape:label="2 Pale mist" id="mist-layer"><rect width="1024" height="1024" fill="url(#mist)"/></g>
+  <g inkscape:groupmode="layer" inkscape:label="3 Coral wash" id="coral-layer"><rect width="1024" height="1024" fill="url(#coral)"/></g>
+  <g inkscape:groupmode="layer" inkscape:label="4 Subtle warmth" id="warm-layer"><rect width="1024" height="1024" fill="url(#warm-bridge)"/></g>
+</g>
+</svg>

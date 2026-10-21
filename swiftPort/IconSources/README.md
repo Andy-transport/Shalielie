@@ -9,8 +9,13 @@ Four separately editable layers use a 1024 × 1024 canvas:
 3. Small dots: 24 white SVG circles, without glow, glass or shadow.
 4. Accent dot: its original radius is retained, without a drop shadow.
 
-The background colors and dot radii are editable in `../tools/generate_app_icon.py`;
-run it with Pillow to regenerate both the Composer layers and flattened AppIcon/AboutIcon PNGs.
+The background's sole source is `Palettify-aurora-background-editable.svg`.
+Edit its gradient stops in a vector editor. The `color-strength` filter controls overall saturation.
+Its sibling PNG is rendered directly from that SVG; no independent gradient approximation remains.
+Run `python tools/generate_app_icon.py` from swiftPort to render the SVG and regenerate the Composer
+background plus AppIcon/AboutIcon. Requires Pillow, Node.js and sharp (`npm install --no-save sharp`
+in swiftPort, or set PALETTIFY_SHARP_PATH to an existing sharp module directory).
+Dot radii remain editable in `../tools/generate_app_icon.py`.
 SVG dot elements are named by row and column for manual editing. No rounded mask is baked in.
 
 The source package is not wired into the app target; the app uses the matching flattened PNG.
