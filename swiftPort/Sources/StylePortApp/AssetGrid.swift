@@ -576,15 +576,24 @@ struct AssetImage: View {
                     width: geometry.size.width * displayScale,
                     height: geometry.size.height * displayScale
                 )
-                let loaded = await ThumbnailLoader.image(for: asset, size: size, contentMode: contentMode)
-                if !Task.isCancelled { image = loaded }
+                let loaded = await ThumbnailLoader.image(
+                    for: asset, size: size, contentMode: contentMode
+                ) { preview in
+                    if image == nil { image = preview }
+                }
+                if !Task.isCancelled, let loaded { image = loaded }
             }
         }
     }
 }
 
 enum ThumbnailLoader {
-    private static let manager = PHCachingImageManager()
+    private static let manager: PHCachingImageManager = {
+        let manager = PHCachingImageManager()
+        // Grid thumbnails only; this keeps the caching manager from holding full-size renders.
+        manager.allowsCachingHighQualityImages = false
+        return manager
+    }()
     // Retain recent images across the release crossfade, while larger requests complete.
     private static let images: NSCache<NSString, UIImage> = {
         let cache = NSCache<NSString, UIImage>()
@@ -601,26 +610,52 @@ enum ThumbnailLoader {
         images.object(forKey: key(for: asset, contentMode: contentMode))
     }
 
+    private final class Request: @unchecked Sendable {
+        var id: PHImageRequestID = PHInvalidImageRequestID
+        var finished = false
+    }
+
+    /// Photos' own thumbnail, delivered fast first (`preview`) and sharp after. The PhotoKit
+    /// request is cancelled with the task, so tiles scrolled past never queue stale work.
     @MainActor
-    static func image(for asset: PHAsset, size: CGSize, contentMode: ContentMode) async -> UIImage? {
+    static func image(
+        for asset: PHAsset,
+        size: CGSize,
+        contentMode: ContentMode,
+        preview: ((UIImage) -> Void)? = nil
+    ) async -> UIImage? {
         let options = PHImageRequestOptions()
-        options.deliveryMode = .highQualityFormat
+        options.deliveryMode = .opportunistic
         options.resizeMode = .fast
         options.isNetworkAccessAllowed = true
-        return await withCheckedContinuation { continuation in
-            manager.requestImage(
-                for: asset,
-                targetSize: size,
-                contentMode: contentMode == .fill ? .aspectFill : .aspectFit,
-                options: options
-            ) { image, _ in
-                if let image {
-                    let cost = image.cgImage.map { $0.bytesPerRow * $0.height } ?? 0
-                    images.setObject(image, forKey: key(for: asset, contentMode: contentMode), cost: cost)
+        let request = Request()
+        let final: UIImage? = await withTaskCancellationHandler {
+            await withCheckedContinuation { continuation in
+                request.id = manager.requestImage(
+                    for: asset,
+                    targetSize: size,
+                    contentMode: contentMode == .fill ? .aspectFill : .aspectFit,
+                    options: options
+                ) { image, info in
+                    let degraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
+                    if degraded {
+                        if let image { preview?(image) }
+                        return
+                    }
+                    guard !request.finished else { return }
+                    request.finished = true
+                    continuation.resume(returning: image)
                 }
-                continuation.resume(returning: image)
             }
+        } onCancel: {
+            manager.cancelImageRequest(request.id)
         }
+        guard let final else { return nil }
+        // Decode off the main thread so the first frame it appears in doesn't stutter.
+        let ready = await final.byPreparingForDisplay() ?? final
+        let cost = ready.cgImage.map { $0.bytesPerRow * $0.height } ?? 0
+        images.setObject(ready, forKey: key(for: asset, contentMode: contentMode), cost: cost)
+        return ready
     }
 }
 
