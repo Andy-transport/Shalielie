@@ -2,6 +2,33 @@ import Photos
 import SwiftUI
 import UIKit
 
+/// Prepared off the main thread, so a pinch never rebuilds the date index.
+struct GalleryDateSection: Identifiable {
+    let id: String
+    let title: String
+    var assets: [PHAsset]
+
+    static func group(_ assets: [PHAsset], by component: Calendar.Component) -> [GalleryDateSection] {
+        let calendar = Calendar.current
+        let formatter = DateFormatter()
+        formatter.setLocalizedDateFormatFromTemplate(component == .year ? "yyyy" : "yMMMM")
+        var groups: [GalleryDateSection] = []
+        var indices: [String: Int] = [:]
+        for asset in assets {
+            let start = asset.creationDate.flatMap { calendar.dateInterval(of: component, for: $0)?.start }
+            let id = start.map { String($0.timeIntervalSinceReferenceDate) } ?? "unknown"
+            if let index = indices[id] {
+                groups[index].assets.append(asset)
+            } else {
+                indices[id] = groups.count
+                groups.append(GalleryDateSection(id: id,
+                    title: start.map { formatter.string(from: $0) } ?? String(localized: "Unknown Date"), assets: [asset]))
+            }
+        }
+        return groups
+    }
+}
+
 /// The photos of the library or of one album, sorted, and kept current as the library changes.
 @MainActor
 final class AssetListModel: NSObject, ObservableObject, PHPhotoLibraryChangeObserver {
@@ -11,6 +38,8 @@ final class AssetListModel: NSObject, ObservableObject, PHPhotoLibraryChangeObse
     }
 
     @Published private(set) var assets: [PHAsset] = []
+    @Published private(set) var yearSections: [GalleryDateSection] = []
+    @Published private(set) var monthSections: [GalleryDateSection] = []
     @Published private(set) var isLoading = true
 
     let scope: Scope
@@ -110,10 +139,15 @@ final class AssetListModel: NSObject, ObservableObject, PHPhotoLibraryChangeObse
                 }
             }
             guard !Task.isCancelled else { return }
+            let years = sort == .captured ? GalleryDateSection.group(list, by: .year) : []
+            let months = sort == .captured ? GalleryDateSection.group(list, by: .month) : []
+            guard !Task.isCancelled else { return }
             await MainActor.run {
                 guard generation == self.generation else { return }
                 self.fetchResult = result
                 self.filenames = names
+                self.yearSections = years
+                self.monthSections = months
                 self.assets = list
                 self.isLoading = false
             }
@@ -148,16 +182,22 @@ struct AssetGridView<Empty: View>: View {
 
     @AppStorage(AppSettings.gridTileSizeKey) private var tileSize = 100.0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Namespace private var zoomLayout
     @GestureState private var isPinching = false
     @State private var pinchStartSize: Double?
     @State private var zoomSize: Double?
+    @State private var layoutRevision = 0
+    @State private var scrollAnchor: String?
     @State private var tileTapsBlocked = false
     @State private var tapUnlockTask: Task<Void, Never>?
 
     private func boundedTileSize(_ size: Double) -> Double { min(320, max(32, size)) }
 
-    private var displayedTileSize: Double { boundedTileSize(zoomSize ?? tileSize) }
+    // The column layout stays committed until fingers lift. Only the entire viewport scales.
+    private var displayedTileSize: Double { boundedTileSize(tileSize) }
+    private var liveZoomScale: CGFloat {
+        guard let zoomSize, let pinchStartSize else { return 1 }
+        return CGFloat(zoomSize / pinchStartSize)
+    }
 
     private func columnCount(for width: CGFloat) -> Int {
         max(1, Int((max(0, width) + 2) / (displayedTileSize + 2)))
@@ -165,9 +205,12 @@ struct AssetGridView<Empty: View>: View {
 
     private func finishZoom() {
         if let zoomSize {
-            // Keep the displayed size identical while moving it into persistent storage.
-            tileSize = zoomSize
-            self.zoomSize = nil
+            // Replace the frozen, scaled layout once, using only a short crossfade.
+            withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.16)) {
+                tileSize = zoomSize
+                self.zoomSize = nil
+                layoutRevision += 1
+            }
         }
         pinchStartSize = nil
         guard tileTapsBlocked else { return }
@@ -195,24 +238,16 @@ struct AssetGridView<Empty: View>: View {
     var body: some View {
         GeometryReader { geometry in
             let count = columnCount(for: geometry.size.width)
-            ScrollView {
-                LazyVGrid(
-                    columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: count),
-                    spacing: 2
-                ) {
-                    ForEach(model.assets, id: \.localIdentifier) { asset in
-                        cell(asset)
-                            .matchedGeometryEffect(id: asset.localIdentifier, in: zoomLayout)
-                    }
-                }
-                .padding(.bottom, selecting ? 72 : 0)
-                // Interpolate each existing tile's position and size when columns reflow.
-                // Do not spring every finger update or unrelated library/selection changes.
-                .animation(
-                    reduceMotion ? nil : .interactiveSpring(response: 0.28, dampingFraction: 0.9),
-                    value: count
-                )
+            let width = max(0, geometry.size.width - CGFloat(count - 1) * 2) / CGFloat(count)
+            ZStack {
+                gallery(columns: count, compact: width < 80)
+                    .scaleEffect(liveZoomScale, anchor: .center)
+                    // Never animate grid positions, thumbnail sizes or finger movement.
+                    .transaction { $0.animation = nil }
+                    .id(layoutRevision)
+                    .transition(.opacity.animation(reduceMotion ? nil : .easeInOut(duration: 0.16)))
             }
+            .clipped()
             .simultaneousGesture(gridZoom)
         }
         .onChange(of: isPinching) { _, active in
@@ -283,6 +318,35 @@ struct AssetGridView<Empty: View>: View {
         }
     }
 
+    private func gallery(columns: Int, compact: Bool) -> some View {
+        ScrollView {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: columns), spacing: 2) {
+                if model.sort == .captured {
+                    ForEach(compact ? model.yearSections : model.monthSections) { group in
+                        Section {
+                            ForEach(group.assets, id: \.localIdentifier) { asset in cell(asset) }
+                        } header: {
+                            Text(group.title)
+                                .font(.title3.weight(.semibold))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 12)
+                                .padding(.top, 18)
+                                .padding(.bottom, 8)
+                                .accessibilityAddTraits(.isHeader)
+                        }
+                    }
+                } else {
+                    // Capture-date grouping must not override a filename or saved-date sort.
+                    ForEach(model.assets, id: \.localIdentifier) { asset in cell(asset) }
+                }
+            }
+            .scrollTargetLayout()
+            .padding(.bottom, selecting ? 72 : 0)
+        }
+        .scrollPosition(id: $scrollAnchor, anchor: .top)
+        .scrollDisabled(isPinching)
+    }
+
     private var replaceTitle: String {
         selection.count == 1 ? "Replace 1 photo with its styled version?"
             : "Replace \(selection.count) photos with their styled versions?"
@@ -311,8 +375,7 @@ struct AssetGridView<Empty: View>: View {
                 guard !isPinching, !tileTapsBlocked else { return }
                 previewRoute = AssetRoute(identifier: asset.localIdentifier)
             } label: { tile }
-            .buttonStyle(.plain)
-            .disabled(isPinching || tileTapsBlocked)
+            .buttonStyle(GalleryTileButtonStyle())
         }
     }
 
@@ -358,6 +421,10 @@ struct AssetGridView<Empty: View>: View {
             selection.removeAll()
         }
     }
+}
+
+private struct GalleryTileButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View { configuration.label }
 }
 
 /// One square of the grid: thumbnail, Live Photo and format badges, selection and progress.
@@ -458,8 +525,8 @@ struct AssetImage: View {
         GeometryReader { geometry in
             ZStack {
                 Rectangle().fill(.quaternary)
-                if let image {
-                    Image(uiImage: image)
+                if let displayed = image ?? ThumbnailLoader.cachedImage(for: asset, contentMode: contentMode) {
+                    Image(uiImage: displayed)
                         .resizable()
                         .aspectRatio(contentMode: contentMode)
                         .frame(width: geometry.size.width, height: geometry.size.height)
@@ -479,6 +546,21 @@ struct AssetImage: View {
 
 enum ThumbnailLoader {
     private static let manager = PHCachingImageManager()
+    // Retain recent images across the release crossfade, while larger requests complete.
+    private static let images: NSCache<NSString, UIImage> = {
+        let cache = NSCache<NSString, UIImage>()
+        cache.countLimit = 256
+        cache.totalCostLimit = 96 * 1024 * 1024
+        return cache
+    }()
+
+    private static func key(for asset: PHAsset, contentMode: ContentMode) -> NSString {
+        "\(asset.localIdentifier)-\(asset.modificationDate?.timeIntervalSinceReferenceDate ?? 0)-\(contentMode == .fill ? "fill" : "fit")" as NSString
+    }
+
+    static func cachedImage(for asset: PHAsset, contentMode: ContentMode) -> UIImage? {
+        images.object(forKey: key(for: asset, contentMode: contentMode))
+    }
 
     @MainActor
     static func image(for asset: PHAsset, size: CGSize, contentMode: ContentMode) async -> UIImage? {
@@ -493,6 +575,10 @@ enum ThumbnailLoader {
                 contentMode: contentMode == .fill ? .aspectFill : .aspectFit,
                 options: options
             ) { image, _ in
+                if let image {
+                    let cost = image.cgImage.map { $0.bytesPerRow * $0.height } ?? 0
+                    images.setObject(image, forKey: key(for: asset, contentMode: contentMode), cost: cost)
+                }
                 continuation.resume(returning: image)
             }
         }

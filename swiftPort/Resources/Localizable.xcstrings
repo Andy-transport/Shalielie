@@ -416,6 +416,22 @@
           }
         }
       }
+    },
+    "Unknown Date": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown Date"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知日期"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
