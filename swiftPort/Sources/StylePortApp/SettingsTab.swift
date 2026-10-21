@@ -123,6 +123,7 @@ struct SettingsTab: View {
                     Text("About")
                 }
             }
+            .readableWidth()
             .navigationTitle("Palettify")
         }
         .onChange(of: scenePhase) { _, phase in
@@ -181,6 +182,7 @@ struct AboutView: View {
                 }
             }
         }
+        .readableWidth()
         .navigationTitle("About")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -222,6 +224,7 @@ struct FeaturesView: View {
                 )
             }
         }
+        .readableWidth()
         .navigationTitle("Features")
         .navigationBarTitleDisplayMode(.inline)
     }
@@ -248,6 +251,7 @@ struct PrivacyView: View {
                 )
             }
         }
+        .readableWidth()
         .navigationTitle("Privacy")
         .navigationBarTitleDisplayMode(.inline)
     }

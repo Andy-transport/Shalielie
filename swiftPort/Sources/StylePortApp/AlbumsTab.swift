@@ -221,6 +221,7 @@ struct AlbumsTab: View {
                 }
             }
         }
+        .readableWidth()
     }
 
     private var albumGrid: some View {

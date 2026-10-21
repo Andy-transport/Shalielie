@@ -49,7 +49,8 @@ struct BackupBinTab: View {
                             .foregroundStyle(.secondary)
                             .padding(.horizontal, 16)
                     }
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: 3), spacing: 2) {
+                    // Three columns on a portrait iPhone, more in landscape and on iPad.
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 2)], spacing: 2) {
                         ForEach(visible) { entry in tile(entry) }
                     }
                 }
@@ -241,6 +242,7 @@ struct BackupBinTab: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
         .floatingGlass()
+        .frame(maxWidth: 560)
         .padding(.horizontal, 12)
         .padding(.bottom, 8)
     }
@@ -381,6 +383,7 @@ private struct BackupDetailView: View {
                 Text("Restoring puts the original back with its date, location, favorite and albums.")
             }
         }
+        .readableWidth()
         .navigationTitle(entry.photoFilename)
         .navigationBarTitleDisplayMode(.inline)
         .confirmationDialog("Restore this original?", isPresented: $confirmingRestore, titleVisibility: .visible) {

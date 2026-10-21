@@ -141,8 +141,9 @@ struct LibrarySelectionActions: View {
             switch editor {
             case .album, .move:
                 AlbumActionSheet(assets: assets, moving: editor == .move, initialSource: sourceAlbum, completed: changed)
-            case .date: DateActionSheet(assets: assets, completed: changed)
-            case .location: LocationActionSheet(assets: assets, completed: changed)
+                    .formSheetSizing()
+            case .date: DateActionSheet(assets: assets, completed: changed).formSheetSizing()
+            case .location: LocationActionSheet(assets: assets, completed: changed).formSheetSizing()
             }
         }
         .alert("Library", isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })) {

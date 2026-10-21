@@ -98,8 +98,8 @@ struct AssetDetailView: View {
         .sheet(item: $editor) { editor in
             if let asset {
                 switch editor {
-                case .date: DateActionSheet(assets: [asset]) { Task { await refresh() } }
-                case .location: LocationActionSheet(assets: [asset]) { Task { await refresh(); await loadPlace() } }
+                case .date: DateActionSheet(assets: [asset]) { Task { await refresh() } }.formSheetSizing()
+                case .location: LocationActionSheet(assets: [asset]) { Task { await refresh(); await loadPlace() } }.formSheetSizing()
                 }
             }
         }
@@ -143,16 +143,35 @@ struct AssetDetailView: View {
 
     private func viewer(_ asset: PHAsset) -> some View {
         GeometryReader { geometry in
-            VStack(spacing: 0) {
-                media(asset)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .clipped()
-                if showingInfo {
-                    ScrollView {
-                        infoPanel(asset).padding(.horizontal, 16).padding(.bottom, 16)
+            // Landscape and iPad put the info beside the photo instead of under it.
+            let wide = geometry.size.width > geometry.size.height && geometry.size.width > 600
+            Group {
+                if wide {
+                    HStack(spacing: 0) {
+                        media(asset)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .clipped()
+                        if showingInfo {
+                            ScrollView {
+                                infoPanel(asset).padding(16)
+                            }
+                            .frame(width: min(400, geometry.size.width * 0.4))
+                            .transition(.move(edge: .trailing).combined(with: .opacity))
+                        }
                     }
-                    .frame(height: geometry.size.height * 0.53)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                } else {
+                    VStack(spacing: 0) {
+                        media(asset)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .clipped()
+                        if showingInfo {
+                            ScrollView {
+                                infoPanel(asset).padding(.horizontal, 16).padding(.bottom, 16)
+                            }
+                            .frame(height: geometry.size.height * 0.53)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
+                    }
                 }
             }
             .animation(motion, value: showingInfo)
@@ -163,6 +182,8 @@ struct AssetDetailView: View {
                     if !showingInfo, !assets.isEmpty { filmstrip }
                     controls(asset)
                 }
+                // Sized for a hand, not the screen: on iPad the controls stay together.
+                .frame(maxWidth: 560)
                 .padding(.horizontal, 16).padding(.bottom, 8)
             }
         }

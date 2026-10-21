@@ -55,6 +55,7 @@ struct ActivitySheet: View {
             }
         }
         .presentationDetents([.medium, .large])
+        .formSheetSizing()
     }
 
     @ViewBuilder
