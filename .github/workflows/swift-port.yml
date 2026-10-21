@@ -3,9 +3,10 @@ name: StylePort Apple Build
 on:
   push:
     branches: ["**"]
-    # An ios-v… tag also publishes the unsigned IPA as a pre-release (path filters don't
-    # apply to tag pushes).
-    tags: ["ios-v*"]
+    # A v… release tag attaches the unsigned IPA to that release, next to the command-line
+    # binaries; an ios-v… tag publishes it as an iOS-only pre-release. Path filters don't
+    # apply to tag pushes.
+    tags: ["v*", "ios-v*"]
     paths:
       - "swiftPort/**"
       - ".github/workflows/swift-port.yml"
@@ -57,7 +58,8 @@ jobs:
           cp -R "$RUNNER_TEMP/StylePort-iOS/Build/Products/Release-iphoneos/StylePort.app" "$payload/"
           (cd "$RUNNER_TEMP/ipa" && zip -qry "$artifact_root/ios-device/Palettify-unsigned.ipa" Payload)
           (cd "$artifact_root/ios-simulator" && shasum -a 256 *.zip > SHA256SUMS.txt)
-          (cd "$artifact_root/ios-device" && shasum -a 256 *.ipa > SHA256SUMS.txt)
+          # Its own name: a release also carries the binaries' SHA256SUMS.txt.
+          (cd "$artifact_root/ios-device" && shasum -a 256 *.ipa > Palettify-SHA256SUMS.txt)
       - name: Verify packaged app identity
         run: |
           app="$RUNNER_TEMP/StylePort-iOS/Build/Products/Release-iphoneos/StylePort.app"
@@ -78,18 +80,24 @@ jobs:
           path: ${{ runner.temp }}/StylePort-artifacts/ios-device
           if-no-files-found: error
           retention-days: 14
-      - name: Publish the IPA as a pre-release
-        if: startsWith(github.ref, 'refs/tags/ios-v')
+      - name: Attach the IPA to the release
+        if: startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/tags/ios-v')
         working-directory: ${{ runner.temp }}/StylePort-artifacts/ios-device
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload "$GITHUB_REF_NAME" Palettify-unsigned.ipa SHA256SUMS.txt \
-              --repo "$GITHUB_REPOSITORY" --clobber
+          files=(Palettify-unsigned.ipa Palettify-SHA256SUMS.txt)
+          exists() { gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; }
+          if [[ "$GITHUB_REF_NAME" == v* ]]; then
+            # The binary release workflow creates this release, with its notes; wait for it
+            # (up to 40 minutes) rather than race it.
+            for _ in $(seq 80); do exists && break; sleep 30; done
+          fi
+          if exists; then
+            gh release upload "$GITHUB_REF_NAME" "${files[@]}" --repo "$GITHUB_REPOSITORY" --clobber
           else
-            gh release create "$GITHUB_REF_NAME" Palettify-unsigned.ipa SHA256SUMS.txt \
+            gh release create "$GITHUB_REF_NAME" "${files[@]}" \
               --repo "$GITHUB_REPOSITORY" --prerelease --title "Palettify $GITHUB_REF_NAME" \
               --notes "Unsigned iOS and iPadOS app for sideloading with Sideloadly or AltStore, which sign it with your own Apple ID. Needs iOS 17 or later. Built from $GITHUB_SHA."
           fi

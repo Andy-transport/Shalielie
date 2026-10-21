@@ -47,8 +47,8 @@ tile 布局即可）拍摄的 HEIC 照片补上 iPhone 16/17 照片所携带的�
 包括实况照片；既可以存为新照片，也可以替换原图，被替换的原图会保存在“备份”中，随时可以恢复。它还在“快捷指令”中
 提供“添加摄影风格”操作。源码位于 [`swiftPort/`](swiftPort/)。
 
-**[下载 iOS 应用](https://github.com/nathanatgit/Shalielie/releases)**：找到最新的 `ios-v…` 预发布版，
-下载 `Palettify-unsigned.ipa`。应用未上架 App Store，需要用 Sideloadly 或 AltStore 等侧载工具安装，
+**[下载 iOS 应用](https://github.com/nathanatgit/Shalielie/releases/latest)**：每个版本都附有
+`Palettify-unsigned.ipa`，与命令行可执行文件放在一起。应用未上架 App Store，需要用 Sideloadly 或 AltStore 等侧载工具安装，
 它们会用你自己的 Apple ID 为应用签名。需要 iOS 17 或更高版本；质感/颗粒需要 iOS 27。
 
 ## 下载可执行文件

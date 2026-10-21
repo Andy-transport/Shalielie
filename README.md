@@ -62,8 +62,8 @@ styles photos straight from your library, Live Photos included, either as new ph
 of the originals, which it keeps in a Backup Bin so you can restore them. It also adds an "Add
 Photographic Style" action to Shortcuts. Its source is in [`swiftPort/`](swiftPort/).
 
-**[Download the iOS app](https://github.com/nathanatgit/Shalielie/releases)** — look for the
-newest `ios-v…` pre-release and download `Palettify-unsigned.ipa`. It is not on the App Store:
+**[Download the iOS app](https://github.com/nathanatgit/Shalielie/releases/latest)** —
+`Palettify-unsigned.ipa` is attached to each release, next to the command-line binaries. It is not on the App Store:
 install it with a sideloading tool such as Sideloadly or AltStore, which signs it with your own
 Apple ID. It needs iOS 17 or later; Texture/Grain needs iOS 27.
 
