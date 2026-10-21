@@ -13,6 +13,7 @@ SOURCE = ROOT / "IconSources" / "Palettify.icon"
 ACCENT = (1, 3)  # second row, fourth column; keep its original size
 DOT_RADIUS = 0.022
 ACCENT_RADIUS = 0.036
+COLOR_STRENGTH = 0.40  # restrained color over a neutral gray base
 # Aurora mesh: explicit gold/mint/aqua bridges avoid mixing complementary
 # coral and teal directly into a muddy gray. Each row runs left to right.
 MESH = [
@@ -47,7 +48,8 @@ def background():
             for (v0, colors0), (v1, colors1) in zip(MESH, MESH[1:]):
                 if v <= v1:
                     color = blend(row_color(colors0, u), row_color(colors1, u), (v-v0)/(v1-v0))
-                    pixels[x,y] = tuple(round(c) for c in color)
+                    neutral = sum(c * w for c, w in zip(color, (0.2126, 0.7152, 0.0722)))
+                    pixels[x,y] = tuple(round(neutral + (c-neutral) * COLOR_STRENGTH) for c in color)
                     break
     return image.resize((SIZE, SIZE), Image.Resampling.BICUBIC)
 
