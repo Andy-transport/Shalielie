@@ -333,7 +333,9 @@ struct AssetGridView<Empty: View>: View {
             .transaction { $0.animation = nil }
             .id(layoutRevision)
             .transition(.opacity.animation(reduceMotion ? nil : .easeInOut(duration: 0.16)))
-            .clipped()
+            // Clip only while a pinch scales the grid. Clipped all the time, the photos stop
+            // at the bars instead of running under the title and tab bar as in Photos.
+            .clipShape(Rectangle().inset(by: zoomSize == nil ? -10_000 : 0))
             .simultaneousGesture(gridZoom)
             .background {
                 GeometryReader { geometry in
