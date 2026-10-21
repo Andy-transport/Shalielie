@@ -208,12 +208,20 @@ struct AssetDetailView: View {
         }
     }
 
-    private func page(_ item: PHAsset, size: CGSize) -> some View {
+    private func page(_ item: PHAsset, size: CGSize) -> AnyView {
         let ratio = CGFloat(max(item.pixelWidth, 1)) / CGFloat(max(item.pixelHeight, 1))
         let width = min(size.width, size.height * ratio)
+        if item.mediaSubtypes.contains(.photoLive) {
+            // The player fits the photo inside its bounds, so a press-and-hold in the blank
+            // area around the photo still reaches it and plays the motion.
+            return AssetMedia(asset: item)
+                .frame(width: size.width, height: size.height)
+                .eraseToAnyView()
+        }
         return AssetMedia(asset: item)
             .frame(width: width, height: width / ratio)
             .frame(width: size.width, height: size.height)
+            .eraseToAnyView()
     }
 
     private func prefetchNeighbors(size: CGSize) {
@@ -475,6 +483,10 @@ struct AssetDetailView: View {
         default: return L("Waiting…")
         }
     }
+}
+
+private extension View {
+    func eraseToAnyView() -> AnyView { AnyView(self) }
 }
 
 private struct PhotoShare: Identifiable { let id = UUID(); let urls: [URL] }
