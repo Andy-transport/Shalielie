@@ -221,5 +221,13 @@
 220,Shortcuts action,Save each result to your library as a new photo.,将每个结果作为新照片存入你的图库。
 221,Shortcuts action,Add Photographic Style to ${photos},为 ${photos} 添加摄影风格
 222,Shortcuts action,Add a Photographic Style with Palettify,用⌈盘它⌋添加摄影风格
-223,Albums,Grid,网格
-224,Albums,List,列表
+223,Albums,View,视图
+224,Albums,Album Covers,相簿封面
+225,Albums,List View,列表视图
+226,Albums,Sort by Creation Date,按创建日期排序
+227,Albums,Sort by Modification Date,按修改日期排序
+228,Albums,Sort by Name,按名称排序
+229,Albums,Sort by Custom Order,按自定义顺序排序
+230,Albums,Filter,筛选
+231,Albums,All Albums,全部相簿
+232,Albums,Options,选项

@@ -6,6 +6,23 @@ struct AlbumItem: Identifiable, Hashable {
     let title: String
     let count: Int
     let keyAsset: PHAsset?
+    var startDate: Date? = nil
+    var endDate: Date? = nil
+    /// Position in PhotoKit's own order, which is the person's arrangement in Photos.
+    var order = 0
+}
+
+enum AlbumLayout: String {
+    case covers, list
+}
+
+enum AlbumSort: String, CaseIterable, Identifiable {
+    case custom, created, modified, name
+    var id: String { rawValue }
+}
+
+enum AlbumFilter: String {
+    case all, mine, mediaTypes
 }
 
 /// The system's albums: the person's own, then the media-type smart albums.
@@ -34,7 +51,10 @@ final class AlbumsModel: NSObject, ObservableObject, PHPhotoLibraryChangeObserve
             var mine: [AlbumItem] = []
             let user = PHAssetCollection.fetchAssetCollections(with: .album, subtype: .any, options: nil)
             user.enumerateObjects { collection, _, _ in
-                if let item = Self.item(for: collection, keepEmpty: true) { mine.append(item) }
+                if var item = Self.item(for: collection, keepEmpty: true) {
+                    item.order = mine.count
+                    mine.append(item)
+                }
             }
             var types: [AlbumItem] = []
             for subtype in Self.smartAlbums {
@@ -65,7 +85,9 @@ final class AlbumsModel: NSObject, ObservableObject, PHPhotoLibraryChangeObserve
             id: collection.localIdentifier,
             title: collection.localizedTitle ?? L("Album"),
             count: assets.count,
-            keyAsset: assets.lastObject
+            keyAsset: assets.lastObject,
+            startDate: collection.startDate,
+            endDate: collection.endDate
         )
     }
 
@@ -77,7 +99,9 @@ final class AlbumsModel: NSObject, ObservableObject, PHPhotoLibraryChangeObserve
 struct AlbumsTab: View {
     @StateObject private var model = AlbumsModel()
     @State private var status = PhotoLibraryService.status
-    @AppStorage("albumsGridLayout") private var gridLayout = false
+    @AppStorage("albumsLayout") private var layout = AlbumLayout.covers
+    @AppStorage("albumsSort") private var sort = AlbumSort.custom
+    @AppStorage("albumsFilter") private var filter = AlbumFilter.all
 
     var body: some View {
         NavigationStack {
@@ -99,14 +123,7 @@ struct AlbumsTab: View {
             .navigationTitle("Albums")
             .toolbar {
                 if status == .authorized || status == .limited {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button {
-                            gridLayout.toggle()
-                        } label: {
-                            Label(gridLayout ? "List" : "Grid",
-                                  systemImage: gridLayout ? "list.bullet" : "square.grid.2x2")
-                        }
-                    }
+                    ToolbarItem(placement: .topBarTrailing) { optionsMenu }
                 }
             }
             .navigationDestination(for: AlbumItem.self) { album in
@@ -122,27 +139,73 @@ struct AlbumsTab: View {
     @ViewBuilder
     private var albumList: some View {
         Group {
-            if gridLayout { albumGrid } else { albumRows }
+            if layout == .covers { albumGrid } else { albumRows }
         }
         .overlay {
             if model.isLoading {
                 ProgressView()
-            } else if model.myAlbums.isEmpty && model.mediaTypes.isEmpty {
+            } else if myAlbums.isEmpty && mediaTypes.isEmpty {
                 ContentUnavailableView("No Albums", systemImage: "rectangle.stack")
             }
         }
     }
 
+    private var optionsMenu: some View {
+        Menu {
+            Picker("View", selection: $layout) {
+                Label("Album Covers", systemImage: "photo").tag(AlbumLayout.covers)
+                Label("List View", systemImage: "list.bullet").tag(AlbumLayout.list)
+            }
+            .pickerStyle(.palette)
+            Divider()
+            Picker("Sort", selection: $sort) {
+                Text("Sort by Creation Date").tag(AlbumSort.created)
+                Text("Sort by Modification Date").tag(AlbumSort.modified)
+                Text("Sort by Name").tag(AlbumSort.name)
+                Text("Sort by Custom Order").tag(AlbumSort.custom)
+            }
+            .pickerStyle(.inline)
+            Divider()
+            Menu("Filter") {
+                Picker("Filter", selection: $filter) {
+                    Text("All Albums").tag(AlbumFilter.all)
+                    Text("My Albums").tag(AlbumFilter.mine)
+                    Text("Media Types").tag(AlbumFilter.mediaTypes)
+                }
+                .pickerStyle(.inline)
+            }
+        } label: {
+            Label("Options", systemImage: "ellipsis.circle")
+        }
+    }
+
+    /// PhotoKit has no album creation or modification date, so these use the dates of the
+    /// photos inside: the oldest photo for creation, the newest for modification.
+    private var myAlbums: [AlbumItem] {
+        guard filter != .mediaTypes else { return [] }
+        switch sort {
+        case .custom: return model.myAlbums.sorted { $0.order < $1.order }
+        case .name:
+            return model.myAlbums.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
+        case .created:
+            return model.myAlbums.sorted { ($0.startDate ?? .distantPast) > ($1.startDate ?? .distantPast) }
+        case .modified:
+            return model.myAlbums.sorted { ($0.endDate ?? .distantPast) > ($1.endDate ?? .distantPast) }
+        }
+    }
+
+    private var mediaTypes: [AlbumItem] { filter == .mine ? [] : model.mediaTypes }
+
     private var albumRows: some View {
         List {
-            if !model.myAlbums.isEmpty {
+            if !myAlbums.isEmpty {
                 Section("My Albums") {
-                    ForEach(model.myAlbums) { AlbumRow(album: $0) }
+                    ForEach(myAlbums) { AlbumRow(album: $0) }
                 }
             }
-            if !model.mediaTypes.isEmpty {
+            if !mediaTypes.isEmpty {
                 Section("Media Types") {
-                    ForEach(model.mediaTypes) { AlbumRow(album: $0) }
+                    ForEach(mediaTypes) { AlbumRow(album: $0) }
                 }
             }
         }
@@ -151,8 +214,8 @@ struct AlbumsTab: View {
     private var albumGrid: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 8) {
-                if !model.myAlbums.isEmpty { gridSection("My Albums", model.myAlbums) }
-                if !model.mediaTypes.isEmpty { gridSection("Media Types", model.mediaTypes) }
+                if !myAlbums.isEmpty { gridSection("My Albums", myAlbums) }
+                if !mediaTypes.isEmpty { gridSection("Media Types", mediaTypes) }
             }
             .padding(.horizontal, 16)
             .padding(.bottom, 16)
