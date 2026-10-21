@@ -56,6 +56,7 @@ struct BackupBinTab: View {
                 }
                 .padding(.bottom, selecting ? 80 : 0)
             }
+            .immersiveBars()
             .overlay {
                 if store.entries.isEmpty {
                     ContentUnavailableView {
@@ -68,6 +69,7 @@ struct BackupBinTab: View {
                 }
             }
             .navigationTitle("Backup Bin")
+            .toolbarTitleDisplayMode(.inlineLarge)
             .navigationDestination(for: UUID.self) { id in
                 if let entry = store.entries.first(where: { $0.id == id }) {
                     BackupDetailView(entry: entry)
