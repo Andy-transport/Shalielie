@@ -51,6 +51,7 @@ final class AssetListModel: NSObject, ObservableObject, PHPhotoLibraryChangeObse
     private var registered = false
     private var searchQuery = ""
     private var reloadTask: Task<Void, Never>?
+    private var changeTask: Task<Void, Never>?
 
     init(scope: Scope, sort: LibrarySort, ascending: Bool) {
         self.scope = scope
@@ -61,6 +62,7 @@ final class AssetListModel: NSObject, ObservableObject, PHPhotoLibraryChangeObse
 
     deinit {
         reloadTask?.cancel()
+        changeTask?.cancel()
         PHPhotoLibrary.shared().unregisterChangeObserver(self)
     }
 
@@ -157,7 +159,12 @@ final class AssetListModel: NSObject, ObservableObject, PHPhotoLibraryChangeObse
     nonisolated func photoLibraryDidChange(_ changeInstance: PHChange) {
         Task { @MainActor in
             guard let fetchResult, changeInstance.changeDetails(for: fetchResult) != nil else { return }
-            reload()
+            // A save or an iCloud sync arrives as a burst of changes; reload once it settles.
+            changeTask?.cancel()
+            changeTask = Task { @MainActor [weak self] in
+                do { try await Task.sleep(for: .milliseconds(300)) } catch { return }
+                self?.reload()
+            }
         }
     }
 }
@@ -394,7 +401,7 @@ struct AssetGridView<Empty: View>: View {
                 )
             }
             .modernProminentButton()
-            .disabled(!selectedAssets.contains(where: PhotoLibraryService.isHEIC))
+            .disabled(!selectedAssets.contains { HEICCache.peek($0) ?? true })
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)

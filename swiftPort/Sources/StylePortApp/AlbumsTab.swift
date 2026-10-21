@@ -32,6 +32,7 @@ final class AlbumsModel: NSObject, ObservableObject, PHPhotoLibraryChangeObserve
     @Published private(set) var mediaTypes: [AlbumItem] = []
     @Published private(set) var isLoading = true
     private var registered = false
+    private var loadTask: Task<Void, Never>?
 
     nonisolated private static let smartAlbums: [PHAssetCollectionSubtype] = [
         .smartAlbumUserLibrary, .smartAlbumFavorites, .smartAlbumLivePhotos,
@@ -39,41 +40,52 @@ final class AlbumsModel: NSObject, ObservableObject, PHPhotoLibraryChangeObserve
     ]
 
     deinit {
+        loadTask?.cancel()
         PHPhotoLibrary.shared().unregisterChangeObserver(self)
     }
 
-    func load() {
+    func load(after delay: Duration = .zero) {
         if !registered {
             PHPhotoLibrary.shared().register(self)
             registered = true
         }
-        Task.detached(priority: .userInitiated) {
-            var mine: [AlbumItem] = []
-            let user = PHAssetCollection.fetchAssetCollections(with: .album, subtype: .any, options: nil)
-            user.enumerateObjects { collection, _, _ in
-                if var item = Self.item(for: collection, keepEmpty: true) {
-                    item.order = mine.count
-                    mine.append(item)
-                }
+        // Each load fetches every album and counts its photos: run one at a time, and let a
+        // burst of library changes end in a single load.
+        loadTask?.cancel()
+        loadTask = Task { @MainActor [weak self] in
+            if delay > .zero {
+                do { try await Task.sleep(for: delay) } catch { return }
             }
-            var types: [AlbumItem] = []
-            for subtype in Self.smartAlbums {
-                let result = PHAssetCollection.fetchAssetCollections(
-                    with: .smartAlbum,
-                    subtype: subtype,
-                    options: nil
-                )
-                if let collection = result.firstObject,
-                   let item = Self.item(for: collection, keepEmpty: false) {
-                    types.append(item)
-                }
-            }
-            await MainActor.run {
-                self.myAlbums = mine
-                self.mediaTypes = types
-                self.isLoading = false
+            let (mine, types) = await Task.detached(priority: .userInitiated) { Self.fetchAll() }.value
+            guard !Task.isCancelled, let self else { return }
+            self.myAlbums = mine
+            self.mediaTypes = types
+            self.isLoading = false
+        }
+    }
+
+    nonisolated private static func fetchAll() -> ([AlbumItem], [AlbumItem]) {
+        var mine: [AlbumItem] = []
+        let user = PHAssetCollection.fetchAssetCollections(with: .album, subtype: .any, options: nil)
+        user.enumerateObjects { collection, _, _ in
+            if var item = Self.item(for: collection, keepEmpty: true) {
+                item.order = mine.count
+                mine.append(item)
             }
         }
+        var types: [AlbumItem] = []
+        for subtype in Self.smartAlbums {
+            let result = PHAssetCollection.fetchAssetCollections(
+                with: .smartAlbum,
+                subtype: subtype,
+                options: nil
+            )
+            if let collection = result.firstObject,
+               let item = Self.item(for: collection, keepEmpty: false) {
+                types.append(item)
+            }
+        }
+        return (mine, types)
     }
 
     nonisolated private static func item(for collection: PHAssetCollection, keepEmpty: Bool) -> AlbumItem? {
@@ -92,7 +104,7 @@ final class AlbumsModel: NSObject, ObservableObject, PHPhotoLibraryChangeObserve
     }
 
     nonisolated func photoLibraryDidChange(_ changeInstance: PHChange) {
-        Task { @MainActor in load() }
+        Task { @MainActor in load(after: .milliseconds(400)) }
     }
 }
 

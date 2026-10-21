@@ -83,6 +83,11 @@ private final class Collector<Value>: @unchecked Sendable {
     var values: [Value] = []
 }
 
+/// Resource bytes as they arrive, appended in place.
+private final class DataBuffer: @unchecked Sendable {
+    var data = Data()
+}
+
 struct PhotoLibraryService: Sendable {
     // MARK: Access
 
@@ -385,17 +390,17 @@ private extension PhotoLibraryService {
     internal static func data(for resource: PHAssetResource, allowNetwork: Bool = true) async throws -> Data {
         let options = PHAssetResourceRequestOptions()
         options.isNetworkAccessAllowed = allowNetwork
-        let buffer = Collector<Data>()
+        let buffer = DataBuffer()
         return try await withCheckedThrowingContinuation { continuation in
             PHAssetResourceManager.default().requestData(
                 for: resource,
                 options: options,
-                dataReceivedHandler: { buffer.values.append($0) },
+                dataReceivedHandler: { buffer.data.append($0) },
                 completionHandler: { error in
                     if let error {
                         continuation.resume(throwing: error)
                     } else {
-                        continuation.resume(returning: buffer.values.reduce(into: Data()) { $0.append($1) })
+                        continuation.resume(returning: buffer.data)
                     }
                 }
             )

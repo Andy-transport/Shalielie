@@ -49,19 +49,24 @@ final class BackupStore: ObservableObject {
     }
 
     /// Copy an original into the bin before it is replaced.
-    func add(original: OriginalPhoto, metadata: AssetMetadata) throws -> BackupEntry {
+    func add(original: OriginalPhoto, metadata: AssetMetadata) async throws -> BackupEntry {
         let id = UUID()
         let directory = folder(of: id)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         do {
-            try original.data.write(to: directory.appendingPathComponent(original.filename))
-            var bytes = Int64(original.data.count)
-            if let video = original.video {
-                let destination = directory.appendingPathComponent(video.filename)
-                try FileManager.default.copyItem(at: video.url, to: destination)
-                let size = try destination.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
-                bytes += Int64(size)
-            }
+            // Writing a full-size original and copying its video takes long enough to stall
+            // the interface, so it happens off the main actor.
+            let bytes = try await Task.detached(priority: .userInitiated) { () throws -> Int64 in
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                try original.data.write(to: directory.appendingPathComponent(original.filename))
+                var bytes = Int64(original.data.count)
+                if let video = original.video {
+                    let destination = directory.appendingPathComponent(video.filename)
+                    try FileManager.default.copyItem(at: video.url, to: destination)
+                    let size = try destination.resourceValues(forKeys: [.fileSizeKey]).fileSize ?? 0
+                    bytes += Int64(size)
+                }
+                return bytes
+            }.value
             let entry = BackupEntry(
                 id: id,
                 replacedAt: Date(),

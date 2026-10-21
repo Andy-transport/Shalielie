@@ -95,6 +95,11 @@ struct BackupThumbnail: View {
     let size: CGFloat
     @Environment(\.displayScale) private var displayScale
     @State private var image: UIImage?
+    private static let cache: NSCache<NSString, UIImage> = {
+        let cache = NSCache<NSString, UIImage>()
+        cache.countLimit = 200
+        return cache
+    }()
 
     var body: some View {
         ZStack {
@@ -107,9 +112,17 @@ struct BackupThumbnail: View {
         }
         .task(id: url) {
             let pixels = Int(size * displayScale)
-            image = await Task.detached(priority: .userInitiated) {
+            // Decoding a full-size HEIC is slow; scrolling back shouldn't do it again.
+            let key = "\(url.path)-\(pixels)" as NSString
+            if let cached = Self.cache.object(forKey: key) {
+                image = cached
+                return
+            }
+            let loaded = await Task.detached(priority: .userInitiated) {
                 BackupStore.thumbnail(of: url, maxPixelSize: pixels)
             }.value
+            if let loaded { Self.cache.setObject(loaded, forKey: key) }
+            image = loaded
         }
     }
 }

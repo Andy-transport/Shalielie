@@ -189,8 +189,10 @@ final class PortQueue: ObservableObject {
             for (jobID, item) in zip(batch.jobIDs, items) {
                 do {
                     update(jobID) { $0.phase = .porting }
-                    let original = try Self.readFiles(item)
-                    let eligibility = StylePorter.eligibility(of: original.data)
+                    let (original, eligibility) = try await Task.detached(priority: .userInitiated) {
+                        let original = try Self.readFiles(item)
+                        return (original, StylePorter.eligibility(of: original.data))
+                    }.value
                     let output: PortOutput
                     if original.video != nil, [.alreadyStyled, .addTexture].contains(eligibility) {
                         output = try await Self.asIs(original, texture: eligibility == .alreadyStyled)
@@ -246,7 +248,7 @@ final class PortQueue: ObservableObject {
             for item in items {
                 let meta = PhotoLibraryService.metadata(of: item.asset)
                 metadata.append(meta)
-                added.append(try backups.add(original: item.original, metadata: meta))
+                added.append(try await backups.add(original: item.original, metadata: meta))
             }
         } catch {
             backups.discard(added)
@@ -264,7 +266,7 @@ final class PortQueue: ObservableObject {
     }
 
     /// Copy a Files selection into the app's temporary folder while access lasts.
-    private static func readFiles(_ item: FileItem) throws -> OriginalPhoto {
+    nonisolated private static func readFiles(_ item: FileItem) throws -> OriginalPhoto {
         func scoped<T>(_ url: URL, _ body: () throws -> T) rethrows -> T {
             let granted = url.startAccessingSecurityScopedResource()
             defer { if granted { url.stopAccessingSecurityScopedResource() } }
@@ -290,7 +292,8 @@ final class PortQueue: ObservableObject {
     private static func asIs(_ original: OriginalPhoto, texture: Bool) async throws -> PortOutput {
         let directory = try TemporaryFiles.newDirectory()
         let photoURL = directory.appendingPathComponent(original.filename)
-        try original.data.write(to: photoURL, options: .atomic)
+        let data = original.data
+        try await Task.detached(priority: .userInitiated) { try data.write(to: photoURL, options: .atomic) }.value
         let styled = await styledVideo(original.video, named: original.video?.filename,
                                        in: directory, texture: texture)
         return PortOutput(photoURL: photoURL, photoFilename: original.filename, video: styled.video,
@@ -335,7 +338,8 @@ final class PortQueue: ObservableObject {
         )
         let directory = try TemporaryFiles.newDirectory()
         let photoURL = directory.appendingPathComponent(names.photo)
-        try result.data.write(to: photoURL, options: .atomic)
+        let styledData = result.data
+        try await Task.detached(priority: .userInitiated) { try styledData.write(to: photoURL, options: .atomic) }.value
         let styled = await Self.styledVideo(original.video, named: names.video, in: directory,
                                             texture: result.report.addedTexture)
         return PortOutput(photoURL: photoURL, photoFilename: names.photo, video: styled.video,
