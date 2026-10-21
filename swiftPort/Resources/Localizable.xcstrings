@@ -1923,23 +1923,6 @@
         }
       }
     },
-    "Me": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Me"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "我"
-          }
-        }
-      }
-    },
     "Media Types": {
       "extractionState": "manual",
       "localizations": {

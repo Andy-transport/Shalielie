@@ -32,7 +32,7 @@ struct RootView: View {
                 Tab("Library", systemImage: "photo.on.rectangle") { LibraryTab() }
                 Tab("Albums", systemImage: "rectangle.stack") { AlbumsTab() }
                 Tab("Backup Bin", systemImage: "archivebox") { BackupBinTab() }
-                Tab("Me", systemImage: "person.crop.circle", role: .search) { SettingsTab() }
+                Tab("Palettify", systemImage: "person.crop.circle", role: .search) { SettingsTab() }
             }
         } else {
             TabView {
@@ -43,7 +43,7 @@ struct RootView: View {
                 BackupBinTab()
                     .tabItem { Label("Backup Bin", systemImage: "archivebox") }
                 SettingsTab()
-                    .tabItem { Label("Me", systemImage: "person.crop.circle") }
+                    .tabItem { Label("Palettify", systemImage: "person.crop.circle") }
             }
         }
     }
