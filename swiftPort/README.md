@@ -1,6 +1,25 @@
-# Shalielie for iPhone and iPad
+## 0.7.1 test build
 
-**English:** Shalielie · **简体中文:** 瞎咧咧
+This version is distributed as a GitHub Actions unsigned IPA for phone testing, before a
+proper iOS release. Settings reads version 0.7.1 (build 2) from the installed app bundle.
+
+- Cropped Live Photo videos have their visible aperture baked into a re-encoded video to
+  prevent repeated/blurred edge pixels in Photos. Audio, timeline and pairing are preserved;
+  full-aperture videos are not re-encoded by this correction. Originals are retained.
+- Pinch library/album grids to resize previews; the chosen scale is remembered.
+- Multi-selection supports copying, duplicating the current image/Live Photo, Favorite,
+  Hide, album membership, date/time offsets and map/coordinate location edits. Copy places
+  still images on the local clipboard; Duplicate keeps the paired motion resource.
+- Native Liquid Glass controls on iOS 26+, with material fallbacks for older iOS.
+- Live Photo details reflect the selected asset; per-job notes explain still fallbacks.
+
+Date/location/album changes affect the selected assets in Photos. Moving changes membership
+between the chosen albums, never deletes assets. Library-management UI, gestures and the new
+VideoToolbox crop path still require physical-phone validation of this test build.
+
+# Palettify for iPhone and iPad
+
+**English:** Palettify · **简体中文:** 盘它
 
 A native SwiftUI app that adds the Photographic Styles palette to photos in your library, the
 same port as the command-line tool and the web app (v0.6.3), without leaving the phone. It is

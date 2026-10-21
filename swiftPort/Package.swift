@@ -17,6 +17,7 @@ let package = Package(
             path: ".",
             exclude: [
                 "README.md",
+                "IconSources",
                 "project.yml",
                 "StylePort.xcodeproj",
                 "scripts",

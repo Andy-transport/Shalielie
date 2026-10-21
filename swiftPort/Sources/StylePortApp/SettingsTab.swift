@@ -46,7 +46,7 @@ struct SettingsTab: View {
                     NavigationLink {
                         AboutView()
                     } label: {
-                        Label("About Shalielie", systemImage: "info.circle")
+                        Label("About Palettify", systemImage: "info.circle")
                     }
                     Link(destination: AppSettings.repositoryURL) {
                         Label("Source Code on GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
@@ -69,7 +69,7 @@ struct AboutView: View {
                         .frame(width: 96, height: 96)
                         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                         .accessibilityHidden(true)
-                    Text("Shalielie")
+                    Text(AppSettings.displayName)
                         .font(.title.bold())
                     Text("Photographic Styles for every iPhone photo")
                         .font(.subheadline)
@@ -97,7 +97,7 @@ struct AboutView: View {
                 Feature(
                     symbol: "livephoto",
                     title: "Live Photos",
-                    text: "For now a newly styled Live Photo is saved as a still, because Photos can't yet edit the style of its video; the original keeps its motion. Photos that only get Texture & Grain stay live."
+                    text: "Live Photos keep their motion when their video can be styled. Cropped videos are re-encoded to prevent blurred edges. If video processing fails, the job explains why a still was saved; the original keeps its motion."
                 )
                 Feature(
                     symbol: "arrow.triangle.2.circlepath",
@@ -120,12 +120,12 @@ struct AboutView: View {
                 Feature(
                     symbol: "iphone",
                     title: "Everything stays on this device",
-                    text: "Photos are processed on your iPhone or iPad and never uploaded. Shalielie has no servers, no accounts, no analytics and no ads."
+                    text: "Photos are processed on your iPhone or iPad and never uploaded. Palettify has no servers, no accounts, no analytics and no ads."
                 )
                 Feature(
                     symbol: "photo.on.rectangle",
                     title: "Only the photos you allow",
-                    text: "With limited access Shalielie sees only the photos you select. Photos stored in iCloud are downloaded by iOS when you style them."
+                    text: "With limited access Palettify sees only the photos you select. Photos stored in iCloud are downloaded by iOS when you style them."
                 )
                 Feature(
                     symbol: "lock.shield",

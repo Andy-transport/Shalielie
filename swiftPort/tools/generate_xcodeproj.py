@@ -169,7 +169,7 @@ w(f"\t\t{INFO_VG} /* InfoPlist.strings */ = {{\n\t\t\tisa = PBXVariantGroup;\n\t
   f"\t\t\t\t{INFO_EN} /* en */,\n\t\t\t\t{INFO_ZH} /* zh-Hans */,\n\t\t\t);\n\t\t\tname = InfoPlist.strings;\n\t\t\t{GROUP_TREE}\n\t\t}};")
 w("/* End PBXVariantGroup section */\n")
 
-VERSION = "0.6.3"
+VERSION = "0.7.1"
 
 
 def settings(cid, name, pairs):
@@ -193,7 +193,7 @@ settings("600000000000000000000002", "Release", [
     ("GCC_C_LANGUAGE_STANDARD", "gnu17"), ("SWIFT_COMPILATION_MODE", "wholemodule"),
     ("SWIFT_OPTIMIZATION_LEVEL", q("-O")), ("VALIDATE_PRODUCT", "YES")])
 core_settings = [
-    ("CODE_SIGN_STYLE", "Automatic"), ("CURRENT_PROJECT_VERSION", "1"), ("DEFINES_MODULE", "YES"),
+    ("CODE_SIGN_STYLE", "Automatic"), ("CURRENT_PROJECT_VERSION", "2"), ("DEFINES_MODULE", "YES"),
     ("DYLIB_INSTALL_NAME_BASE", q("@rpath")), ("INSTALL_PATH", q("$(LOCAL_LIBRARY_DIR)/Frameworks")),
     ("LD_RUNPATH_SEARCH_PATHS", q("$(inherited) @executable_path/Frameworks @loader_path/Frameworks")),
     ("GENERATE_INFOPLIST_FILE", "YES"), ("IPHONEOS_DEPLOYMENT_TARGET", "17.0"), ("MACOSX_DEPLOYMENT_TARGET", "14.0"),
@@ -207,16 +207,16 @@ app_settings = [
     ("ASSETCATALOG_COMPILER_APPICON_NAME", "AppIcon"),
     ("ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME", "AccentColor"),
     ("CODE_SIGN_STYLE", "Automatic"),
-    ("CURRENT_PROJECT_VERSION", "1"),
+    ("CURRENT_PROJECT_VERSION", "2"),
     ("GENERATE_INFOPLIST_FILE", "YES"),
     ("INFOPLIST_FILE", "Sources/StylePortApp/Info.plist"),
-    ("INFOPLIST_KEY_CFBundleDisplayName", "Shalielie"),
+    ("INFOPLIST_KEY_CFBundleDisplayName", "Palettify"),
     ("INFOPLIST_KEY_ITSAppUsesNonExemptEncryption", "NO"),
     ("INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace", "YES"),
     ("INFOPLIST_KEY_LSApplicationCategoryType", q("public.app-category.photography")),
-    ("INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription", q("Shalielie saves the styled photos to your library.")),
+    ("INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription", q("Palettify saves the styled photos to your library.")),
     ("INFOPLIST_KEY_NSPhotoLibraryUsageDescription",
-     q("Shalielie reads the original HEIC and Live Photo video of the photos you style, and replaces them when you ask it to.")),
+     q("Palettify reads the original HEIC and Live Photo video of the photos you style, and replaces them when you ask it to.")),
     ("INFOPLIST_KEY_UIApplicationSceneManifest_Generation", "YES"),
     ("INFOPLIST_KEY_UILaunchScreen_Generation", "YES"),
     ("INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad",

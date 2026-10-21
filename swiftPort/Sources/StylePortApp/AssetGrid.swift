@@ -113,7 +113,20 @@ struct AssetGridView<Empty: View>: View {
     @State private var selection = Set<String>()
     @State private var confirmingReplace = false
 
-    private let columns = [GridItem(.adaptive(minimum: 92, maximum: 150), spacing: 2)]
+    @AppStorage(AppSettings.gridTileSizeKey) private var tileSize = 100.0
+    @GestureState private var pinchScale = 1.0
+
+    private func boundedTileSize(_ size: Double) -> Double { min(320, max(64, size)) }
+
+    private var columns: [GridItem] {
+        [GridItem(.adaptive(minimum: boundedTileSize(tileSize * pinchScale)), spacing: 2)]
+    }
+
+    private var gridZoom: some Gesture {
+        MagnificationGesture()
+            .updating($pinchScale) { value, scale, _ in scale = value }
+            .onEnded { value in tileSize = boundedTileSize(tileSize * value) }
+    }
 
     var body: some View {
         ScrollView {
@@ -123,6 +136,10 @@ struct AssetGridView<Empty: View>: View {
                 }
             }
             .padding(.bottom, selecting ? 72 : 0)
+        }
+        .simultaneousGesture(gridZoom)
+        .onReceive(model.$assets) { assets in
+            selection.formIntersection(Set(assets.map(\.localIdentifier)))
         }
         .overlay {
             if model.isLoading {
@@ -176,7 +193,6 @@ struct AssetGridView<Empty: View>: View {
         )
         if selecting {
             tile.onTapGesture {
-                guard PhotoLibraryService.isHEIC(asset) else { return }
                 if isSelected {
                     selection.remove(asset.localIdentifier)
                 } else {
@@ -191,10 +207,11 @@ struct AssetGridView<Empty: View>: View {
 
     private var selectionBar: some View {
         HStack {
-            Text(selection.isEmpty ? "Select HEIC Photos"
+            Text(selection.isEmpty ? "Select Photos"
                  : selection.count == 1 ? "1 Photo Selected" : "\(selection.count) Photos Selected")
                 .font(.subheadline.weight(.semibold))
             Spacer()
+            LibrarySelectionActions(assets: selectedAssets, sourceAlbum: sourceAlbum) { model.reload() }
             Button {
                 if replaceOriginals { confirmingReplace = true } else { start() }
             } label: {
@@ -203,16 +220,27 @@ struct AssetGridView<Empty: View>: View {
                     systemImage: replaceOriginals ? "arrow.triangle.2.circlepath" : "camera.filters"
                 )
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(selection.isEmpty)
+            .modernProminentButton()
+            .disabled(!selectedAssets.contains(where: PhotoLibraryService.isHEIC))
         }
-        .padding(.horizontal)
-        .padding(.vertical, 10)
-        .background(.bar)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .floatingGlass()
+        .padding(.horizontal, 12)
+        .padding(.bottom, 8)
+    }
+
+    private var selectedAssets: [PHAsset] {
+        model.assets.filter { selection.contains($0.localIdentifier) }
+    }
+
+    private var sourceAlbum: PHAssetCollection? {
+        if case .collection(let album) = model.scope, album.canPerform(.removeContent) { return album }
+        return nil
     }
 
     private func start() {
-        let chosen = model.assets.filter { selection.contains($0.localIdentifier) }
+        let chosen = selectedAssets.filter(PhotoLibraryService.isHEIC)
         queue.port(chosen)
         withAnimation {
             selecting = false
@@ -252,7 +280,6 @@ struct AssetTile: View {
                 }
             }
             .overlay(alignment: .bottomTrailing) { status }
-            .opacity(isSelecting && !isHEIC ? 0.4 : 1)
             .overlay {
                 if isSelected { Color.white.opacity(0.2) }
             }
@@ -317,12 +344,13 @@ struct AssetImage: View {
                         .frame(width: geometry.size.width, height: geometry.size.height)
                 }
             }
-            .task(id: asset.localIdentifier) {
+            .task(id: "\(asset.localIdentifier)-\(Int(ceil(geometry.size.width * displayScale / 128)))-\(Int(ceil(geometry.size.height * displayScale / 128)))") {
                 let size = CGSize(
                     width: geometry.size.width * displayScale,
                     height: geometry.size.height * displayScale
                 )
-                image = await ThumbnailLoader.image(for: asset, size: size, contentMode: contentMode)
+                let loaded = await ThumbnailLoader.image(for: asset, size: size, contentMode: contentMode)
+                if !Task.isCancelled { image = loaded }
             }
         }
     }

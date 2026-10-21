@@ -10,6 +10,21 @@ public enum LinearThumbnailEncoder {
     public static let height = 96
 
     public static func encode(videoURL: URL) async throws -> LivePhotoVideo.LinearThumbnail {
+        return try await encode(videoURL: videoURL, width: width, height: height, aperture: nil)
+    }
+
+    /// Re-encode only cropped main videos; untouched/full-aperture videos remain byte-identical.
+    public static func normalizeAperture(videoURL: URL) async throws -> Data {
+        let original = try Data(contentsOf: videoURL)
+        let aperture = try LivePhotoVideo.cleanAperture(of: original)
+        guard aperture.needsNormalization else { return original }
+        let encoded = try await encode(videoURL: videoURL, width: aperture.width,
+                                       height: aperture.height, aperture: aperture)
+        return try LivePhotoVideo.replacingMainVideo(in: original, with: encoded)
+    }
+
+    private static func encode(videoURL: URL, width: Int, height: Int,
+                               aperture: LivePhotoVideo.CleanAperture?) async throws -> LivePhotoVideo.LinearThumbnail {
         let asset = AVURLAsset(url: videoURL)
         guard let track = try await asset.loadTracks(withMediaType: .video).first else {
             throw StylePortError.invalidData("The Live Photo video has no video track.")
@@ -24,7 +39,7 @@ public enum LinearThumbnailEncoder {
         }
         reader.add(output)
 
-        let encoder = try Encoder()
+        let encoder = try Encoder(width: width, height: height, aperture: aperture)
         defer { encoder.invalidate() }
         guard reader.startReading() else {
             throw reader.error ?? StylePortError.invalidData("The Live Photo video can't be read.")
@@ -44,6 +59,9 @@ public enum LinearThumbnailEncoder {
     }
 
     private final class Encoder: @unchecked Sendable {
+        private let aperture: LivePhotoVideo.CleanAperture?
+        private let outputWidth: Int
+        private let outputHeight: Int
         private let session: VTCompressionSession
         private let transfer: VTPixelTransferSession
         private let pool: CVPixelBufferPool
@@ -54,12 +72,15 @@ public enum LinearThumbnailEncoder {
         private var hvcC: Data?
         private var failure: OSStatus = noErr
 
-        init() throws {
+        init(width: Int, height: Int, aperture: LivePhotoVideo.CleanAperture?) throws {
+            self.aperture = aperture
+            self.outputWidth = width
+            self.outputHeight = height
             var session: VTCompressionSession?
             try check(VTCompressionSessionCreate(
                 allocator: nil,
-                width: Int32(LinearThumbnailEncoder.width),
-                height: Int32(LinearThumbnailEncoder.height),
+                width: Int32(width),
+                height: Int32(height),
                 codecType: kCMVideoCodecType_HEVC,
                 encoderSpecification: nil,
                 imageBufferAttributes: nil,
@@ -84,12 +105,18 @@ public enum LinearThumbnailEncoder {
                       "create the scaler")
             guard let transfer else { throw StylePortError.invalidData("No scaler.") }
             self.transfer = transfer
+            if aperture != nil {
+                try check(VTSessionSetProperty(transfer, key: kVTPixelTransferPropertyKey_ScalingMode,
+                    value: kVTScalingMode_CropSourceToCleanAperture), "select clean-aperture scaling")
+                try check(VTSessionSetProperty(session, key: kVTCompressionPropertyKey_AverageBitRate,
+                    value: max(width * height * 8, 4_000_000) as CFNumber), "set video quality")
+            }
 
             var pool: CVPixelBufferPool?
             let attributes: [String: Any] = [
                 kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange,
-                kCVPixelBufferWidthKey as String: LinearThumbnailEncoder.width,
-                kCVPixelBufferHeightKey as String: LinearThumbnailEncoder.height,
+                kCVPixelBufferWidthKey as String: width,
+                kCVPixelBufferHeightKey as String: height,
                 kCVPixelBufferIOSurfacePropertiesKey as String: [String: Any]()
             ]
             try check(CVPixelBufferPoolCreate(nil, nil, attributes as CFDictionary, &pool),
@@ -102,6 +129,29 @@ public enum LinearThumbnailEncoder {
             var scaled: CVPixelBuffer?
             try check(CVPixelBufferPoolCreatePixelBuffer(nil, pool, &scaled), "allocate a frame")
             guard let scaled else { throw StylePortError.invalidData("No frame.") }
+            if let aperture {
+                let w = CVPixelBufferGetWidth(image), h = CVPixelBufferGetHeight(image)
+                let alreadyCropped = abs(Double(w) - aperture.cleanWidth) < 0.000001
+                    && abs(Double(h) - aperture.cleanHeight) < 0.000001
+                guard alreadyCropped || (w == aperture.width && h == aperture.height) else {
+                    throw StylePortError.invalidData("Unexpected decoded clean-aperture dimensions.")
+                }
+                let source: [String: Any] = [
+                    kCVImageBufferCleanApertureWidthKey as String: alreadyCropped ? Double(w) : aperture.cleanWidth,
+                    kCVImageBufferCleanApertureHeightKey as String: alreadyCropped ? Double(h) : aperture.cleanHeight,
+                    kCVImageBufferCleanApertureHorizontalOffsetKey as String: alreadyCropped ? 0 : aperture.horizontalOffset,
+                    kCVImageBufferCleanApertureVerticalOffsetKey as String: alreadyCropped ? 0 : aperture.verticalOffset
+                ]
+                CVBufferSetAttachment(image, kCVImageBufferCleanApertureKey, source as CFDictionary, .shouldPropagate)
+                CVBufferPropagateAttachments(image, scaled)
+                let full: [String: Any] = [
+                    kCVImageBufferCleanApertureWidthKey as String: outputWidth,
+                    kCVImageBufferCleanApertureHeightKey as String: outputHeight,
+                    kCVImageBufferCleanApertureHorizontalOffsetKey as String: 0,
+                    kCVImageBufferCleanApertureVerticalOffsetKey as String: 0
+                ]
+                CVBufferSetAttachment(scaled, kCVImageBufferCleanApertureKey, full as CFDictionary, .shouldPropagate)
+            }
             try check(VTPixelTransferSessionTransferImage(transfer, from: image, to: scaled), "scale a frame")
             let index = lock.withLock {
                 defer { pendingCount += 1 }

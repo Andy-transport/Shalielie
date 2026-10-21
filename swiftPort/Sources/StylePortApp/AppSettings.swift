@@ -7,6 +7,7 @@ enum AppSettings {
     static let textureKey = "addTexture"
     static let librarySortKey = "librarySort"
     static let libraryAscendingKey = "libraryAscending"
+    static let gridTileSizeKey = "libraryGridTileSize"
 
     static let repositoryURL = URL(string: "https://github.com/nathanatgit/Shalielie")!
 
@@ -23,6 +24,10 @@ enum AppSettings {
     static var replaceOriginals: Bool { UserDefaults.standard.bool(forKey: replaceOriginalsKey) }
     static var analyzePhoto: Bool { UserDefaults.standard.bool(forKey: analyzePhotoKey) }
     static var texture: Bool { UserDefaults.standard.bool(forKey: textureKey) }
+
+    static var displayName: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "Palettify"
+    }
 
     static var appVersion: String {
         let info = Bundle.main.infoDictionary

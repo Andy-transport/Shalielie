@@ -1,0 +1,75 @@
+{
+  "color-space-for-untagged-svg-colors": "srgb",
+  "fill": {
+    "linear-gradient": [
+      "srgb:0.39216,0.82353,1.00000,1.00000",
+      "srgb:0.15686,0.15686,0.66667,1.00000"
+    ]
+  },
+  "fill-specializations": [
+    {
+      "appearance": "dark",
+      "value": {
+        "linear-gradient": [
+          "srgb:0.03922,0.47843,1.00000,1.00000",
+          "srgb:0.07843,0.07843,0.33333,1.00000"
+        ]
+      }
+    }
+  ],
+  "groups": [
+    {
+      "name": "01 Soft highlights",
+      "blur-material": 0.4,
+      "specular": false,
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0
+      },
+      "layers": [
+        {
+          "name": "Soft highlight shapes",
+          "image-name": "01-highlight-shapes.svg",
+          "glass": false,
+          "opacity": 0.15,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Palette dots",
+      "specular": true,
+      "translucency": {
+        "enabled": true,
+        "value": 0.2
+      },
+      "shadow": {
+        "kind": "layer-color",
+        "opacity": 0.15
+      },
+      "layers": [
+        {
+          "name": "25 white palette dots",
+          "image-name": "02-palette-dots.svg",
+          "glass": true,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  }
+}

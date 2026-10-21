@@ -13,7 +13,7 @@ on:
 
 jobs:
   apple-build:
-    runs-on: macos-15
+    runs-on: macos-26
     defaults:
       run:
         working-directory: swiftPort
@@ -43,26 +43,32 @@ jobs:
           mkdir -p "$artifact_root/ios-simulator" "$artifact_root/ios-device"
           ditto -c -k --sequesterRsrc --keepParent \
             "$RUNNER_TEMP/StylePort-iOS-Simulator/Build/Products/Debug-iphonesimulator/StylePort.app" \
-            "$artifact_root/ios-simulator/Shalielie-iOS-Simulator-unsigned.zip"
+            "$artifact_root/ios-simulator/Palettify-iOS-Simulator-unsigned.zip"
           # An unsigned IPA for sideloading tools (Sideloadly, AltStore), which sign it with
           # the installer's own Apple ID.
           payload="$RUNNER_TEMP/ipa/Payload"
           mkdir -p "$payload"
           cp -R "$RUNNER_TEMP/StylePort-iOS/Build/Products/Release-iphoneos/StylePort.app" "$payload/"
-          (cd "$RUNNER_TEMP/ipa" && zip -qry "$artifact_root/ios-device/Shalielie-unsigned.ipa" Payload)
+          (cd "$RUNNER_TEMP/ipa" && zip -qry "$artifact_root/ios-device/Palettify-unsigned.ipa" Payload)
           (cd "$artifact_root/ios-simulator" && shasum -a 256 *.zip > SHA256SUMS.txt)
           (cd "$artifact_root/ios-device" && shasum -a 256 *.ipa > SHA256SUMS.txt)
+      - name: Verify packaged app identity
+        run: |
+          app="$RUNNER_TEMP/StylePort-iOS/Build/Products/Release-iphoneos/StylePort.app"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Info.plist")" = "0.7.1"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$app/Info.plist")" = "2"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleDisplayName' "$app/Info.plist")" = "Palettify"
       - name: Upload unsigned iOS and iPadOS Simulator app
         uses: actions/upload-artifact@v7
         with:
-          name: Shalielie-iOS-Simulator-unsigned-${{ github.sha }}
+          name: Palettify-iOS-Simulator-unsigned-${{ github.sha }}
           path: ${{ runner.temp }}/StylePort-artifacts/ios-simulator
           if-no-files-found: error
           retention-days: 14
       - name: Upload unsigned iOS and iPadOS device IPA
         uses: actions/upload-artifact@v7
         with:
-          name: Shalielie-iOS-unsigned-ipa-${{ github.sha }}
+          name: Palettify-iOS-unsigned-ipa-${{ github.sha }}
           path: ${{ runner.temp }}/StylePort-artifacts/ios-device
           if-no-files-found: error
           retention-days: 14

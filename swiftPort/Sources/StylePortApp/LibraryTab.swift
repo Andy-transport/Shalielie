@@ -79,7 +79,7 @@ struct LibraryTab: View {
                     ContentUnavailableView {
                         Label("No Photos Selected", systemImage: "photo.badge.plus")
                     } description: {
-                        Text("Shalielie only sees the photos you choose. Select the photos you want to style.")
+                        Text("Palettify only sees the photos you choose. Select the photos you want to style.")
                     } actions: {
                         Button("Select Photos…") { LimitedLibrary.presentPicker() }
                             .buttonStyle(.borderedProminent)
@@ -98,7 +98,7 @@ struct LibraryTab: View {
             ContentUnavailableView {
                 Label("No Access to Photos", systemImage: "lock")
             } description: {
-                Text("Shalielie reads each original HEIC and its Live Photo video, and saves the styled result. Allow access in Settings.")
+                Text("Palettify reads each original HEIC and its Live Photo video, and saves the styled result. Allow access in Settings.")
             } actions: {
                 Button("Open Settings") { LimitedLibrary.openSettings() }
                     .buttonStyle(.borderedProminent)

@@ -34,6 +34,7 @@ struct RootView: View {
             SettingsTab()
                 .tabItem { Label("Settings", systemImage: "gearshape") }
         }
+        .modernTabBar()
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if let status = queue.statusLine {
                 Button {
@@ -75,7 +76,7 @@ private struct ActivityCapsule: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
-        .background(.regularMaterial, in: Capsule())
+        .floatingGlass()
         .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
     }
 }

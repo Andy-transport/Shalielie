@@ -109,10 +109,7 @@ struct AssetDetailView: View {
     }
 
     private func liveStatus(_ asset: PHAsset) -> String {
-        guard asset.mediaSubtypes.contains(.photoLive) else { return "No" }
-        return eligibility == .addTexture
-            ? "Yes, the motion is kept"
-            : "Yes; the styled copy is a still photo for now"
+        asset.mediaSubtypes.contains(.photoLive) ? "Yes" : "No"
     }
 
     private func styleStatus(_ asset: PHAsset) -> String {
@@ -144,11 +141,11 @@ struct AssetDetailView: View {
             }
             .frame(maxWidth: .infinity)
         }
-        .buttonStyle(.borderedProminent)
+        .modernProminentButton()
         .controlSize(.large)
         .disabled(running || blocked)
-        .padding()
-        .background(.bar)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
     }
 
     private var actionTitle: String {
