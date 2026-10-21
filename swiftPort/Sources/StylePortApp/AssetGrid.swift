@@ -293,6 +293,9 @@ struct AssetGridView<Empty: View>: View {
             withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.16)) {
                 tileSize = zoomSize
                 self.zoomSize = nil
+                // The rebuilt grid starts where the old one was; at no other time is the
+                // remembered position handed back.
+                scrollAnchor.restoring = true
                 layoutRevision += 1
             }
         }
@@ -440,7 +443,13 @@ struct AssetGridView<Empty: View>: View {
             .scrollTargetLayout()
             .padding(.bottom, selecting ? 72 : 0)
         }
-        .scrollPosition(id: Binding(get: { scrollAnchor.id }, set: { scrollAnchor.id = $0 }), anchor: .top)
+        .scrollPosition(id: Binding(get: { scrollAnchor.restoring ? scrollAnchor.id : nil },
+                                    set: { scrollAnchor.id = $0 }), anchor: .top)
+        .task(id: layoutRevision) {
+            // Long enough for the new grid to read the position, then stop handing it back.
+            do { try await Task.sleep(for: .milliseconds(400)) } catch { return }
+            scrollAnchor.restoring = false
+        }
         .scrollDisabled(isPinching)
     }
 
@@ -647,8 +656,11 @@ private struct TileJobStatus: View {
 }
 
 /// Remembers the scroll position without invalidating the grid on every scroll step.
+/// The position is offered back only while a pinch rebuilds the grid: offered at every
+/// redraw, a selection tap made the grid snap the top row into place, one row up.
 final class ScrollAnchorBox {
     var id: String?
+    var restoring = false
 }
 
 /// Whether an asset's original is a HEIC, computed once and off the main thread.
