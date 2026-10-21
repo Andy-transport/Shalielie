@@ -203,7 +203,7 @@ final class PortQueue: ObservableObject {
                     if original.video != nil && output.video == nil {
                         update(jobID) {
                             $0.isLivePhoto = false
-                            $0.warnings.append(L("Saved as a still photo: the video couldn't be styled (\(output.videoError ?? L("unknown error"))).")))
+                            $0.warnings.append(L("Saved as a still photo: the video couldn't be styled (\(output.videoError ?? L("unknown error")))."))
                         }
                     }
                     ported.append((jobID: jobID, asset: nil, original: original, output: output))
