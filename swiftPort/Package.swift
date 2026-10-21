@@ -25,6 +25,7 @@ let package = Package(
                 "Sources/StylePortApp",
                 "Tests",
                 "Resources/Assets.xcassets",
+                "Resources/Localizable.xcstrings",
                 "Resources/en.lproj",
                 "Resources/zh-Hans.lproj"
             ],

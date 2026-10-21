@@ -20,6 +20,8 @@ final class AssetListModel: NSObject, ObservableObject, PHPhotoLibraryChangeObse
     private var filenames: [String: String] = [:]
     private var generation = 0
     private var registered = false
+    private var searchQuery = ""
+    private var reloadTask: Task<Void, Never>?
 
     init(scope: Scope, sort: LibrarySort, ascending: Bool) {
         self.scope = scope
@@ -29,6 +31,7 @@ final class AssetListModel: NSObject, ObservableObject, PHPhotoLibraryChangeObse
     }
 
     deinit {
+        reloadTask?.cancel()
         PHPhotoLibrary.shared().unregisterChangeObserver(self)
     }
 
@@ -36,6 +39,13 @@ final class AssetListModel: NSObject, ObservableObject, PHPhotoLibraryChangeObse
         guard sort != self.sort || ascending != self.ascending else { return }
         self.sort = sort
         self.ascending = ascending
+        reload()
+    }
+
+    func search(_ query: String) {
+        let query = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard query != searchQuery else { return }
+        searchQuery = query
         reload()
     }
 
@@ -48,13 +58,15 @@ final class AssetListModel: NSObject, ObservableObject, PHPhotoLibraryChangeObse
     }
 
     func reload() {
+        reloadTask?.cancel()
         generation += 1
         let generation = generation
         let scope = scope
         let sort = sort
         let ascending = ascending
         let cache = filenames
-        Task.detached(priority: .userInitiated) {
+        let query = searchQuery
+        reloadTask = Task.detached(priority: .userInitiated) {
             let options = PHFetchOptions()
             options.predicate = NSPredicate(format: "mediaType == %d", PHAssetMediaType.image.rawValue)
             if sort == .captured {
@@ -69,10 +81,13 @@ final class AssetListModel: NSObject, ObservableObject, PHPhotoLibraryChangeObse
             }
             var list = result.count == 0 ? [] : result.objects(at: IndexSet(integersIn: 0..<result.count))
             var names = cache
-            if sort == .filename {
+            if sort == .filename || !query.isEmpty {
                 for asset in list where names[asset.localIdentifier] == nil {
+                    guard !Task.isCancelled else { return }
                     names[asset.localIdentifier] = PhotoLibraryService.filename(of: asset)
                 }
+            }
+            if sort == .filename {
                 list.sort {
                     (names[$0.localIdentifier] ?? "").localizedStandardCompare(
                         names[$1.localIdentifier] ?? ""
@@ -80,6 +95,21 @@ final class AssetListModel: NSObject, ObservableObject, PHPhotoLibraryChangeObse
                 }
             }
             if !ascending { list.reverse() }
+            if !query.isEmpty {
+                let localDate = DateFormatter()
+                localDate.dateStyle = .medium
+                let isoDate = DateFormatter()
+                isoDate.calendar = Calendar(identifier: .gregorian)
+                isoDate.locale = Locale(identifier: "en_US_POSIX")
+                isoDate.dateFormat = "yyyy-MM-dd"
+                list = list.filter { asset in
+                    if (names[asset.localIdentifier] ?? "").localizedStandardContains(query) { return true }
+                    guard let date = asset.creationDate else { return false }
+                    return localDate.string(from: date).localizedStandardContains(query)
+                        || isoDate.string(from: date).localizedStandardContains(query)
+                }
+            }
+            guard !Task.isCancelled else { return }
             await MainActor.run {
                 guard generation == self.generation else { return }
                 self.fetchResult = result
@@ -112,32 +142,84 @@ struct AssetGridView<Empty: View>: View {
     @State private var selecting = false
     @State private var selection = Set<String>()
     @State private var confirmingReplace = false
+    @State private var searchText = ""
+    @State private var searchPresented = false
 
     @AppStorage(AppSettings.gridTileSizeKey) private var tileSize = 100.0
-    @GestureState private var pinchScale = 1.0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Namespace private var zoomLayout
+    @GestureState private var isPinching = false
+    @State private var pinchStartSize: Double?
+    @State private var zoomSize: Double?
 
-    private func boundedTileSize(_ size: Double) -> Double { min(320, max(64, size)) }
+    private func boundedTileSize(_ size: Double) -> Double { min(320, max(32, size)) }
 
-    private var columns: [GridItem] {
-        [GridItem(.adaptive(minimum: boundedTileSize(tileSize * pinchScale)), spacing: 2)]
+    private var displayedTileSize: Double { boundedTileSize(zoomSize ?? tileSize) }
+
+    private func columnCount(for width: CGFloat) -> Int {
+        max(1, Int((max(0, width) + 2) / (displayedTileSize + 2)))
+    }
+
+    private func finishZoom() {
+        guard let zoomSize else { return }
+        // Keep the displayed size identical while moving it into persistent storage.
+        // A gesture-state scale would reset to 1 before the stored size catches up.
+        tileSize = zoomSize
+        self.zoomSize = nil
+        pinchStartSize = nil
     }
 
     private var gridZoom: some Gesture {
         MagnificationGesture()
-            .updating($pinchScale) { value, scale, _ in scale = value }
-            .onEnded { value in tileSize = boundedTileSize(tileSize * value) }
+            .updating($isPinching) { _, active, _ in active = true }
+            .onChanged { value in
+                if pinchStartSize == nil { pinchStartSize = tileSize }
+                zoomSize = boundedTileSize((pinchStartSize ?? tileSize) * value)
+            }
+            .onEnded { _ in finishZoom() }
     }
 
     var body: some View {
-        ScrollView {
-            LazyVGrid(columns: columns, spacing: 2) {
-                ForEach(model.assets, id: \.localIdentifier) { asset in
-                    cell(asset)
+        GeometryReader { geometry in
+            let count = columnCount(for: geometry.size.width)
+            ScrollView {
+                LazyVGrid(
+                    columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: count),
+                    spacing: 2
+                ) {
+                    ForEach(model.assets, id: \.localIdentifier) { asset in
+                        cell(asset)
+                            .matchedGeometryEffect(id: asset.localIdentifier, in: zoomLayout)
+                    }
                 }
+                .padding(.bottom, selecting ? 72 : 0)
+                // Interpolate each existing tile's position and size when columns reflow.
+                // Do not spring every finger update or unrelated library/selection changes.
+                .animation(
+                    reduceMotion ? nil : .interactiveSpring(response: 0.28, dampingFraction: 0.9),
+                    value: count
+                )
             }
-            .padding(.bottom, selecting ? 72 : 0)
+            .simultaneousGesture(gridZoom)
         }
-        .simultaneousGesture(gridZoom)
+        .onChange(of: isPinching) { _, active in
+            // Cancellation resets gesture state too; commit the last visible size.
+            if !active { finishZoom() }
+        }
+        .searchable(
+            text: $searchText,
+            isPresented: $searchPresented,
+            placement: .navigationBarDrawer(displayMode: .automatic),
+            prompt: "Filename or date"
+        )
+        .task(id: searchText) {
+            do { try await Task.sleep(for: .milliseconds(200)) } catch { return }
+            guard !Task.isCancelled else { return }
+            model.search(searchText)
+        }
+        .onChange(of: searchPresented) { _, presented in
+            if !presented { searchText = "" }
+        }
         .onReceive(model.$assets) { assets in
             selection.formIntersection(Set(assets.map(\.localIdentifier)))
         }
@@ -145,10 +227,21 @@ struct AssetGridView<Empty: View>: View {
             if model.isLoading {
                 ProgressView()
             } else if model.assets.isEmpty {
-                empty()
+                if searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    empty()
+                } else {
+                    ContentUnavailableView.search(text: searchText)
+                }
             }
         }
         .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    searchPresented = true
+                } label: {
+                    Label("Search", systemImage: "magnifyingglass")
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 if !model.assets.isEmpty {
                     Button(selecting ? "Cancel" : "Select") {

@@ -56,7 +56,7 @@ jobs:
         run: |
           app="$RUNNER_TEMP/StylePort-iOS/Build/Products/Release-iphoneos/StylePort.app"
           test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Info.plist")" = "0.7.1"
-          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$app/Info.plist")" = "2"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$app/Info.plist")" = "3"
           test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleDisplayName' "$app/Info.plist")" = "Palettify"
       - name: Upload unsigned iOS and iPadOS Simulator app
         uses: actions/upload-artifact@v7

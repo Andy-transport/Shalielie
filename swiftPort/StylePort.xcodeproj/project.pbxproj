@@ -44,6 +44,7 @@
 		B40000000000000000000002 /* Profiles in Resources */ = {isa = PBXBuildFile; fileRef = E00000000000000000000001 /* Profiles */; };
 		B40000000000000000000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E00000000000000000000002 /* Assets.xcassets */; };
 		B40000000000000000000004 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E00000000000000000000003 /* InfoPlist.strings */; };
+		B40000000000000000000005 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E00000000000000000000006 /* Localizable.xcstrings */; };
 		B50000000000000000000001 /* StylePortCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F10000000000000000000001 /* StylePortCore.framework */; };
 		B50000000000000000000002 /* StylePortCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F10000000000000000000001 /* StylePortCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		B50000000000000000000003 /* StylePortCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F10000000000000000000001 /* StylePortCore.framework */; };
@@ -118,6 +119,7 @@
 		A10000000000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		E00000000000000000000001 /* Profiles */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Profiles; sourceTree = "<group>"; };
 		E00000000000000000000002 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		E00000000000000000000006 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		E00000000000000000000004 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		E00000000000000000000005 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
 		F00000000000000000000001 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
@@ -195,6 +197,7 @@
 			isa = PBXGroup;
 			children = (
 				E00000000000000000000002 /* Assets.xcassets */,
+				E00000000000000000000006 /* Localizable.xcstrings */,
 				E00000000000000000000003 /* InfoPlist.strings */,
 				E00000000000000000000001 /* Profiles */,
 			);
@@ -311,7 +314,7 @@
 
 /* Begin PBXResourcesBuildPhase section */
 		200000000000000000000001 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (B40000000000000000000002 /* Profiles in Resources */, ); runOnlyForDeploymentPostprocessing = 0; };
-		200000000000000000000002 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (B40000000000000000000003 /* Assets.xcassets in Resources */, B40000000000000000000004 /* InfoPlist.strings in Resources */, B40000000000000000000001 /* PrivacyInfo.xcprivacy in Resources */, ); runOnlyForDeploymentPostprocessing = 0; };
+		200000000000000000000002 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (B40000000000000000000003 /* Assets.xcassets in Resources */, B40000000000000000000005 /* Localizable.xcstrings in Resources */, B40000000000000000000004 /* InfoPlist.strings in Resources */, B40000000000000000000001 /* PrivacyInfo.xcprivacy in Resources */, ); runOnlyForDeploymentPostprocessing = 0; };
 		200000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
@@ -425,7 +428,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEFINES_MODULE = YES;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
@@ -447,7 +450,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				DEFINES_MODULE = YES;
 				DYLIB_INSTALL_NAME_BASE = "@rpath";
 				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
@@ -471,7 +474,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/StylePortApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Palettify;
@@ -503,7 +506,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Sources/StylePortApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Palettify;

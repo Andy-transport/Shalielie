@@ -31,6 +31,7 @@ PROF, PROF_B = ident("E0", 1), ident("B4", 2)
 ASSETS, ASSETS_B = ident("E0", 2), ident("B4", 3)
 INFO_VG, INFO_B = ident("E0", 3), ident("B4", 4)
 INFO_EN, INFO_ZH = ident("E0", 4), ident("E0", 5)
+LOCALIZABLE, LOCALIZABLE_B = ident("E0", 6), ident("B4", 5)
 FW, APP, XCT = ident("F1", 1), ident("F1", 2), ident("F1", 3)
 FW_LINK, FW_EMBED, FW_TEST, XCT_B = ident("B5", 1), ident("B5", 2), ident("B5", 3), ident("B5", 4)
 XCTEST_FW = ident("F0", 1)
@@ -48,6 +49,7 @@ w(f"\t\t{PRIV_B} /* PrivacyInfo.xcprivacy in Resources */ = {{isa = PBXBuildFile
 w(f"\t\t{PROF_B} /* Profiles in Resources */ = {{isa = PBXBuildFile; fileRef = {PROF} /* Profiles */; }};")
 w(f"\t\t{ASSETS_B} /* Assets.xcassets in Resources */ = {{isa = PBXBuildFile; fileRef = {ASSETS} /* Assets.xcassets */; }};")
 w(f"\t\t{INFO_B} /* InfoPlist.strings in Resources */ = {{isa = PBXBuildFile; fileRef = {INFO_VG} /* InfoPlist.strings */; }};")
+w(f"\t\t{LOCALIZABLE_B} /* Localizable.xcstrings in Resources */ = {{isa = PBXBuildFile; fileRef = {LOCALIZABLE} /* Localizable.xcstrings */; }};")
 w(f"\t\t{FW_LINK} /* StylePortCore.framework in Frameworks */ = {{isa = PBXBuildFile; fileRef = {FW} /* StylePortCore.framework */; }};")
 w(f"\t\t{FW_EMBED} /* StylePortCore.framework in Embed Frameworks */ = {{isa = PBXBuildFile; fileRef = {FW} /* StylePortCore.framework */; settings = {{ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }}; }};")
 w(f"\t\t{FW_TEST} /* StylePortCore.framework in Frameworks */ = {{isa = PBXBuildFile; fileRef = {FW} /* StylePortCore.framework */; }};")
@@ -75,6 +77,7 @@ for (k, n), f in files.items():
 w(f"\t\t{PRIV} /* PrivacyInfo.xcprivacy */ = {{isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; {GROUP_TREE} }};")
 w(f"\t\t{PROF} /* Profiles */ = {{isa = PBXFileReference; lastKnownFileType = folder; path = Profiles; {GROUP_TREE} }};")
 w(f"\t\t{ASSETS} /* Assets.xcassets */ = {{isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; {GROUP_TREE} }};")
+w(f"\t\t{LOCALIZABLE} /* Localizable.xcstrings */ = {{isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; {GROUP_TREE} }};")
 w(f"\t\t{INFO_EN} /* en */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; {GROUP_TREE} }};")
 w(f"\t\t{INFO_ZH} /* zh-Hans */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = {Q}zh-Hans{Q}; path = {Q}zh-Hans.lproj/InfoPlist.strings{Q}; {GROUP_TREE} }};")
 w(f"\t\t{XCTEST_FW} /* XCTest.framework */ = {{isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; }};")
@@ -102,7 +105,7 @@ w("/* Begin PBXGroup section */")
 group(G["main"], "", [f"{G[n]} /* {n} */" for n in ["StylePortCore", "StylePortApp", "Resources", "Tests", "Frameworks", "Products"]])
 group(G["StylePortCore"], "StylePortCore", [f"{files[('core', n)]} /* {n} */" for n in core], "Sources/StylePortCore")
 group(G["StylePortApp"], "StylePortApp", [f"{files[('app', n)]} /* {n} */" for n in app] + [f"{PRIV} /* PrivacyInfo.xcprivacy */"], "Sources/StylePortApp")
-group(G["Resources"], "Resources", [f"{ASSETS} /* Assets.xcassets */", f"{INFO_VG} /* InfoPlist.strings */", f"{PROF} /* Profiles */"], "Resources")
+group(G["Resources"], "Resources", [f"{ASSETS} /* Assets.xcassets */", f"{LOCALIZABLE} /* Localizable.xcstrings */", f"{INFO_VG} /* InfoPlist.strings */", f"{PROF} /* Profiles */"], "Resources")
 group(G["Tests"], "Tests", [f"{files[('test', n)]} /* {n} */" for n in tests], "Tests/StylePortCoreTests")
 group(G["Frameworks"], "Frameworks", [f"{XCTEST_FW} /* XCTest.framework */"], named=True)
 group(G["Products"], "Products", [f"{FW} /* StylePortCore.framework */", f"{APP} /* StylePort.app */", f"{XCT} /* StylePortCoreTests.xctest */"], named=True)
@@ -147,7 +150,7 @@ w("/* End PBXProject section */\n")
 
 w("/* Begin PBXResourcesBuildPhase section */")
 w(f"\t\t200000000000000000000001 /* Resources */ = {{isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = ({PROF_B} /* Profiles in Resources */, ); runOnlyForDeploymentPostprocessing = 0; }};")
-w(f"\t\t200000000000000000000002 /* Resources */ = {{isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = ({ASSETS_B} /* Assets.xcassets in Resources */, {INFO_B} /* InfoPlist.strings in Resources */, {PRIV_B} /* PrivacyInfo.xcprivacy in Resources */, ); runOnlyForDeploymentPostprocessing = 0; }};")
+w(f"\t\t200000000000000000000002 /* Resources */ = {{isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = ({ASSETS_B} /* Assets.xcassets in Resources */, {LOCALIZABLE_B} /* Localizable.xcstrings in Resources */, {INFO_B} /* InfoPlist.strings in Resources */, {PRIV_B} /* PrivacyInfo.xcprivacy in Resources */, ); runOnlyForDeploymentPostprocessing = 0; }};")
 w("\t\t200000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };")
 w("/* End PBXResourcesBuildPhase section */\n")
 
@@ -193,7 +196,7 @@ settings("600000000000000000000002", "Release", [
     ("GCC_C_LANGUAGE_STANDARD", "gnu17"), ("SWIFT_COMPILATION_MODE", "wholemodule"),
     ("SWIFT_OPTIMIZATION_LEVEL", q("-O")), ("VALIDATE_PRODUCT", "YES")])
 core_settings = [
-    ("CODE_SIGN_STYLE", "Automatic"), ("CURRENT_PROJECT_VERSION", "2"), ("DEFINES_MODULE", "YES"),
+    ("CODE_SIGN_STYLE", "Automatic"), ("CURRENT_PROJECT_VERSION", "3"), ("DEFINES_MODULE", "YES"),
     ("DYLIB_INSTALL_NAME_BASE", q("@rpath")), ("INSTALL_PATH", q("$(LOCAL_LIBRARY_DIR)/Frameworks")),
     ("LD_RUNPATH_SEARCH_PATHS", q("$(inherited) @executable_path/Frameworks @loader_path/Frameworks")),
     ("GENERATE_INFOPLIST_FILE", "YES"), ("IPHONEOS_DEPLOYMENT_TARGET", "17.0"), ("MACOSX_DEPLOYMENT_TARGET", "14.0"),
@@ -207,7 +210,7 @@ app_settings = [
     ("ASSETCATALOG_COMPILER_APPICON_NAME", "AppIcon"),
     ("ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME", "AccentColor"),
     ("CODE_SIGN_STYLE", "Automatic"),
-    ("CURRENT_PROJECT_VERSION", "2"),
+    ("CURRENT_PROJECT_VERSION", "3"),
     ("GENERATE_INFOPLIST_FILE", "YES"),
     ("INFOPLIST_FILE", "Sources/StylePortApp/Info.plist"),
     ("INFOPLIST_KEY_CFBundleDisplayName", "Palettify"),
