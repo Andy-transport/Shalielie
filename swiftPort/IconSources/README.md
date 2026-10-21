@@ -1,16 +1,19 @@
 # Palettify / 盘它 — Icon Composer source
 
-Open `Palettify.icon` with Apple Icon Composer on macOS.
+Open `Palettify.icon` in Apple Icon Composer on macOS.
 
-- Canvas fill: editable blue gradient, with a separate dark appearance.
-- Back group: optional soft highlight shapes (toggle or remove to taste).
-- Front group: the 25 white dots, with native glass/specular settings.
-- Every SVG uses a 1024 x 1024 canvas. Each dot has a named SVG element.
-- Do not bake in rounded corners: iOS supplies the icon mask.
+Four separately editable layers use a 1024 × 1024 canvas:
 
-The original flattened AppIcon and AboutIcon PNGs are untouched. This source package is
-not wired into the app target yet, so manual edits do not unexpectedly change a release.
-When ready, add the saved `.icon` to the app target and select its name as the app icon;
-remove/rename the old same-name asset to avoid ambiguity. Icon Composer/Xcode must render
-and validate final appearance variants on a Mac; the package has not been opened on this
-Windows machine. SVGs are editable directly in vector editors on Windows.
+1. Aurora background: a smooth gradient image only, with mist, coral, lavender, blue and deep teal washes.
+2. Accent white glow: a subtle transparent white glow for the second-row, fourth-column dot only.
+3. Small dots: 24 white SVG circles, without glow, glass or shadow.
+4. Accent dot: its original radius is retained, without a drop shadow.
+
+The background colors and dot radii are editable in `../tools/generate_app_icon.py`;
+run it with Pillow to regenerate both the Composer layers and flattened AppIcon/AboutIcon PNGs.
+SVG dot elements are named by row and column for manual editing. No rounded mask is baked in.
+
+The source package is not wired into the app target; the app uses the matching flattened PNG.
+Manual Composer changes therefore require exporting/updating the flattened icon, or wiring the
+saved `.icon` into Xcode. This package has not been opened or validated in Icon Composer on this
+Windows machine. Validate its appearance variants on a Mac before a proper iOS release.

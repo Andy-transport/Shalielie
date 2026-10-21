@@ -402,7 +402,7 @@ private extension PhotoLibraryService {
         }
     }
 
-    static func temporaryCopy(of resource: PHAssetResource) async throws -> URL {
+    internal static func temporaryCopy(of resource: PHAssetResource) async throws -> URL {
         let directory = try TemporaryFiles.newDirectory()
         let filename = resource.originalFilename.isEmpty ? "paired-video.mov" : resource.originalFilename
         let destination = directory.appendingPathComponent(filename)

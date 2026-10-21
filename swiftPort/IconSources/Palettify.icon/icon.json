@@ -1,26 +1,11 @@
 {
   "color-space-for-untagged-svg-colors": "srgb",
   "fill": {
-    "linear-gradient": [
-      "srgb:0.71373,0.75686,0.81176,1.00000",
-      "srgb:0.40000,0.38824,0.44314,1.00000"
-    ]
+    "solid": "srgb:0.09412,0.19216,0.19216,1.00000"
   },
-  "fill-specializations": [
-    {
-      "appearance": "dark",
-      "value": {
-        "linear-gradient": [
-          "srgb:0.32549,0.34902,0.40000,1.00000",
-          "srgb:0.17255,0.16471,0.21176,1.00000"
-        ]
-      }
-    }
-  ],
   "groups": [
     {
-      "name": "01 Soft highlights",
-      "blur-material": 0.4,
+      "name": "Aurora background",
       "specular": false,
       "shadow": {
         "kind": "neutral",
@@ -28,10 +13,9 @@
       },
       "layers": [
         {
-          "name": "Soft highlight shapes",
-          "image-name": "01-highlight-shapes.svg",
+          "name": "Aurora background",
+          "image-name": "01-aurora-background.png",
           "glass": false,
-          "opacity": 0.15,
           "position": {
             "scale": 1,
             "translation-in-points": [
@@ -43,21 +27,61 @@
       ]
     },
     {
-      "name": "02 Palette dots",
-      "specular": true,
-      "translucency": {
-        "enabled": true,
-        "value": 0.2
-      },
+      "name": "Accent glow",
+      "specular": false,
       "shadow": {
-        "kind": "layer-color",
-        "opacity": 0.15
+        "kind": "neutral",
+        "opacity": 0
       },
       "layers": [
         {
-          "name": "25 white palette dots",
-          "image-name": "02-palette-dots.svg",
-          "glass": true,
+          "name": "Accent glow",
+          "image-name": "02-accent-white-glow.png",
+          "glass": false,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Small dots",
+      "specular": false,
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0
+      },
+      "layers": [
+        {
+          "name": "Small dots",
+          "image-name": "03-small-dots.svg",
+          "glass": false,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Accent dot",
+      "specular": false,
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0
+      },
+      "layers": [
+        {
+          "name": "Accent dot",
+          "image-name": "04-accent-dot.svg",
+          "glass": false,
           "position": {
             "scale": 1,
             "translation-in-points": [
