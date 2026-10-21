@@ -63,7 +63,7 @@ final class AlbumsModel: NSObject, ObservableObject, PHPhotoLibraryChangeObserve
         guard keepEmpty || assets.count > 0 else { return nil }
         return AlbumItem(
             id: collection.localIdentifier,
-            title: collection.localizedTitle ?? "Album",
+            title: collection.localizedTitle ?? L("Album"),
             count: assets.count,
             keyAsset: assets.lastObject
         )
@@ -148,7 +148,7 @@ private struct AlbumRow: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(album.title)
                         .font(.body)
-                    Text(album.count == 1 ? "1 photo" : "\(album.count) photos")
+                    Text(album.count == 1 ? L("1 photo") : L("\(album.count) photos"))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }

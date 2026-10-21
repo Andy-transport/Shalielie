@@ -71,9 +71,9 @@ final class PortQueue: ObservableObject {
         guard showsStatus, !jobs.isEmpty else { return nil }
         let finished = jobs.filter(\.isFinished).count
         let failed = jobs.filter(\.isFailed).count
-        if isRunning { return "Styling \(min(finished + 1, jobs.count)) of \(jobs.count)…" }
-        if failed > 0 { return "\(jobs.count - failed) done, \(failed) failed" }
-        return jobs.count == 1 ? "1 photo done" : "\(jobs.count) photos done"
+        if isRunning { return L("Styling \(min(finished + 1, jobs.count)) of \(jobs.count)…") }
+        if failed > 0 { return L("\(jobs.count - failed) done, \(failed) failed") }
+        return jobs.count == 1 ? L("1 photo done") : L("\(jobs.count) photos done")
     }
 
     func job(forAsset identifier: String) -> PortJob? {
@@ -166,7 +166,7 @@ final class PortQueue: ObservableObject {
                         $0.phase = .porting
                         $0.isLivePhoto = original.video != nil
                         if original.hasEdits {
-                            $0.warnings.append("Edits made in Photos aren't carried over; the style is added to the original.")
+                            $0.warnings.append(L("Edits made in Photos aren't carried over; the style is added to the original."))
                         }
                     }
                     let output = try await port(original, replace: batch.replace, options: options)
@@ -175,10 +175,10 @@ final class PortQueue: ObservableObject {
                         $0.report = output.report
                         if original.video != nil && output.video == nil {
                             $0.isLivePhoto = false
-                            let reason = "Saved as a still photo: the video couldn't be styled (\(output.videoError ?? "unknown error"))."
+                            let reason = L("Saved as a still photo: the video couldn't be styled (\(output.videoError ?? L("unknown error"))).")
                             $0.warnings.append(batch.replace
-                                ? reason + " The original, with its motion, is in the Backup Bin."
-                                : reason + " The original Live Photo is unchanged.")
+                                ? reason + " " + L("The original, with its motion, is in the Backup Bin.")
+                                : reason + " " + L("The original Live Photo is unchanged."))
                         }
                     }
                 } catch {
@@ -195,7 +195,7 @@ final class PortQueue: ObservableObject {
                     if original.video != nil, [.alreadyStyled, .addTexture].contains(eligibility) {
                         output = try await Self.asIs(original, texture: eligibility == .alreadyStyled)
                         update(jobID) {
-                            $0.warnings.append("Already has a Photographic Style; saved unchanged with its video as a Live Photo.")
+                            $0.warnings.append(L("Already has a Photographic Style; saved unchanged with its video as a Live Photo."))
                         }
                     } else {
                         output = try await port(original, replace: false, options: options)
@@ -203,7 +203,7 @@ final class PortQueue: ObservableObject {
                     if original.video != nil && output.video == nil {
                         update(jobID) {
                             $0.isLivePhoto = false
-                            $0.warnings.append("Saved as a still photo: the video couldn't be styled (\(output.videoError ?? "unknown error")).")
+                            $0.warnings.append(L("Saved as a still photo: the video couldn't be styled (\(output.videoError ?? L("unknown error"))).")))
                         }
                     }
                     ported.append((jobID: jobID, asset: nil, original: original, output: output))
@@ -238,7 +238,7 @@ final class PortQueue: ObservableObject {
     private func replace(
         _ items: [(jobID: UUID, asset: PHAsset, original: OriginalPhoto, output: PortOutput)]
     ) async throws {
-        guard let backups else { throw LibraryError.saveFailed("The backup bin isn't available.") }
+        guard let backups else { throw LibraryError.saveFailed(L("The backup bin isn't available.")) }
         // Back up first: an original is only deleted once its copy is safely in the bin.
         var added: [BackupEntry] = []
         var metadata: [AssetMetadata] = []

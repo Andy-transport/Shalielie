@@ -16,7 +16,7 @@ public enum StylePortError: LocalizedError, Equatable {
         case .invalidData(let message):
             return message
         case .unsupportedPhoto:
-            return "This HEIC is not supported yet."
+            return String(localized: "This HEIC is not supported yet.", bundle: .main)
         case .missingResource(let name):
             return "A bundled StylePort resource is missing: \(name)."
         case .photoPermissionDenied:
@@ -28,9 +28,9 @@ public enum StylePortError: LocalizedError, Equatable {
         case .originalIsNotHEIC:
             return "The selected asset's original photo is not HEIC."
         case .alreadyHasTexture:
-            return "This photo already has a Photographic Style and Texture/Grain."
+            return String(localized: "This photo already has a Photographic Style and Texture/Grain.", bundle: .main)
         case .saveFailed(let message):
-            return "Could not save the result: \(message)"
+            return String(localized: "Could not save the result: \(message)", bundle: .main)
         }
     }
 }

@@ -46,9 +46,9 @@ enum LibrarySort: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .filename: return "Filename"
-        case .captured: return "Date Captured"
-        case .saved: return "Date Saved"
+        case .filename: return L("Filename")
+        case .captured: return L("Date Captured")
+        case .saved: return L("Date Saved")
         }
     }
 }

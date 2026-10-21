@@ -22,7 +22,7 @@ struct GalleryDateSection: Identifiable {
             } else {
                 indices[id] = groups.count
                 groups.append(GalleryDateSection(id: id,
-                    title: start.map { formatter.string(from: $0) } ?? String(localized: "Unknown Date"), assets: [asset]))
+                    title: start.map { formatter.string(from: $0) } ?? L("Unknown Date"), assets: [asset]))
             }
         }
         return groups
@@ -186,7 +186,7 @@ struct AssetGridView<Empty: View>: View {
     @State private var pinchStartSize: Double?
     @State private var zoomSize: Double?
     @State private var layoutRevision = 0
-    @State private var scrollAnchor: String?
+    @State private var scrollAnchor = ScrollAnchorBox()
     @State private var tileTapsBlocked = false
     @State private var tapUnlockTask: Task<Void, Never>?
 
@@ -292,7 +292,7 @@ struct AssetGridView<Empty: View>: View {
             }
             ToolbarItem(placement: .topBarTrailing) {
                 if !model.assets.isEmpty {
-                    Button(selecting ? "Cancel" : "Select") {
+                    Button(selecting ? L("Cancel") : L("Select")) {
                         withAnimation {
                             selecting.toggle()
                             selection.removeAll()
@@ -343,13 +343,13 @@ struct AssetGridView<Empty: View>: View {
             .scrollTargetLayout()
             .padding(.bottom, selecting ? 72 : 0)
         }
-        .scrollPosition(id: $scrollAnchor, anchor: .top)
+        .scrollPosition(id: Binding(get: { scrollAnchor.id }, set: { scrollAnchor.id = $0 }), anchor: .top)
         .scrollDisabled(isPinching)
     }
 
     private var replaceTitle: String {
-        selection.count == 1 ? "Replace 1 photo with its styled version?"
-            : "Replace \(selection.count) photos with their styled versions?"
+        selection.count == 1 ? L("Replace 1 photo with its styled version?")
+            : L("Replace \(selection.count) photos with their styled versions?")
     }
 
     @ViewBuilder
@@ -358,8 +358,7 @@ struct AssetGridView<Empty: View>: View {
         let tile = AssetTile(
             asset: asset,
             isSelecting: selecting,
-            isSelected: isSelected,
-            job: queue.job(forAsset: asset.localIdentifier)
+            isSelected: isSelected
         )
         if selecting {
             tile.onTapGesture {
@@ -381,8 +380,8 @@ struct AssetGridView<Empty: View>: View {
 
     private var selectionBar: some View {
         HStack {
-            Text(selection.isEmpty ? "Select Photos"
-                 : selection.count == 1 ? "1 Photo Selected" : "\(selection.count) Photos Selected")
+            Text(selection.isEmpty ? L("Select Photos")
+                 : selection.count == 1 ? L("1 Photo Selected") : L("\(selection.count) Photos Selected"))
                 .font(.subheadline.weight(.semibold))
             Spacer()
             LibrarySelectionActions(assets: selectedAssets, sourceAlbum: sourceAlbum) { model.reload() }
@@ -390,7 +389,7 @@ struct AssetGridView<Empty: View>: View {
                 if replaceOriginals { confirmingReplace = true } else { start() }
             } label: {
                 Label(
-                    replaceOriginals ? "Replace with Style" : "Add Style",
+                    replaceOriginals ? L("Replace with Style") : L("Add Style"),
                     systemImage: replaceOriginals ? "arrow.triangle.2.circlepath" : "camera.filters"
                 )
             }
@@ -432,7 +431,6 @@ struct AssetTile: View {
     let asset: PHAsset
     let isSelecting: Bool
     let isSelected: Bool
-    let job: PortJob?
 
     @State private var isHEIC = true
 
@@ -447,7 +445,9 @@ struct AssetTile: View {
             .clipped()
             .contentShape(Rectangle())
             .task(id: asset.localIdentifier) {
-                isHEIC = PhotoLibraryService.isHEIC(asset)
+                // Reading a photo's resources is a synchronous database query: cache it and keep
+                // it off the main thread so scrolling never waits on it.
+                isHEIC = await HEICCache.isHEIC(asset)
             }
             .accessibilityElement(children: .combine)
             .accessibilityAddTraits(isSelected ? .isSelected : [])
@@ -488,12 +488,41 @@ struct AssetTile: View {
                 .foregroundStyle(.white, isSelected ? Color.accentColor : .black.opacity(0.2))
                 .shadow(radius: 2)
                 .padding(5)
-        } else if let job {
+        } else {
+            TileJobStatus(identifier: asset.localIdentifier)
+        }
+    }
+
+    private func badge(_ symbol: String, compact: Bool = false) -> some View {
+        TileBadge(symbol: symbol, compact: compact)
+    }
+}
+
+private struct TileBadge: View {
+    let symbol: String
+    var compact = false
+
+    var body: some View {
+        Image(systemName: symbol)
+            .font(compact ? .system(size: 10, weight: .semibold) : .footnote.weight(.semibold))
+            .foregroundStyle(.white)
+            .shadow(color: .black.opacity(0.5), radius: 2)
+            .padding(compact ? 3 : 6)
+    }
+}
+
+/// Only this small view watches the queue, so job progress never re-renders the whole grid.
+private struct TileJobStatus: View {
+    let identifier: String
+    @EnvironmentObject private var queue: PortQueue
+
+    var body: some View {
+        if let job = queue.job(forAsset: identifier) {
             switch job.phase {
             case .done:
-                badge("checkmark.seal.fill")
+                TileBadge(symbol: "checkmark.seal.fill")
             case .failed:
-                badge("exclamationmark.triangle.fill")
+                TileBadge(symbol: "exclamationmark.triangle.fill")
             default:
                 ProgressView()
                     .tint(.white)
@@ -503,13 +532,23 @@ struct AssetTile: View {
             }
         }
     }
+}
 
-    private func badge(_ symbol: String, compact: Bool = false) -> some View {
-        Image(systemName: symbol)
-            .font(compact ? .system(size: 10, weight: .semibold) : .footnote.weight(.semibold))
-            .foregroundStyle(.white)
-            .shadow(color: .black.opacity(0.5), radius: 2)
-            .padding(compact ? 3 : 6)
+/// Remembers the scroll position without invalidating the grid on every scroll step.
+final class ScrollAnchorBox {
+    var id: String?
+}
+
+/// Whether an asset's original is a HEIC, computed once and off the main thread.
+enum HEICCache {
+    private static let cache = NSCache<NSString, NSNumber>()
+
+    static func isHEIC(_ asset: PHAsset) async -> Bool {
+        let key = asset.localIdentifier as NSString
+        if let known = cache.object(forKey: key) { return known.boolValue }
+        let value = await Task.detached(priority: .utility) { PhotoLibraryService.isHEIC(asset) }.value
+        cache.setObject(NSNumber(value: value), forKey: key)
+        return value
     }
 }
 

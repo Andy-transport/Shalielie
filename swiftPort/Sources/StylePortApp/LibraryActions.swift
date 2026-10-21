@@ -80,10 +80,10 @@ enum LibraryActions {
 
     static func add(_ assets: [PHAsset], to album: PHAssetCollection, movingFrom source: PHAssetCollection?) async throws {
         guard album.canPerform(.addContent), source?.localIdentifier != album.localIdentifier else {
-            throw LibraryError.saveFailed("Choose a different editable destination album.")
+            throw LibraryError.saveFailed(L("Choose a different editable destination album."))
         }
         if let source, !source.canPerform(.removeContent) {
-            throw LibraryError.saveFailed("The source album can't be changed.")
+            throw LibraryError.saveFailed(L("The source album can't be changed."))
         }
         try await PHPhotoLibrary.shared().performChanges {
             PHAssetCollectionChangeRequest(for: album)?.addAssets(assets as NSArray)
@@ -109,15 +109,15 @@ struct LibrarySelectionActions: View {
 
     var body: some View {
         Menu {
-            Button { run("Copied") { try await LibraryActions.copy(assets) } } label: { Label("Copy", systemImage: "doc.on.doc") }
-            Button { run("Duplicated") { try await LibraryActions.duplicate(assets) } } label: { Label("Duplicate", systemImage: "plus.square.on.square") }
+            Button { run(L("Copied")) { try await LibraryActions.copy(assets) } } label: { Label("Copy", systemImage: "doc.on.doc") }
+            Button { run(L("Duplicated")) { try await LibraryActions.duplicate(assets) } } label: { Label("Duplicate", systemImage: "plus.square.on.square") }
             Button {
                 let value = !allFavorite
-                run(value ? "Added to Favorites" : "Removed from Favorites") {
+                run(value ? L("Added to Favorites") : L("Removed from Favorites")) {
                     try await LibraryActions.update(assets) { request, _ in request.isFavorite = value }
                 }
-            } label: { Label(allFavorite ? "Remove from Favorites" : "Favorite", systemImage: allFavorite ? "heart.slash" : "heart") }
-            Button { hiding = true } label: { Label(allHidden ? "Unhide" : "Hide", systemImage: allHidden ? "eye" : "eye.slash") }
+            } label: { Label(allFavorite ? L("Remove from Favorites") : L("Favorite"), systemImage: allFavorite ? "heart.slash" : "heart") }
+            Button { hiding = true } label: { Label(allHidden ? L("Unhide") : L("Hide"), systemImage: allHidden ? "eye" : "eye.slash") }
             Divider()
             Button { sheet = .album } label: { Label("Add to Album…", systemImage: "rectangle.stack.badge.plus") }
             Button { sheet = .move } label: { Label("Move Between Albums…", systemImage: "folder") }
@@ -129,10 +129,10 @@ struct LibrarySelectionActions: View {
             else { Label("Actions", systemImage: "ellipsis.circle").labelStyle(.iconOnly) }
         }
         .disabled(assets.isEmpty || busy)
-        .confirmationDialog(allHidden ? "Unhide selected photos?" : "Hide selected photos?", isPresented: $hiding) {
-            Button(allHidden ? "Unhide" : "Hide") {
+        .confirmationDialog(allHidden ? L("Unhide selected photos?") : L("Hide selected photos?"), isPresented: $hiding) {
+            Button(allHidden ? L("Unhide") : L("Hide")) {
                 let value = !allHidden
-                run(value ? "Hidden" : "Unhidden") {
+                run(value ? L("Hidden") : L("Unhidden")) {
                     try await LibraryActions.update(assets) { request, _ in request.isHidden = value }
                 }
             }
@@ -179,24 +179,24 @@ private struct AlbumActionSheet: View {
                     Picker("From Album", selection: $source) {
                         Text("Choose an Album").tag("")
                         ForEach(albums.filter { $0.canPerform(.removeContent) }, id: \.localIdentifier) {
-                            Text($0.localizedTitle ?? "Album").tag($0.localIdentifier)
+                            Text($0.localizedTitle ?? L("Album")).tag($0.localIdentifier)
                         }
                     }
                 }
                 Picker("To Album", selection: $destination) {
                     Text("Choose an Album").tag("")
-                    ForEach(albums, id: \.localIdentifier) { Text($0.localizedTitle ?? "Album").tag($0.localIdentifier) }
+                    ForEach(albums, id: \.localIdentifier) { Text($0.localizedTitle ?? L("Album")).tag($0.localIdentifier) }
                 }
-                Text(moving ? "Selected photos are added to the destination and removed only from the chosen source album. They stay in your library and other albums."
-                     : "The selected photos stay in your library and existing albums.").font(.footnote).foregroundStyle(.secondary)
+                Text(moving ? L("Selected photos are added to the destination and removed only from the chosen source album. They stay in your library and other albums.")
+                     : L("The selected photos stay in your library and existing albums.")).font(.footnote).foregroundStyle(.secondary)
                 if albums.isEmpty { Text("Create an editable album in Photos first.") }
                 if let error { Text(error).foregroundStyle(.red) }
             }
-            .navigationTitle(moving ? "Move Photos" : "Add to Album")
+            .navigationTitle(moving ? L("Move Photos") : L("Add to Album"))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() }.disabled(busy) }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button(moving ? "Move" : "Add") { save() }
+                    Button(moving ? L("Move") : L("Add")) { save() }
                         .disabled(busy || destination.isEmpty || (moving && (source.isEmpty || source == destination)))
                 }
             }
@@ -231,8 +231,8 @@ struct DateActionSheet: View {
             Form {
                 DatePicker("New Date & Time", selection: $date)
                 if assets.count > 1 { Toggle("Keep Time Differences", isOn: $preserveIntervals) }
-                Text(preserveIntervals ? "The first selected photo moves to this date and time. The same time offset is applied to the others."
-                     : "All selected photos get this date and time.").font(.footnote).foregroundStyle(.secondary)
+                Text(preserveIntervals ? L("The first selected photo moves to this date and time. The same time offset is applied to the others.")
+                     : L("All selected photos get this date and time.")).font(.footnote).foregroundStyle(.secondary)
                 if let error { Text(error).foregroundStyle(.red) }
             }
             .navigationTitle("Adjust Date & Time")
@@ -323,7 +323,7 @@ struct LocationActionSheet: View {
             do {
                 let request = MKLocalSearch.Request(); request.naturalLanguageQuery = query
                 let response = try await MKLocalSearch(request: request).start()
-                guard let item = response.mapItems.first else { error = "No matching place found."; return }
+                guard let item = response.mapItems.first else { error = L("No matching place found."); return }
                 choose(item.placemark.coordinate)
             } catch { self.error = error.localizedDescription }
         }

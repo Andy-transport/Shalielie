@@ -1,5 +1,8 @@
 import SwiftUI
 
+/// A localized string for places that need a String rather than a view's LocalizedStringKey.
+func L(_ key: String.LocalizationValue) -> String { String(localized: key) }
+
 /// Use the system's Liquid Glass on iOS 26+, with material fallbacks on older devices.
 extension View {
     @ViewBuilder

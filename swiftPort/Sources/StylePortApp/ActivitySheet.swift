@@ -74,20 +74,20 @@ struct ActivitySheet: View {
 
     private func detail(_ job: PortJob) -> String {
         switch job.phase {
-        case .waiting: return "Waiting"
-        case .reading: return "Reading the original"
-        case .porting: return "Adding the style"
-        case .saving: return "Saving to Photos"
-        case .failed: return "Failed"
+        case .waiting: return L("Waiting")
+        case .reading: return L("Reading the original")
+        case .porting: return L("Adding the style")
+        case .saving: return L("Saving to Photos")
+        case .failed: return L("Failed")
         case .done:
-            guard let report = job.report else { return "Done" }
+            guard let report = job.report else { return L("Done") }
             var parts: [String] = []
             switch report.mode {
-            case .addTexture: parts.append("Texture & Grain added")
-            case .photoGraph, .donorGraph: parts.append("Photographic Style added")
+            case .addTexture: parts.append(L("Texture & Grain added"))
+            case .photoGraph, .donorGraph: parts.append(L("Photographic Style added"))
             }
-            if report.mode != .addTexture && report.addedTexture { parts.append("with Texture & Grain") }
-            if job.isLivePhoto { parts.append("Live Photo kept") }
+            if report.mode != .addTexture && report.addedTexture { parts.append(L("with Texture & Grain")) }
+            if job.isLivePhoto { parts.append(L("Live Photo kept")) }
             return parts.joined(separator: " · ")
         }
     }

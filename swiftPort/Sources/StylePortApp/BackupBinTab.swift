@@ -5,6 +5,12 @@ struct BackupBinTab: View {
     @EnvironmentObject private var store: BackupStore
     @State private var confirmingEmpty = false
 
+    private var footerText: String {
+        let count = store.entries.count == 1 ? L("1 original") : L("\(store.entries.count) originals")
+        let size = ByteCountFormatter.string(fromByteCount: store.totalBytes, countStyle: .file)
+        return L("\(count), \(size). Originals stay here until you restore or delete them.")
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -17,7 +23,7 @@ struct BackupBinTab: View {
                             for index in offsets { store.delete(store.entries[index]) }
                         }
                     } footer: {
-                        Text("\(store.entries.count == 1 ? "1 original" : "\(store.entries.count) originals"), \(ByteCountFormatter.string(fromByteCount: store.totalBytes, countStyle: .file)). Originals stay here until you restore or delete them.")
+                        Text(footerText)
                     }
                 }
             }
@@ -127,9 +133,9 @@ private struct BackupDetailView: View {
                     .listRowInsets(EdgeInsets())
             }
             Section {
-                LabeledContent("Captured", value: entry.metadata.creationDate?.formatted(date: .abbreviated, time: .shortened) ?? "Unknown")
+                LabeledContent("Captured", value: entry.metadata.creationDate?.formatted(date: .abbreviated, time: .shortened) ?? L("Unknown"))
                 LabeledContent("Replaced", value: entry.replacedAt.formatted(date: .abbreviated, time: .shortened))
-                LabeledContent("Live Photo", value: entry.isLivePhoto ? "Yes, with its video" : "No")
+                LabeledContent("Live Photo", value: entry.isLivePhoto ? L("Yes, with its video") : L("No"))
                 if !entry.metadata.albumIdentifiers.isEmpty {
                     LabeledContent("Albums", value: "\(entry.metadata.albumIdentifiers.count)")
                 }

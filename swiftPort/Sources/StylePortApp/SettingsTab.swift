@@ -20,9 +20,11 @@ struct SettingsTab: View {
                 } header: {
                     Text("Mode")
                 } footer: {
-                    Text(replaceOriginals
-                         ? "The styled photo takes the original's place, with its date, location, favorite and albums. The original goes to the Backup Bin, so you can restore it."
-                         : "The styled photo is saved next to the original as a new photo, named with \"_PhotographicStyle\".")
+                    if replaceOriginals {
+                        Text("The styled photo takes the original's place, with its date, location, favorite and albums. The original goes to the Backup Bin, so you can restore it.")
+                    } else {
+                        Text("The styled photo is saved next to the original as a new photo, named with \"_PhotographicStyle\".")
+                    }
                 }
 
                 Section {
@@ -54,7 +56,7 @@ struct SettingsTab: View {
                     LabeledContent("Version", value: AppSettings.appVersion)
                 }
             }
-            .navigationTitle("Settings")
+            .navigationTitle("Palettify")
         }
     }
 }
@@ -150,8 +152,8 @@ struct AboutView: View {
 
 private struct Feature: View {
     let symbol: String
-    let title: String
-    let text: String
+    let title: LocalizedStringKey
+    let text: LocalizedStringKey
 
     var body: some View {
         HStack(alignment: .top, spacing: 14) {

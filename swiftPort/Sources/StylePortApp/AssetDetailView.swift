@@ -105,7 +105,7 @@ struct AssetDetailView: View {
                     if let date = asset.creationDate {
                         Text(date.formatted(date: .abbreviated, time: .shortened))
                             .font(placeName == nil ? .subheadline.weight(.semibold) : .caption)
-                    } else { Text("Photo").font(.subheadline.weight(.semibold)) }
+                    } else { Text(L("Photo")).font(.subheadline.weight(.semibold)) }
                 }
                 .padding(.horizontal, 16).padding(.vertical, 6)
                 .floatingGlass()
@@ -218,7 +218,7 @@ struct AssetDetailView: View {
                 HStack(spacing: 4) {
                     Button { favorite(asset) } label: { controlIcon(asset.isFavorite ? "heart.fill" : "heart") }
                         .foregroundStyle(asset.isFavorite ? .red : .primary)
-                        .accessibilityLabel(asset.isFavorite ? "Remove from Favorites" : "Favorite")
+                        .accessibilityLabel(asset.isFavorite ? L("Remove from Favorites") : L("Favorite"))
                     Button { withAnimation(motion) { showingInfo.toggle() } } label: {
                         controlIcon(showingInfo ? "info.circle.fill" : "info.circle")
                     }.accessibilityLabel("Info")
@@ -263,7 +263,7 @@ struct AssetDetailView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(asset.creationDate?.formatted(date: .complete, time: .shortened) ?? "Unknown")
+                        Text(asset.creationDate?.formatted(date: .complete, time: .shortened) ?? L("Unknown"))
                             .font(.subheadline.weight(.medium))
                         Text(PhotoLibraryService.filename(of: asset)).font(.subheadline).foregroundStyle(.secondary).textSelection(.enabled)
                     }
@@ -272,9 +272,9 @@ struct AssetDetailView: View {
                 }
                 Divider()
                 HStack {
-                    Text(cameraInfo?.camera ?? "Photo").font(.subheadline.weight(.medium))
+                    Text(cameraInfo?.camera ?? L("Photo")).font(.subheadline.weight(.medium))
                     Spacer()
-                    Text(PhotoLibraryService.isHEIC(asset) ? "HEIF" : "Image").font(.caption)
+                    Text(PhotoLibraryService.isHEIC(asset) ? "HEIF" : L("Image")).font(.caption)
                         .padding(.horizontal, 8).padding(.vertical, 4).background(.quaternary, in: Capsule())
                 }
                 if let lens = cameraInfo?.lens { Text(lens).font(.subheadline).foregroundStyle(.secondary) }
@@ -283,7 +283,7 @@ struct AssetDetailView: View {
                 Divider()
                 HStack {
                     Label("Live Photo", systemImage: "livephoto")
-                    Spacer(); Text(asset.mediaSubtypes.contains(.photoLive) ? "Yes" : "No")
+                    Spacer(); Text(asset.mediaSubtypes.contains(.photoLive) ? L("Yes") : L("No"))
                 }.font(.subheadline)
                 HStack(alignment: .top) {
                     Text("Photographic Style"); Spacer(); Text(styleStatus(asset)).multilineTextAlignment(.trailing)
@@ -293,12 +293,12 @@ struct AssetDetailView: View {
             if let location = asset.location {
                 VStack(alignment: .leading, spacing: 8) {
                     Map(initialPosition: .region(MKCoordinateRegion(center: location.coordinate, span: MKCoordinateSpan(latitudeDelta: 0.008, longitudeDelta: 0.008)))) {
-                        Marker(placeName ?? "Photo", coordinate: location.coordinate)
+                        Marker(placeName ?? L("Photo"), coordinate: location.coordinate)
                     }
                     .frame(height: 180).clipShape(RoundedRectangle(cornerRadius: 22))
                     .id(selectedIdentifier)
                     HStack {
-                        Text(placeName ?? "Location").font(.subheadline)
+                        Text(placeName ?? L("Location")).font(.subheadline)
                         Spacer(); Button("Adjust") { editor = .location }.font(.subheadline)
                     }.padding(.horizontal, 4)
                 }
@@ -397,29 +397,33 @@ struct AssetDetailView: View {
     private func resolution(_ asset: PHAsset) -> String {
         let mp = Double(asset.pixelWidth) * Double(asset.pixelHeight) / 1_000_000
         let size = cameraInfo?.bytes.map { " · " + ByteCountFormatter.string(fromByteCount: $0, countStyle: .file) } ?? ""
-        return "\(mp.formatted(.number.precision(.fractionLength(0)))) MP · \(asset.pixelWidth) × \(asset.pixelHeight)\(size)"
+        return L("\(mp.formatted(.number.precision(.fractionLength(0)))) MP · \(asset.pixelWidth) × \(asset.pixelHeight)") + size
     }
     private func styleStatus(_ asset: PHAsset) -> String {
-        if !PhotoLibraryService.isHEIC(asset) { return "Not available: not a HEIC" }
+        if !PhotoLibraryService.isHEIC(asset) { return L("Not available: not a HEIC") }
         switch eligibility {
-        case .port: return "Can be added"
-        case .addTexture: return "Has a style; Texture & Grain can be added"
-        case .alreadyStyled: return "Already has a style and Texture & Grain"
-        case .unsupported: return "This HEIC isn't supported yet"
-        case nil: return eligibilityChecked ? "Checked when you add it (in iCloud)" : "Checking…"
+        case .port: return L("Can be added")
+        case .addTexture: return L("Has a style; Texture & Grain can be added")
+        case .alreadyStyled: return L("Already has a style and Texture & Grain")
+        case .unsupported: return L("This HEIC isn't supported yet")
+        case nil: return eligibilityChecked ? L("Checked when you add it (in iCloud)") : L("Checking…")
         }
     }
     private var actionTitle: String {
-        let what = eligibility == .addTexture ? "Texture & Grain" : "Photographic Style"
-        if case .done = job?.phase { return replaceOriginals ? "Replace Again" : "Add \(what) Again" }
-        return replaceOriginals ? "Replace with \(what)" : "Add \(what)"
+        let texture = eligibility == .addTexture
+        if case .done = job?.phase {
+            return replaceOriginals ? L("Replace Again")
+                : texture ? L("Add Texture & Grain Again") : L("Add Photographic Style Again")
+        }
+        if replaceOriginals { return texture ? L("Replace with Texture & Grain") : L("Replace with Photographic Style") }
+        return texture ? L("Add Texture & Grain") : L("Add Photographic Style")
     }
     private var progressText: String {
         switch job?.phase {
-        case .reading: return "Reading original…"
-        case .porting: return "Adding style…"
-        case .saving: return "Saving…"
-        default: return "Waiting…"
+        case .reading: return L("Reading original…")
+        case .porting: return L("Adding style…")
+        case .saving: return L("Saving…")
+        default: return L("Waiting…")
         }
     }
 }

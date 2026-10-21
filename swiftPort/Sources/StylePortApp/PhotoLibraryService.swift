@@ -65,15 +65,15 @@ enum LibraryError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .accessDenied:
-            return "Allow access to your photos in Settings to read the original HEIC and Live Photo video."
+            return L("Allow access to your photos in Settings to read the original HEIC and Live Photo video.")
         case .addAccessDenied:
-            return "Allow adding to your photo library in Settings to save the result."
+            return L("Allow adding to your photo library in Settings to save the result.")
         case .assetUnavailable:
-            return "This photo is no longer in your library."
+            return L("This photo is no longer in your library.")
         case .notHEIC:
-            return "This photo's original isn't a HEIC."
+            return L("This photo's original isn't a HEIC.")
         case .saveFailed(let message):
-            return "Photos didn't save the result: \(message)"
+            return L("Photos didn't save the result: \(message)")
         }
     }
 }
