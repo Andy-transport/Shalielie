@@ -144,6 +144,7 @@ struct AssetGridView<Empty: View>: View {
     @State private var confirmingReplace = false
     @State private var searchText = ""
     @State private var searchPresented = false
+    @State private var previewRoute: AssetRoute?
 
     @AppStorage(AppSettings.gridTileSizeKey) private var tileSize = 100.0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -268,7 +269,7 @@ struct AssetGridView<Empty: View>: View {
         .safeAreaInset(edge: .bottom) {
             if selecting { selectionBar }
         }
-        .navigationDestination(for: AssetRoute.self) { route in
+        .navigationDestination(item: $previewRoute) { route in
             AssetDetailView(identifier: route.identifier, assets: model.assets)
         }
         .confirmationDialog(
@@ -306,9 +307,12 @@ struct AssetGridView<Empty: View>: View {
                 }
             }
         } else {
-            NavigationLink(value: AssetRoute(identifier: asset.localIdentifier)) { tile }
-                .buttonStyle(.plain)
-                .disabled(isPinching || tileTapsBlocked)
+            Button {
+                guard !isPinching, !tileTapsBlocked else { return }
+                previewRoute = AssetRoute(identifier: asset.localIdentifier)
+            } label: { tile }
+            .buttonStyle(.plain)
+            .disabled(isPinching || tileTapsBlocked)
         }
     }
 
