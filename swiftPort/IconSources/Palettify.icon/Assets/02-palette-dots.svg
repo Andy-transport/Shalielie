@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <circle id="dot-01" cx="245.760" cy="245.760" r="36.864" fill="white"/>
+  <circle id="dot-02" cx="378.880" cy="245.760" r="36.864" fill="white"/>
+  <circle id="dot-03" cx="512.000" cy="245.760" r="36.864" fill="white"/>
+  <circle id="dot-04" cx="645.120" cy="245.760" r="36.864" fill="white"/>
+  <circle id="dot-05" cx="778.240" cy="245.760" r="36.864" fill="white"/>
+  <circle id="dot-06" cx="245.760" cy="378.880" r="36.864" fill="white"/>
+  <circle id="dot-07" cx="378.880" cy="378.880" r="36.864" fill="white"/>
+  <circle id="dot-08" cx="512.000" cy="378.880" r="36.864" fill="white"/>
+  <circle id="dot-09" cx="645.120" cy="378.880" r="36.864" fill="white"/>
+  <circle id="dot-10" cx="778.240" cy="378.880" r="36.864" fill="white"/>
+  <circle id="dot-11" cx="245.760" cy="512.000" r="36.864" fill="white"/>
+  <circle id="dot-12" cx="378.880" cy="512.000" r="36.864" fill="white"/>
+  <circle id="dot-13" cx="512.000" cy="512.000" r="36.864" fill="white"/>
+  <circle id="dot-14" cx="645.120" cy="512.000" r="36.864" fill="white"/>
+  <circle id="dot-15" cx="778.240" cy="512.000" r="36.864" fill="white"/>
+  <circle id="dot-16" cx="245.760" cy="645.120" r="36.864" fill="white"/>
+  <circle id="dot-17" cx="378.880" cy="645.120" r="36.864" fill="white"/>
+  <circle id="dot-18" cx="512.000" cy="645.120" r="36.864" fill="white"/>
+  <circle id="dot-19" cx="645.120" cy="645.120" r="36.864" fill="white"/>
+  <circle id="dot-20" cx="778.240" cy="645.120" r="36.864" fill="white"/>
+  <circle id="dot-21" cx="245.760" cy="778.240" r="36.864" fill="white"/>
+  <circle id="dot-22" cx="378.880" cy="778.240" r="36.864" fill="white"/>
+  <circle id="dot-23" cx="512.000" cy="778.240" r="36.864" fill="white"/>
+  <circle id="dot-24" cx="645.120" cy="778.240" r="36.864" fill="white"/>
+  <circle id="dot-25" cx="778.240" cy="778.240" r="36.864" fill="white"/>
+</svg>

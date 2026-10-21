@@ -1,0 +1,99 @@
+{
+  "color-space-for-untagged-svg-colors": "srgb",
+  "fill": {
+    "solid": "srgb:0.09412,0.19216,0.19216,1.00000"
+  },
+  "groups": [
+    {
+      "name": "Aurora background",
+      "specular": false,
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0
+      },
+      "layers": [
+        {
+          "name": "Aurora background",
+          "image-name": "01-aurora-background.png",
+          "glass": false,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Accent glow",
+      "specular": false,
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0
+      },
+      "layers": [
+        {
+          "name": "Accent glow",
+          "image-name": "02-accent-white-glow.png",
+          "glass": false,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Small dots",
+      "specular": false,
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0
+      },
+      "layers": [
+        {
+          "name": "Small dots",
+          "image-name": "03-small-dots.svg",
+          "glass": false,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Accent dot",
+      "specular": false,
+      "shadow": {
+        "kind": "neutral",
+        "opacity": 0
+      },
+      "layers": [
+        {
+          "name": "Accent dot",
+          "image-name": "04-accent-dot.svg",
+          "glass": false,
+          "position": {
+            "scale": 1,
+            "translation-in-points": [
+              0,
+              0
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "supported-platforms": {
+    "squares": "shared"
+  }
+}

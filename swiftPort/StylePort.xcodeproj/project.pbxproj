@@ -1,0 +1,579 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		B10000000000000000000001 /* AppleBytes.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00000000000000000000001 /* AppleBytes.swift */; };
+		B10000000000000000000002 /* BinaryPlist.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00000000000000000000002 /* BinaryPlist.swift */; };
+		B10000000000000000000003 /* ByteBuffer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00000000000000000000003 /* ByteBuffer.swift */; };
+		B10000000000000000000004 /* DonorProfile.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00000000000000000000004 /* DonorProfile.swift */; };
+		B10000000000000000000005 /* Exif.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00000000000000000000005 /* Exif.swift */; };
+		B10000000000000000000006 /* Graft.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00000000000000000000006 /* Graft.swift */; };
+		B10000000000000000000007 /* HEIF.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00000000000000000000007 /* HEIF.swift */; };
+		B10000000000000000000008 /* ISOBoxes.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00000000000000000000008 /* ISOBoxes.swift */; };
+		B10000000000000000000009 /* LinearThumbnailEncoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = C00000000000000000000009 /* LinearThumbnailEncoder.swift */; };
+		B1000000000000000000000A /* LivePhotoAperture.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0000000000000000000000A /* LivePhotoAperture.swift */; };
+		B1000000000000000000000B /* LivePhotoVideo.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0000000000000000000000B /* LivePhotoVideo.swift */; };
+		B1000000000000000000000C /* StyleMaps.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0000000000000000000000C /* StyleMaps.swift */; };
+		B1000000000000000000000D /* StylePortError.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0000000000000000000000D /* StylePortError.swift */; };
+		B1000000000000000000000E /* StylePorter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0000000000000000000000E /* StylePorter.swift */; };
+		B1000000000000000000000F /* Texture.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0000000000000000000000F /* Texture.swift */; };
+		B20000000000000000000001 /* ActivitySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000001 /* ActivitySheet.swift */; };
+		B20000000000000000000002 /* AlbumsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000002 /* AlbumsTab.swift */; };
+		B20000000000000000000003 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000003 /* AppSettings.swift */; };
+		B20000000000000000000004 /* AssetDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000004 /* AssetDetailView.swift */; };
+		B20000000000000000000005 /* AssetGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000005 /* AssetGrid.swift */; };
+		B20000000000000000000006 /* BackupBinTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000006 /* BackupBinTab.swift */; };
+		B20000000000000000000007 /* BackupStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000007 /* BackupStore.swift */; };
+		B20000000000000000000008 /* LibraryActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000008 /* LibraryActions.swift */; };
+		B20000000000000000000009 /* LibraryTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000009 /* LibraryTab.swift */; };
+		B2000000000000000000000A /* LivePhotoStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000A /* LivePhotoStyler.swift */; };
+		B2000000000000000000000B /* ModernUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000B /* ModernUI.swift */; };
+		B2000000000000000000000C /* PhotoLibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000C /* PhotoLibraryService.swift */; };
+		B2000000000000000000000D /* PortQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000D /* PortQueue.swift */; };
+		B2000000000000000000000E /* SettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000E /* SettingsTab.swift */; };
+		B2000000000000000000000F /* ShortcutsIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000F /* ShortcutsIntents.swift */; };
+		B20000000000000000000010 /* StylePortApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000010 /* StylePortApp.swift */; };
+		B30000000000000000000001 /* LivePhotoApertureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00000000000000000000001 /* LivePhotoApertureTests.swift */; };
+		B30000000000000000000002 /* StylePortCoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00000000000000000000002 /* StylePortCoreTests.swift */; };
+		B40000000000000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000001 /* PrivacyInfo.xcprivacy */; };
+		B40000000000000000000002 /* Profiles in Resources */ = {isa = PBXBuildFile; fileRef = E00000000000000000000001 /* Profiles */; };
+		B40000000000000000000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = E00000000000000000000002 /* Assets.xcassets */; };
+		B40000000000000000000004 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E00000000000000000000003 /* InfoPlist.strings */; };
+		B40000000000000000000005 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = E00000000000000000000006 /* Localizable.xcstrings */; };
+		B50000000000000000000001 /* StylePortCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F10000000000000000000001 /* StylePortCore.framework */; };
+		B50000000000000000000002 /* StylePortCore.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = F10000000000000000000001 /* StylePortCore.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		B50000000000000000000003 /* StylePortCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F10000000000000000000001 /* StylePortCore.framework */; };
+		B50000000000000000000004 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F00000000000000000000001 /* XCTest.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		900000000000000000000001 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 800000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 500000000000000000000001;
+			remoteInfo = StylePortCore;
+		};
+		900000000000000000000002 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 800000000000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 500000000000000000000001;
+			remoteInfo = StylePortCore;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		400000000000000000000001 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				B50000000000000000000002 /* StylePortCore.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		C00000000000000000000001 /* AppleBytes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleBytes.swift; sourceTree = "<group>"; };
+		C00000000000000000000002 /* BinaryPlist.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinaryPlist.swift; sourceTree = "<group>"; };
+		C00000000000000000000003 /* ByteBuffer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ByteBuffer.swift; sourceTree = "<group>"; };
+		C00000000000000000000004 /* DonorProfile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DonorProfile.swift; sourceTree = "<group>"; };
+		C00000000000000000000005 /* Exif.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Exif.swift; sourceTree = "<group>"; };
+		C00000000000000000000006 /* Graft.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Graft.swift; sourceTree = "<group>"; };
+		C00000000000000000000007 /* HEIF.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HEIF.swift; sourceTree = "<group>"; };
+		C00000000000000000000008 /* ISOBoxes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ISOBoxes.swift; sourceTree = "<group>"; };
+		C00000000000000000000009 /* LinearThumbnailEncoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinearThumbnailEncoder.swift; sourceTree = "<group>"; };
+		C0000000000000000000000A /* LivePhotoAperture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePhotoAperture.swift; sourceTree = "<group>"; };
+		C0000000000000000000000B /* LivePhotoVideo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePhotoVideo.swift; sourceTree = "<group>"; };
+		C0000000000000000000000C /* StyleMaps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StyleMaps.swift; sourceTree = "<group>"; };
+		C0000000000000000000000D /* StylePortError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StylePortError.swift; sourceTree = "<group>"; };
+		C0000000000000000000000E /* StylePorter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StylePorter.swift; sourceTree = "<group>"; };
+		C0000000000000000000000F /* Texture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Texture.swift; sourceTree = "<group>"; };
+		A00000000000000000000001 /* ActivitySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivitySheet.swift; sourceTree = "<group>"; };
+		A00000000000000000000002 /* AlbumsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlbumsTab.swift; sourceTree = "<group>"; };
+		A00000000000000000000003 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		A00000000000000000000004 /* AssetDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetDetailView.swift; sourceTree = "<group>"; };
+		A00000000000000000000005 /* AssetGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetGrid.swift; sourceTree = "<group>"; };
+		A00000000000000000000006 /* BackupBinTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupBinTab.swift; sourceTree = "<group>"; };
+		A00000000000000000000007 /* BackupStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupStore.swift; sourceTree = "<group>"; };
+		A00000000000000000000008 /* LibraryActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryActions.swift; sourceTree = "<group>"; };
+		A00000000000000000000009 /* LibraryTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryTab.swift; sourceTree = "<group>"; };
+		A0000000000000000000000A /* LivePhotoStyler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePhotoStyler.swift; sourceTree = "<group>"; };
+		A0000000000000000000000B /* ModernUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernUI.swift; sourceTree = "<group>"; };
+		A0000000000000000000000C /* PhotoLibraryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibraryService.swift; sourceTree = "<group>"; };
+		A0000000000000000000000D /* PortQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortQueue.swift; sourceTree = "<group>"; };
+		A0000000000000000000000E /* SettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsTab.swift; sourceTree = "<group>"; };
+		A0000000000000000000000F /* ShortcutsIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsIntents.swift; sourceTree = "<group>"; };
+		A00000000000000000000010 /* StylePortApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StylePortApp.swift; sourceTree = "<group>"; };
+		D00000000000000000000001 /* LivePhotoApertureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePhotoApertureTests.swift; sourceTree = "<group>"; };
+		D00000000000000000000002 /* StylePortCoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StylePortCoreTests.swift; sourceTree = "<group>"; };
+		A10000000000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		E00000000000000000000001 /* Profiles */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Profiles; sourceTree = "<group>"; };
+		E00000000000000000000002 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		E00000000000000000000006 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		E00000000000000000000004 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		E00000000000000000000005 /* zh-Hans */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = "zh-Hans"; path = "zh-Hans.lproj/InfoPlist.strings"; sourceTree = "<group>"; };
+		F00000000000000000000001 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
+		F10000000000000000000001 /* StylePortCore.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = StylePortCore.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		F10000000000000000000002 /* StylePort.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = StylePort.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		F10000000000000000000003 /* StylePortCoreTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StylePortCoreTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		300000000000000000000001 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		300000000000000000000002 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (B50000000000000000000001 /* StylePortCore.framework in Frameworks */, ); runOnlyForDeploymentPostprocessing = 0; };
+		300000000000000000000003 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (B50000000000000000000003 /* StylePortCore.framework in Frameworks */, B50000000000000000000004 /* XCTest.framework in Frameworks */, ); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A20000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000002 /* StylePortCore */,
+				A20000000000000000000003 /* StylePortApp */,
+				A20000000000000000000004 /* Resources */,
+				A20000000000000000000005 /* Tests */,
+				A20000000000000000000006 /* Frameworks */,
+				A20000000000000000000007 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A20000000000000000000002 /* StylePortCore */ = {
+			isa = PBXGroup;
+			children = (
+				C00000000000000000000001 /* AppleBytes.swift */,
+				C00000000000000000000002 /* BinaryPlist.swift */,
+				C00000000000000000000003 /* ByteBuffer.swift */,
+				C00000000000000000000004 /* DonorProfile.swift */,
+				C00000000000000000000005 /* Exif.swift */,
+				C00000000000000000000006 /* Graft.swift */,
+				C00000000000000000000007 /* HEIF.swift */,
+				C00000000000000000000008 /* ISOBoxes.swift */,
+				C00000000000000000000009 /* LinearThumbnailEncoder.swift */,
+				C0000000000000000000000A /* LivePhotoAperture.swift */,
+				C0000000000000000000000B /* LivePhotoVideo.swift */,
+				C0000000000000000000000C /* StyleMaps.swift */,
+				C0000000000000000000000D /* StylePortError.swift */,
+				C0000000000000000000000E /* StylePorter.swift */,
+				C0000000000000000000000F /* Texture.swift */,
+			);
+			path = Sources/StylePortCore;
+			sourceTree = "<group>";
+		};
+		A20000000000000000000003 /* StylePortApp */ = {
+			isa = PBXGroup;
+			children = (
+				A00000000000000000000001 /* ActivitySheet.swift */,
+				A00000000000000000000002 /* AlbumsTab.swift */,
+				A00000000000000000000003 /* AppSettings.swift */,
+				A00000000000000000000004 /* AssetDetailView.swift */,
+				A00000000000000000000005 /* AssetGrid.swift */,
+				A00000000000000000000006 /* BackupBinTab.swift */,
+				A00000000000000000000007 /* BackupStore.swift */,
+				A00000000000000000000008 /* LibraryActions.swift */,
+				A00000000000000000000009 /* LibraryTab.swift */,
+				A0000000000000000000000A /* LivePhotoStyler.swift */,
+				A0000000000000000000000B /* ModernUI.swift */,
+				A0000000000000000000000C /* PhotoLibraryService.swift */,
+				A0000000000000000000000D /* PortQueue.swift */,
+				A0000000000000000000000E /* SettingsTab.swift */,
+				A0000000000000000000000F /* ShortcutsIntents.swift */,
+				A00000000000000000000010 /* StylePortApp.swift */,
+				A10000000000000000000001 /* PrivacyInfo.xcprivacy */,
+			);
+			path = Sources/StylePortApp;
+			sourceTree = "<group>";
+		};
+		A20000000000000000000004 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				E00000000000000000000002 /* Assets.xcassets */,
+				E00000000000000000000006 /* Localizable.xcstrings */,
+				E00000000000000000000003 /* InfoPlist.strings */,
+				E00000000000000000000001 /* Profiles */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		A20000000000000000000005 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				D00000000000000000000001 /* LivePhotoApertureTests.swift */,
+				D00000000000000000000002 /* StylePortCoreTests.swift */,
+			);
+			path = Tests/StylePortCoreTests;
+			sourceTree = "<group>";
+		};
+		A20000000000000000000006 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				F00000000000000000000001 /* XCTest.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		A20000000000000000000007 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F10000000000000000000001 /* StylePortCore.framework */,
+				F10000000000000000000002 /* StylePort.app */,
+				F10000000000000000000003 /* StylePortCoreTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		500000000000000000000001 /* StylePortCore */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 700000000000000000000002 /* Build configuration list for PBXNativeTarget "StylePortCore" */;
+			buildPhases = (
+				100000000000000000000001 /* Sources */,
+				300000000000000000000001 /* Frameworks */,
+				200000000000000000000001 /* Resources */,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = StylePortCore;
+			productName = StylePortCore;
+			productReference = F10000000000000000000001 /* StylePortCore.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		500000000000000000000002 /* StylePort */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 700000000000000000000003 /* Build configuration list for PBXNativeTarget "StylePort" */;
+			buildPhases = (
+				100000000000000000000002 /* Sources */,
+				300000000000000000000002 /* Frameworks */,
+				200000000000000000000002 /* Resources */,
+				400000000000000000000001 /* Embed Frameworks */,
+			);
+			buildRules = ();
+			dependencies = (900000000000000000000003 /* PBXTargetDependency */, );
+			name = StylePort;
+			productName = StylePort;
+			productReference = F10000000000000000000002 /* StylePort.app */;
+			productType = "com.apple.product-type.application";
+		};
+		500000000000000000000003 /* StylePortCoreTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 700000000000000000000004 /* Build configuration list for PBXNativeTarget "StylePortCoreTests" */;
+			buildPhases = (
+				100000000000000000000003 /* Sources */,
+				300000000000000000000003 /* Frameworks */,
+				200000000000000000000003 /* Resources */,
+			);
+			buildRules = ();
+			dependencies = (900000000000000000000004 /* PBXTargetDependency */, );
+			name = StylePortCoreTests;
+			productName = StylePortCoreTests;
+			productReference = F10000000000000000000003 /* StylePortCoreTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		800000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					500000000000000000000001 = {CreatedOnToolsVersion = 16.0; };
+					500000000000000000000002 = {CreatedOnToolsVersion = 16.0; };
+					500000000000000000000003 = {CreatedOnToolsVersion = 16.0; };
+				};
+			};
+			buildConfigurationList = 700000000000000000000001 /* Build configuration list for PBXProject "StylePort" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (en, Base, "zh-Hans", );
+			mainGroup = A20000000000000000000001;
+			productRefGroup = A20000000000000000000007 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				500000000000000000000001 /* StylePortCore */,
+				500000000000000000000002 /* StylePort */,
+				500000000000000000000003 /* StylePortCoreTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		200000000000000000000001 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (B40000000000000000000002 /* Profiles in Resources */, ); runOnlyForDeploymentPostprocessing = 0; };
+		200000000000000000000002 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (B40000000000000000000003 /* Assets.xcassets in Resources */, B40000000000000000000005 /* Localizable.xcstrings in Resources */, B40000000000000000000004 /* InfoPlist.strings in Resources */, B40000000000000000000001 /* PrivacyInfo.xcprivacy in Resources */, ); runOnlyForDeploymentPostprocessing = 0; };
+		200000000000000000000003 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		100000000000000000000001 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B10000000000000000000001 /* AppleBytes.swift in Sources */,
+				B10000000000000000000002 /* BinaryPlist.swift in Sources */,
+				B10000000000000000000003 /* ByteBuffer.swift in Sources */,
+				B10000000000000000000004 /* DonorProfile.swift in Sources */,
+				B10000000000000000000005 /* Exif.swift in Sources */,
+				B10000000000000000000006 /* Graft.swift in Sources */,
+				B10000000000000000000007 /* HEIF.swift in Sources */,
+				B10000000000000000000008 /* ISOBoxes.swift in Sources */,
+				B10000000000000000000009 /* LinearThumbnailEncoder.swift in Sources */,
+				B1000000000000000000000A /* LivePhotoAperture.swift in Sources */,
+				B1000000000000000000000B /* LivePhotoVideo.swift in Sources */,
+				B1000000000000000000000C /* StyleMaps.swift in Sources */,
+				B1000000000000000000000D /* StylePortError.swift in Sources */,
+				B1000000000000000000000E /* StylePorter.swift in Sources */,
+				B1000000000000000000000F /* Texture.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		100000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B20000000000000000000001 /* ActivitySheet.swift in Sources */,
+				B20000000000000000000002 /* AlbumsTab.swift in Sources */,
+				B20000000000000000000003 /* AppSettings.swift in Sources */,
+				B20000000000000000000004 /* AssetDetailView.swift in Sources */,
+				B20000000000000000000005 /* AssetGrid.swift in Sources */,
+				B20000000000000000000006 /* BackupBinTab.swift in Sources */,
+				B20000000000000000000007 /* BackupStore.swift in Sources */,
+				B20000000000000000000008 /* LibraryActions.swift in Sources */,
+				B20000000000000000000009 /* LibraryTab.swift in Sources */,
+				B2000000000000000000000A /* LivePhotoStyler.swift in Sources */,
+				B2000000000000000000000B /* ModernUI.swift in Sources */,
+				B2000000000000000000000C /* PhotoLibraryService.swift in Sources */,
+				B2000000000000000000000D /* PortQueue.swift in Sources */,
+				B2000000000000000000000E /* SettingsTab.swift in Sources */,
+				B2000000000000000000000F /* ShortcutsIntents.swift in Sources */,
+				B20000000000000000000010 /* StylePortApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		100000000000000000000003 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B30000000000000000000001 /* LivePhotoApertureTests.swift in Sources */,
+				B30000000000000000000002 /* StylePortCoreTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		900000000000000000000003 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = 500000000000000000000001 /* StylePortCore */; targetProxy = 900000000000000000000001 /* PBXContainerItemProxy */; };
+		900000000000000000000004 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = 500000000000000000000001 /* StylePortCore */; targetProxy = 900000000000000000000002 /* PBXContainerItemProxy */; };
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		E00000000000000000000003 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				E00000000000000000000004 /* en */,
+				E00000000000000000000005 /* zh-Hans */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		600000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		600000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		600000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 6;
+				DEFINES_MODULE = YES;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.7.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nathanhanapps.styleport.core;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		600000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 6;
+				DEFINES_MODULE = YES;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.7.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nathanhanapps.styleport.core;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		600000000000000000000005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 6;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Sources/StylePortApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Palettify;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Palettify saves the styled photos to your library.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Palettify reads the original HEIC and Live Photo video of the photos you style, and replaces them when you ask it to.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 0.7.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nathanhanapps.styleport;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		600000000000000000000006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 6;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Sources/StylePortApp/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = Palettify;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
+				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Palettify saves the styled photos to your library.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Palettify reads the original HEIC and Live Photo video of the photos you style, and replaces them when you ask it to.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 0.7.1;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nathanhanapps.styleport;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		600000000000000000000007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nathanhanapps.styleport.coretests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "";
+			};
+			name = Debug;
+		};
+		600000000000000000000008 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nathanhanapps.styleport.coretests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		700000000000000000000001 /* Build configuration list for PBXProject "StylePort" */ = {isa = XCConfigurationList; buildConfigurations = (600000000000000000000001 /* Debug */, 600000000000000000000002 /* Release */, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		700000000000000000000002 /* Build configuration list for PBXNativeTarget "StylePortCore" */ = {isa = XCConfigurationList; buildConfigurations = (600000000000000000000003 /* Debug */, 600000000000000000000004 /* Release */, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		700000000000000000000003 /* Build configuration list for PBXNativeTarget "StylePort" */ = {isa = XCConfigurationList; buildConfigurations = (600000000000000000000005 /* Debug */, 600000000000000000000006 /* Release */, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		700000000000000000000004 /* Build configuration list for PBXNativeTarget "StylePortCoreTests" */ = {isa = XCConfigurationList; buildConfigurations = (600000000000000000000007 /* Debug */, 600000000000000000000008 /* Release */, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+	};
+	rootObject = 800000000000000000000001 /* Project object */;
+}

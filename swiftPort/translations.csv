@@ -1,0 +1,277 @@
+﻿#,Section,English,简体中文 (edit this column)
+1,Tabs,Library,图库
+2,Tabs,Albums,相簿
+3,Tabs,Backup Bin,备份
+4,Tabs,Palettify (Me tab title),盘它
+5,Tabs,Activity,活动
+6,Library,Sort,排序
+7,Library,Sort By,排序方式
+8,Library,Order,顺序
+9,Library,Filename,文件名
+10,Library,Date Captured,拍摄日期
+11,Library,Date Saved,保存日期
+12,Library,Ascending,升序
+13,Library,Descending,降序
+14,Library,More,更多
+15,Library,Select More Photos…,选择更多照片…
+16,Library,Import HEIC (and MOV) Files…,导入 HEIC（及 MOV）文件…
+17,Library,Select,选择
+18,Library,Cancel,取消
+19,Library,Select Photos,选择照片
+20,Library,1 Photo Selected,已选择 1 张照片
+21,Library,%d Photos Selected,已选择 %d 张照片
+22,Library,Add Style,添加风格
+23,Library,Replace with Style,用风格版替换
+24,Library,Not HEIC,非 HEIC
+25,Library,No Photos,无照片
+26,Library,Photos you take or save appear here.,你拍摄或保存的照片会显示在这里。
+27,Library,No Photos Selected,未选择照片
+28,Library,Palettify only sees the photos you choose. Select the photos you want to style.,⌈盘它⌋只能看到你选择的照片。请选择想要加风格的照片。
+29,Library,Select Photos…,选择照片…
+30,Library,No Access to Photos,无法访问照片
+31,Library,"Palettify reads each original HEIC and its Live Photo video, and saves the styled result. Allow access in Settings.",⌈盘它⌋会读取每张 HEIC 原图及其实况照片视频，并保存加好风格的结果。请在“设置”中允许访问。
+32,Library,Open Settings,打开设置
+33,Library,Replace,替换
+34,Library,Replace 1 photo with its styled version?,用风格版替换这 1 张照片？
+35,Library,Replace %d photos with their styled versions?,用风格版替换这 %d 张照片？
+36,Library,"Each original is kept in the Backup Bin, and iOS asks you to confirm deleting it from your library.",每张原图都会保存在备份箱中，iOS 会请你确认是否从图库中删除。
+37,Library,Search,搜索
+38,Library,Filename or date,文件名或拍摄日期
+39,Library,Unknown Date,未知日期
+40,Selection actions,Actions,操作
+41,Selection actions,Copy,拷贝
+42,Selection actions,Duplicate,复制
+43,Selection actions,Favorite,收藏
+44,Selection actions,Remove from Favorites,取消收藏
+45,Selection actions,Hide,隐藏
+46,Selection actions,Unhide,取消隐藏
+47,Selection actions,Hide selected photos?,隐藏所选照片？
+48,Selection actions,Unhide selected photos?,取消隐藏所选照片？
+49,Selection actions,This changes the selected photos in your library. Hidden photos remain in the Hidden album.,这会更改图库中的所选照片。已隐藏的照片会保留在“已隐藏”相簿中。
+50,Selection actions,Copied,已拷贝
+51,Selection actions,Duplicated,已复制
+52,Selection actions,Added to Favorites,已添加到收藏
+53,Selection actions,Hidden,已隐藏
+54,Selection actions,Unhidden,已取消隐藏
+55,Selection actions,Library (alert title),图库
+56,Selection actions,OK,好
+57,Selection actions,Add to Album…,添加到相簿…
+58,Selection actions,Add to Album,添加到相簿
+59,Selection actions,Move Between Albums…,在相簿间移动…
+60,Selection actions,Move Photos,移动照片
+61,Selection actions,From Album,来源相簿
+62,Selection actions,To Album,目标相簿
+63,Selection actions,Choose an Album,选取相簿
+64,Selection actions,Add,添加
+65,Selection actions,Move,移动
+66,Selection actions,Selected photos are added to the destination and removed only from the chosen source album. They stay in your library and other albums.,所选照片会添加到目标相簿，并仅从所选来源相簿中移除。它们仍保留在图库和其他相簿中。
+67,Selection actions,The selected photos stay in your library and existing albums.,所选照片仍保留在图库和现有相簿中。
+68,Selection actions,Create an editable album in Photos first.,请先在“照片”中创建可编辑的相簿。
+69,Selection actions,Adjust Date & Time,调整日期与时间
+70,Selection actions,New Date & Time,新的日期与时间
+71,Selection actions,Keep Time Differences,保持时间间隔
+72,Selection actions,The first selected photo moves to this date and time. The same time offset is applied to the others.,第一张所选照片会移到此日期和时间，其余照片按相同时间偏移调整。
+73,Selection actions,All selected photos get this date and time.,所有所选照片都将使用此日期和时间。
+74,Selection actions,Adjust,调整
+75,Selection actions,Adjust Location,调整位置
+76,Selection actions,Search for a Place,搜索地点
+77,Selection actions,Latitude,纬度
+78,Selection actions,Longitude,经度
+79,Selection actions,Selected Location,所选位置
+80,Selection actions,"Tap the map, search for a place, or enter coordinates. This location applies to all selected photos.",点按地图、搜索地点或输入坐标。此位置将应用于所有所选照片。
+81,Selection actions,Remove Location,移除位置
+82,Selection actions,No matching place found.,未找到匹配的地点。
+83,Selection actions,Choose a different editable destination album.,请选择其他可编辑的目标相簿。
+84,Selection actions,The source album can't be changed.,无法更改来源相簿。
+85,Photo viewer,Photo,照片
+86,Photo viewer,Back,返回
+87,Photo viewer,Live,实况
+88,Photo viewer,Info,信息
+89,Photo viewer,Share,共享
+90,Photo viewer,Adjust Info,调整信息
+91,Photo viewer,Delete Photo,删除照片
+92,Photo viewer,Delete this photo?,删除这张照片？
+93,Photo viewer,The photo moves to Recently Deleted in Photos.,照片将移至照片 App 的“最近删除”。
+94,Photo viewer,"The original is kept in the Backup Bin, and iOS asks you to confirm deleting it from your library.",原图会保存在备份箱中，iOS 会请你确认是否从图库中删除。
+95,Photo viewer,Add Location…,添加位置…
+96,Photo viewer,Location,位置
+97,Photo viewer,Live Photo,实况照片
+98,Photo viewer,Photographic Style,摄影风格
+99,Photo viewer,Captured,拍摄时间
+100,Photo viewer,Unknown,未知
+101,Photo viewer,Yes,是
+102,Photo viewer,No,否
+103,Photo viewer,Photo Unavailable,照片不可用
+104,Photo viewer,This photo is no longer in your library.,此照片已不在图库中。
+105,Photo viewer,Adjust Date & Time…,调整日期与时间…
+106,Photo viewer,Adjust Location…,调整位置…
+107,Photo viewer,HEIF,HEIF
+108,Photo viewer,Image,图像
+109,Photo viewer,Can be added,可添加
+110,Photo viewer,Has a style; Texture & Grain can be added,已有风格；可添加质感与颗粒
+111,Photo viewer,Already has a style and Texture & Grain,已有风格和质感与颗粒
+112,Photo viewer,This HEIC isn't supported yet,暂不支持此 HEIC
+113,Photo viewer,Not available: not a HEIC,不可用：不是 HEIC
+114,Photo viewer,Reading original…,正在读取原图…
+115,Photo viewer,Adding style…,正在添加风格…
+116,Photo viewer,Saving…,正在保存…
+117,Photo viewer,Waiting…,等待中…
+118,Photo viewer,%@ MP · %d × %d,%@ MP · %d × %d
+119,Albums,My Albums,我的相簿
+120,Albums,Media Types,媒体类型
+121,Albums,No Albums,无相簿
+122,Albums,Allow access to your photos in Settings to browse your albums.,请在“设置”中允许访问照片以浏览相簿。
+123,Albums,1 photo,1 张照片
+124,Albums,%d photos,%d 张照片
+125,Albums,Album,相簿
+126,Backup Bin,Backup Bin Is Empty,备份箱为空
+127,Backup Bin,"When Replace Original is on in Settings, each photo you style is kept here first, with its Live Photo video, so you can put it back.",在设置中开启“替换原图”后，你加风格的每张照片会先连同其实况照片视频保存在这里，以便恢复。
+128,Backup Bin,1 original,1 张原图
+129,Backup Bin,%d originals,%d 张原图
+130,Backup Bin,%@. Originals stay here until you restore or delete them.,%@。原图会一直保留在这里，直到你恢复或删除。
+131,Backup Bin,Empty,清空
+132,Backup Bin,Delete every original in the Backup Bin?,删除备份箱中的所有原图？
+133,Backup Bin,Delete All,全部删除
+134,Backup Bin,"They can't be restored afterwards, except from Recently Deleted in Photos for up to 30 days after they were replaced.",之后将无法恢复，但替换后 30 天内仍可在“照片”的“最近删除”中找回。
+135,Backup Bin,Removed,已移除
+136,Backup Bin,Replaced %@,%@替换
+137,Backup Bin,Replaced,替换时间
+138,Backup Bin,Size,大小
+139,Backup Bin,Albums (label),相簿
+140,Backup Bin,"Yes, with its video",是，含视频
+141,Backup Bin,Restore to Library,恢复到图库
+142,Backup Bin,Export Original Files,导出原始文件
+143,Backup Bin,Delete from Backup Bin,从备份箱删除
+144,Backup Bin,"Restoring puts the original back with its date, location, favorite and albums.",恢复会将原图放回，并保留其日期、位置、收藏状态和相簿。
+145,Backup Bin,Restore this original?,恢复这张原图？
+146,Backup Bin,Restore and Delete Styled Version,恢复并删除风格版
+147,Backup Bin,"Restore, Keep Styled Version",恢复并保留风格版
+148,Backup Bin,Delete this original permanently?,永久删除这张原图？
+149,Backup Bin,Delete,删除
+150,Backup Bin,Couldn't Restore,无法恢复
+151,Backup Bin,The backup bin isn't available.,备份箱不可用。
+152,Activity and status,Nothing in Progress,没有进行中的任务
+153,Activity and status,Clear,清除
+154,Activity and status,Done,完成
+155,Activity and status,Waiting,等待中
+156,Activity and status,Reading the original,正在读取原图
+157,Activity and status,Adding the style,正在添加风格
+158,Activity and status,Saving to Photos,正在存入照片
+159,Activity and status,Failed,失败
+160,Activity and status,Texture & Grain added,已添加质感与颗粒
+161,Activity and status,Photographic Style added,已添加摄影风格
+162,Activity and status,with Texture & Grain,含质感与颗粒
+163,Activity and status,Live Photo kept,已保留实况照片
+164,Activity and status,Styling %d of %d…,正在处理第 %d 张，共 %d 张…
+165,Activity and status,"%d done, %d failed",%d 张完成，%d 张失败
+166,Activity and status,1 photo done,1 张照片完成
+167,Activity and status,%d photos done,%d 张照片完成
+168,Activity and status,Edits made in Photos aren't carried over; the style is added to the original.,在“照片”中所做的编辑不会保留；风格将添加到原图上。
+169,Activity and status,Saved as a still photo: the video couldn't be styled (%@).,已存为静态照片：无法为视频添加风格（%@）。
+170,Activity and status,Already has a Photographic Style; saved unchanged with its video as a Live Photo.,已有摄影风格；已连同视频原样存为实况照片。
+171,Errors,Allow access to your photos in Settings to read the original HEIC and Live Photo video.,请在“设置”中允许访问照片，以读取 HEIC 原图和实况照片视频。
+172,Errors,Allow adding to your photo library in Settings to save the result.,请在“设置”中允许添加到照片图库，以保存结果。
+173,Errors,This photo's original isn't a HEIC.,此照片的原图不是 HEIC。
+174,Errors,Photos didn't save the result: %@,“照片”未能保存结果：%@
+175,Errors,This HEIC is not supported yet.,暂不支持此 HEIC。
+176,Errors,This photo already has a Photographic Style and Texture/Grain.,此照片已有摄影风格和质感/颗粒。
+177,Errors,Could not save the result: %@,无法保存结果：%@
+178,Settings page,Mode,模式
+179,Settings page,When Styling a Photo,为照片加风格时
+180,Settings page,Save as New,存为新照片
+181,Settings page,Replace Original,替换原图
+182,Settings page,"The styled photo takes the original's place, with its date, location, favorite and albums. The original goes to the Backup Bin, so you can restore it.",风格版会取代原图，并保留其日期、位置、收藏状态和相簿。原图会放入备份箱，你可以随时恢复。
+183,Settings page,"The styled photo is saved next to the original as a new photo, named with ""_PhotographicStyle"".",风格版会作为新照片保存在原图旁，文件名带有“_PhotographicStyle”。
+184,Settings page,Style,风格
+185,Settings page,Analyze Each Photo,分析每张照片
+186,Settings page,Add Texture & Grain,添加质感与颗粒
+187,Settings page,"Analyzing measures the photo's own tones for the palette instead of using the reference photo's. Texture & Grain adds the iOS 27 controls, and Soft Skin when the photo has the face data for it.",分析会根据照片自身的色调生成色板，而不是使用参考照片的色调。质感与颗粒会添加 iOS 27 的相关控制项；当照片有人脸数据时，还会添加“柔肤”。
+188,Settings page,Shortcuts,快捷指令
+189,Settings page,The Add Photographic Style action always saves a new photo and never replaces one.,“添加摄影风格”操作始终保存为新照片，绝不会替换原图。
+190,Settings page,About Palettify,关于⌈盘它⌋
+191,Settings page,Source Code on GitHub,GitHub 源代码
+192,Settings page,Version,版本
+193,About page,About,关于
+194,About page,Photographic Styles for every iPhone photo,为每张 iPhone 照片加上摄影风格
+195,About page,Version %@ · porter %@,版本 %@ · porter %@
+196,About page,Features,功能
+197,About page,Privacy,隐私
+198,About page,Photographic Styles palette,摄影风格色板
+199,About page,"Adds the style palette introduced with iPhone 16 to HEIC photos from earlier iPhones, so you can change the style in Photos and change it back.",为早期 iPhone 拍摄的 HEIC 照片加上 iPhone 16 引入的风格色板，让你可以在“照片”中更改风格，也可以改回去。
+200,About page,Texture & Grain,质感与颗粒
+201,About page,"Adds the iOS 27 Texture and Grain controls, and Soft Skin for portraits with face data. Photos from iPhone 16 and 17 that already have a style get just these.",添加 iOS 27 的质感与颗粒控制项，并为带人脸数据的人像添加“柔肤”。iPhone 16 和 17 拍摄的、已有风格的照片只会添加这些。
+202,About page,Live Photos,实况照片
+203,About page,"Live Photos keep their motion when their video can be styled. Cropped videos are re-encoded to prevent blurred edges. If video processing fails, the job explains why a still was saved; the original keeps its motion.",当视频可以加风格时，实况照片会保留动态效果。裁剪过的视频会重新编码，以避免边缘模糊。如果视频处理失败，任务会说明为何只保存了静态照片；原图仍保留其动态效果。
+204,About page,Save as new or replace,存为新照片或替换
+205,About page,"Keep both versions, or replace the original with its date, location, favorite and albums carried over.",保留两个版本，或替换原图并保留其日期、位置、收藏状态和相簿。
+206,About page,"Every replaced original is kept, with its video, until you restore or delete it.",每张被替换的原图都会连同视频一起保留，直到你恢复或删除。
+207,About page,Add a style from any shortcut with the Add Photographic Style action.,通过“添加摄影风格”操作，在任意快捷指令中添加风格。
+208,About page,Everything stays on this device,一切都留在此设备上
+209,About page,"Photos are processed on your iPhone or iPad and never uploaded. Palettify has no servers, no accounts, no analytics and no ads.",照片在你的 iPhone 或 iPad 上处理，绝不上传。⌈盘它⌋没有服务器、没有账号、没有数据分析，也没有广告。
+210,About page,Only the photos you allow,仅限你允许的照片
+211,About page,With limited access Palettify sees only the photos you select. Photos stored in iCloud are downloaded by iOS when you style them.,在有限访问下，⌈盘它⌋只能看到你选择的照片。存储在 iCloud 中的照片会在你加风格时由 iOS 下载。
+212,About page,Backups are yours,备份由你掌控
+213,About page,The Backup Bin lives in the app's own storage on this device and is deleted with the app.,备份箱位于此设备上 App 自己的存储空间中，删除 App 时会一并删除。
+214,About page,"Experimental, unofficial software, not affiliated with Apple. Keep your original photos.",实验性的非官方软件，与 Apple 无关。请保留你的原始照片。
+215,Shortcuts action,Add Photographic Style,添加摄影风格
+216,Shortcuts action,"Adds the Photographic Styles palette to HEIC photos, or Texture & Grain to photos that already have a style. Live Photos found in the library keep their motion when saved to Photos.",为 HEIC 照片添加摄影风格色板，或为已有风格的照片添加质感与颗粒。图库中的实况照片存入“照片”时会保留动态效果。
+217,Shortcuts action,Photos (parameter),照片
+218,Shortcuts action,"Original HEIC photos, for example from Select Photos.",HEIC 原图，例如来自“选择照片”。
+219,Shortcuts action,Save to Photos,存入照片
+220,Shortcuts action,Save each result to your library as a new photo.,将每个结果作为新照片存入你的图库。
+221,Shortcuts action,Add Photographic Style to ${photos},为 ${photos} 添加摄影风格
+222,Shortcuts action,Add a Photographic Style with Palettify,用⌈盘它⌋添加摄影风格
+223,Albums,View,视图
+224,Albums,Album Covers,相簿封面
+225,Albums,List View,列表视图
+226,Albums,Sort by Creation Date,按创建日期排序
+227,Albums,Sort by Modification Date,按修改日期排序
+228,Albums,Sort by Name,按名称排序
+229,Albums,Sort by Custom Order,按自定义顺序排序
+230,Albums,Filter,筛选
+231,Albums,All Albums,全部相簿
+232,Albums,Options,选项
+233,Settings page,Photos & Backups,照片与备份
+234,Settings page,Photo Access,照片访问权限
+235,Settings page,Full Access,完全访问
+236,Settings page,Limited Access,有限访问
+237,Settings page,No Access,无访问权限
+238,Settings page,Not Determined,尚未选择
+239,Settings page,No originals,没有原图
+240,Settings page,Open Shortcuts,打开快捷指令
+241,Added later,"%@, %@. Originals stay here until you restore or delete them.",%1$@，%2$@。原图会一直保留在这里，直到你恢复或删除。
+242,Backup Bin,%lld Selected,已选择 %lld 项
+243,Backup Bin,%lld days,%lld 天
+244,Errors,A bundled StylePort resource is missing: %@.,缺少内置的 StylePort 资源：%@。
+245,Added later,Add Photographic Style Again,再次添加摄影风格
+246,Added later,Add Texture & Grain Again,再次添加质感与颗粒
+247,Backup Bin,All Items,所有项目
+248,Backup Bin,All Types,所有类型
+249,Backup Bin,Aspect Ratio Grid,宽高比网格
+250,Added later,Checked when you add it (in iCloud),添加时检查（在 iCloud 中）
+251,Added later,Checking…,检查中…
+252,Backup Bin,Delete %lld originals permanently?,永久删除这 %lld 张原图？
+253,Backup Bin,Display Options,显示选项
+254,Backup Bin,"Each original goes back with its date, location, favorite and albums. The styled versions stay in your library.",每张原图都会连同其日期、位置、收藏状态和相簿一起恢复。风格版仍保留在图库中。
+255,Backup Bin,Favorites,个人收藏
+256,Backup Bin,Filter:,筛选：
+258,Backup Bin,No Matching Originals,没有符合条件的原图
+259,Backup Bin,Not in Albums,不在相簿中
+260,Errors,Photos access is required to retrieve the original HEIC and Live Photo video.,需要照片访问权限才能读取 HEIC 原图和实况照片视频。
+261,Errors,Photos add access is required to save the StylePort result.,需要添加照片的权限才能保存结果。
+262,Added later,Removed from Favorites,已取消收藏
+263,Added later,Replace Again,再次替换
+264,Added later,Replace this photo with its styled version?,用风格版替换这张照片？
+265,Added later,Replace with Photographic Style,用摄影风格替换
+266,Added later,Replace with Texture & Grain,用质感与颗粒替换
+267,Backup Bin,Restore,恢复
+268,Backup Bin,Restore %lld originals to your library?,将这 %lld 张原图恢复到图库？
+269,Backup Bin,Restore All,全部恢复
+270,Backup Bin,Select Items,选择项目
+271,Backup Bin,Still Photos,静态照片
+272,Added later,The original Live Photo is unchanged.,原始实况照片保持不变。
+273,Added later,"The original, with its motion, is in the Backup Bin.",原图连同其动态效果已放入备份箱。
+274,Errors,The selected Photos asset is no longer available.,所选照片已不可用。
+275,Errors,The selected asset's original photo is not HEIC.,所选照片的原图不是 HEIC。
+276,Backup Bin,Today,今天
+277,Added later,unknown error,未知错误
