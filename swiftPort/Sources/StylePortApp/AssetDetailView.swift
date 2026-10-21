@@ -18,6 +18,7 @@ struct AssetDetailView: View {
     @State private var selectedIdentifier: String
     @State private var pagerID: String?
     @State private var heicTick = 0
+    @State private var commitTask: Task<Void, Never>?
     @State private var asset: PHAsset?
     @State private var loaded = false
     @State private var eligibility: StylePorter.Eligibility?
@@ -78,7 +79,13 @@ struct AssetDetailView: View {
         }
         .task(id: selectedIdentifier) { await loadPlace() }
         .onChange(of: pagerID) { _, id in
-            if let id, id != selectedIdentifier { choose(id) }
+            // The position changes halfway through a swipe. Rebuilding the viewer then would
+            // stall the animation, so the new photo is taken once the page has settled.
+            commitTask?.cancel()
+            commitTask = Task { @MainActor in
+                do { try await Task.sleep(for: .milliseconds(160)) } catch { return }
+                if let id, id != selectedIdentifier { choose(id) }
+            }
         }
         .onChange(of: selectedIdentifier) { _, id in
             if pagerID != id { pagerID = id }
@@ -188,40 +195,13 @@ struct AssetDetailView: View {
         }
     }
 
-    /// The photos side by side: the one being swiped to moves with the finger, and the
-    /// neighbours are already loading.
     @ViewBuilder
     private func pager(current: PHAsset, size: CGSize) -> some View {
         if assets.isEmpty {
-            page(current, size: size)
+            PhotoPage(asset: current, playsLive: true, size: size)
         } else {
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 0) {
-                    ForEach(assets, id: \.localIdentifier) { item in
-                        page(item, size: size).id(item.localIdentifier)
-                    }
-                }
-                .scrollTargetLayout()
-            }
-            .scrollTargetBehavior(.paging)
-            .scrollPosition(id: $pagerID)
+            PhotoPager(assets: assets, liveID: selectedIdentifier, size: size, position: $pagerID)
         }
-    }
-
-    private func page(_ item: PHAsset, size: CGSize) -> AnyView {
-        let ratio = CGFloat(max(item.pixelWidth, 1)) / CGFloat(max(item.pixelHeight, 1))
-        let width = min(size.width, size.height * ratio)
-        if item.mediaSubtypes.contains(.photoLive) {
-            // The player fits the photo inside its bounds, so a press-and-hold in the blank
-            // area around the photo still reaches it and plays the motion.
-            return AssetMedia(asset: item)
-                .frame(width: size.width, height: size.height)
-                .eraseToAnyView()
-        }
-        return AssetMedia(asset: item)
-            .frame(width: width, height: width / ratio)
-            .frame(width: size.width, height: size.height)
-            .eraseToAnyView()
     }
 
     private func prefetchNeighbors(size: CGSize) {
@@ -233,30 +213,7 @@ struct AssetDetailView: View {
     }
 
     private var filmstrip: some View {
-        ScrollViewReader { proxy in
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 4) {
-                    ForEach(assets, id: \.localIdentifier) { item in
-                        Button { choose(item.localIdentifier) } label: {
-                            AssetImage(asset: item)
-                                .frame(width: item.localIdentifier == selectedIdentifier ? 40 : 25, height: 46)
-                                .clipped().clipShape(RoundedRectangle(cornerRadius: 4))
-                                .overlay { if item.localIdentifier == selectedIdentifier {
-                                    RoundedRectangle(cornerRadius: 4).strokeBorder(Color.accentColor, lineWidth: 2)
-                                } }
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(PhotoLibraryService.filename(of: item))
-                        .accessibilityAddTraits(item.localIdentifier == selectedIdentifier ? .isSelected : [])
-                        .id(item.localIdentifier)
-                    }
-                }
-                .padding(.horizontal, 8)
-            }
-            .frame(height: 48)
-            .onAppear { proxy.scrollTo(selectedIdentifier, anchor: .center) }
-            .onChange(of: selectedIdentifier) { _, id in withAnimation(motion) { proxy.scrollTo(id, anchor: .center) } }
-        }
+        Filmstrip(assets: assets, selectedID: selectedIdentifier, motion: motion) { choose($0) }
     }
 
     private func controls(_ asset: PHAsset) -> some View {
@@ -485,8 +442,86 @@ struct AssetDetailView: View {
     }
 }
 
-private extension View {
-    func eraseToAnyView() -> AnyView { AnyView(self) }
+/// The photos side by side: the one being swiped to moves with the finger. Its own view, so
+/// changes elsewhere in the viewer don't re-diff the whole library during a swipe.
+private struct PhotoPager: View {
+    let assets: [PHAsset]
+    /// The settled photo: the only page that runs a Live Photo player.
+    let liveID: String
+    let size: CGSize
+    @Binding var position: String?
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            LazyHStack(spacing: 0) {
+                ForEach(assets, id: \.localIdentifier) { item in
+                    PhotoPage(asset: item, playsLive: item.localIdentifier == liveID, size: size)
+                        .id(item.localIdentifier)
+                }
+            }
+            .scrollTargetLayout()
+        }
+        .scrollTargetBehavior(.paging)
+        .scrollPosition(id: $position)
+    }
+}
+
+/// One page. A Live Photo shows its still while it slides past; the player, which loads the
+/// video, starts only once the page has settled, over the still so nothing flashes.
+private struct PhotoPage: View {
+    let asset: PHAsset
+    let playsLive: Bool
+    let size: CGSize
+
+    var body: some View {
+        let ratio = CGFloat(max(asset.pixelWidth, 1)) / CGFloat(max(asset.pixelHeight, 1))
+        let width = min(size.width, size.height * ratio)
+        ZStack {
+            AssetImage(asset: asset, contentMode: .fit)
+                .frame(width: width, height: width / ratio)
+            if playsLive, asset.mediaSubtypes.contains(.photoLive) {
+                // Full page, so a press-and-hold in the blank area around the photo plays it.
+                LivePhotoPlayer(asset: asset)
+            }
+        }
+        .frame(width: size.width, height: size.height)
+    }
+}
+
+private struct Filmstrip: View {
+    let assets: [PHAsset]
+    let selectedID: String
+    let motion: Animation?
+    let select: (String) -> Void
+
+    var body: some View {
+        ScrollViewReader { proxy in
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 4) {
+                    ForEach(assets, id: \.localIdentifier) { item in
+                        let selected = item.localIdentifier == selectedID
+                        Button { select(item.localIdentifier) } label: {
+                            AssetImage(asset: item)
+                                .frame(width: selected ? 40 : 25, height: 46)
+                                .clipped().clipShape(RoundedRectangle(cornerRadius: 4))
+                                .overlay { if selected {
+                                    RoundedRectangle(cornerRadius: 4).strokeBorder(Color.accentColor, lineWidth: 2)
+                                } }
+                        }
+                        .buttonStyle(.plain)
+                        // A date, not the filename: reading a filename is a synchronous query.
+                        .accessibilityLabel(item.creationDate?.formatted(date: .abbreviated, time: .shortened) ?? L("Photo"))
+                        .accessibilityAddTraits(selected ? .isSelected : [])
+                        .id(item.localIdentifier)
+                    }
+                }
+                .padding(.horizontal, 8)
+            }
+            .frame(height: 48)
+            .onAppear { proxy.scrollTo(selectedID, anchor: .center) }
+            .onChange(of: selectedID) { _, id in withAnimation(motion) { proxy.scrollTo(id, anchor: .center) } }
+        }
+    }
 }
 
 private struct PhotoShare: Identifiable { let id = UUID(); let urls: [URL] }
@@ -549,19 +584,6 @@ struct JobNotes: View {
             }
         }
         .font(.footnote)
-    }
-}
-
-/// The photo, played as a Live Photo when it is one.
-private struct AssetMedia: View {
-    let asset: PHAsset
-
-    var body: some View {
-        if asset.mediaSubtypes.contains(.photoLive) {
-            LivePhotoPlayer(asset: asset)
-        } else {
-            AssetImage(asset: asset, contentMode: .fit)
-        }
     }
 }
 
