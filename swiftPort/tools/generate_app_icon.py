@@ -13,13 +13,27 @@ SOURCE = ROOT / "IconSources" / "Palettify.icon"
 ACCENT = (1, 3)  # second row, fourth column; keep its original size
 DOT_RADIUS = 0.022
 ACCENT_RADIUS = 0.036
-# Broad, overlapping aurora washes: pale mist, coral, soft gold and teal over deep teal.
-WASHES = [
-    (0.05, 0.02, 0.58, 0.42, (213, 221, 209), 0.94),
-    (0.96, 0.02, 0.48, 0.32, (247, 102, 111), 0.98),
-    (0.55, 0.28, 0.32, 0.28, (237, 210, 154), 0.52),
-    (0.22, 0.54, 0.43, 0.27, (106, 180, 179), 0.55),
+# Aurora mesh: explicit gold/mint/aqua bridges avoid mixing complementary
+# coral and teal directly into a muddy gray. Each row runs left to right.
+MESH = [
+    (0.00, [(200, 210, 202), (211, 207, 188), (232, 125, 133)]),
+    (0.27, [(147, 177, 173), (182, 190, 174), (207, 171, 149)]),
+    (0.50, [(98, 145, 148), (125, 160, 151), (153, 166, 143)]),
+    (0.74, [(41, 85, 88), (55, 100, 95), (64, 99, 88)]),
+    (1.00, [(22, 45, 47), (27, 55, 53), (24, 49, 47)]),
 ]
+
+
+def blend(a, b, t):
+    t = (1 - math.cos(math.pi * t)) / 2
+    return tuple(x * (1 - t) + y * t for x, y in zip(a, b))
+
+
+def row_color(colors, u):
+    # Warm light enters from above and the right, with cool light on the left.
+    if u <= 0.5:
+        return blend(colors[0], colors[1], u * 2)
+    return blend(colors[1], colors[2], (u - 0.5) * 2)
 
 
 def background():
@@ -30,11 +44,11 @@ def background():
         v = y / (small - 1)
         for x in range(small):
             u = x / (small - 1)
-            color = [a * (1-v) + b * v for a, b in zip((111, 132, 138), (24, 49, 49))]
-            for cx, cy, sx, sy, tint, strength in WASHES:
-                weight = strength * math.exp(-0.5 * (((u-cx)/sx)**2 + ((v-cy)/sy)**2))
-                color = [a * (1-weight) + b * weight for a, b in zip(color, tint)]
-            pixels[x, y] = tuple(round(c) for c in color)
+            for (v0, colors0), (v1, colors1) in zip(MESH, MESH[1:]):
+                if v <= v1:
+                    color = blend(row_color(colors0, u), row_color(colors1, u), (v-v0)/(v1-v0))
+                    pixels[x,y] = tuple(round(c) for c in color)
+                    break
     return image.resize((SIZE, SIZE), Image.Resampling.BICUBIC)
 
 
@@ -66,7 +80,9 @@ def layers():
         if selected:
             r = n * 0.044
             ImageDraw.Draw(glow).ellipse((cx-r, cy-r, cx+r, cy+r), fill=(255,255,255,90))
-    glow = glow.filter(ImageFilter.GaussianBlur(n * 0.017))
+    mask = glow.getchannel("A").filter(ImageFilter.GaussianBlur(n * 0.017))
+    glow = Image.new("RGBA", (n, n), (255, 255, 255, 0))
+    glow.putalpha(mask)
     return [layer.resize((SIZE,SIZE), Image.Resampling.LANCZOS) for layer in (glow, ordinary, accent)]
 
 
