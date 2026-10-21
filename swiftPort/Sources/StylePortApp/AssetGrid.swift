@@ -46,7 +46,9 @@ final class AssetListModel: NSObject, ObservableObject, PHPhotoLibraryChangeObse
     private(set) var sort: LibrarySort
     private(set) var ascending: Bool
     private var fetchResult: PHFetchResult<PHAsset>?
-    private var filenames: [String: String] = [:]
+    /// Where each photo sits in `assets`, for prefetching the rows ahead of the scroll.
+    private var indexByID: [String: Int] = [:]
+    private var lastPrefetchBucket = -1
     private var generation = 0
     private var registered = false
     private var searchQuery = ""
@@ -95,7 +97,6 @@ final class AssetListModel: NSObject, ObservableObject, PHPhotoLibraryChangeObse
         let scope = scope
         let sort = sort
         let ascending = ascending
-        let cache = filenames
         let query = searchQuery
         reloadTask = Task.detached(priority: .userInitiated) {
             let options = PHFetchOptions()
@@ -111,13 +112,8 @@ final class AssetListModel: NSObject, ObservableObject, PHPhotoLibraryChangeObse
             case .collection(let collection): result = PHAsset.fetchAssets(in: collection, options: options)
             }
             var list = result.count == 0 ? [] : result.objects(at: IndexSet(integersIn: 0..<result.count))
-            var names = cache
-            if sort == .filename || !query.isEmpty {
-                for asset in list where names[asset.localIdentifier] == nil {
-                    guard !Task.isCancelled else { return }
-                    names[asset.localIdentifier] = PhotoLibraryService.filename(of: asset)
-                }
-            }
+            let names = sort == .filename || !query.isEmpty ? FilenameCache.names(for: list) : [:]
+            guard !Task.isCancelled else { return }
             if sort == .filename {
                 list.sort {
                     (names[$0.localIdentifier] ?? "").localizedStandardCompare(
@@ -141,13 +137,15 @@ final class AssetListModel: NSObject, ObservableObject, PHPhotoLibraryChangeObse
                 }
             }
             guard !Task.isCancelled else { return }
+            let index = Dictionary(list.enumerated().map { ($1.localIdentifier, $0) }) { first, _ in first }
             let years = sort == .captured ? GalleryDateSection.group(list, by: .year) : []
             let months = sort == .captured ? GalleryDateSection.group(list, by: .month) : []
             guard !Task.isCancelled else { return }
             await MainActor.run {
                 guard generation == self.generation else { return }
                 self.fetchResult = result
-                self.filenames = names
+                self.indexByID = index
+                self.lastPrefetchBucket = -1
                 self.yearSections = years
                 self.monthSections = months
                 self.assets = list
@@ -158,7 +156,15 @@ final class AssetListModel: NSObject, ObservableObject, PHPhotoLibraryChangeObse
 
     nonisolated func photoLibraryDidChange(_ changeInstance: PHChange) {
         Task { @MainActor in
-            guard let fetchResult, changeInstance.changeDetails(for: fetchResult) != nil else { return }
+            guard let fetchResult, let details = changeInstance.changeDetails(for: fetchResult) else { return }
+            // A favorite, hide or edit only changes objects in place: swap those in instead of
+            // reloading the library.
+            if details.hasIncrementalChanges, details.insertedIndexes?.count ?? 0 == 0,
+               details.removedIndexes?.count ?? 0 == 0, !details.hasMoves,
+               applyInPlace(details.changedObjects) {
+                self.fetchResult = details.fetchResultAfterChanges
+                return
+            }
             // A save or an iCloud sync arrives as a burst of changes; reload once it settles.
             changeTask?.cancel()
             changeTask = Task { @MainActor [weak self] in
@@ -166,6 +172,71 @@ final class AssetListModel: NSObject, ObservableObject, PHPhotoLibraryChangeObse
                 self?.reload()
             }
         }
+    }
+}
+
+extension AssetListModel {
+    /// Replace changed photos where they are. Returns false when the change could move a
+    /// photo (its date changed) and the list needs a full reload.
+    fileprivate func applyInPlace(_ changed: [PHAsset]) -> Bool {
+        guard !changed.isEmpty else { return true }
+        var updated: [String: PHAsset] = [:]
+        for asset in changed {
+            guard let index = indexByID[asset.localIdentifier] else { continue }
+            if assets[index].creationDate != asset.creationDate { return false }
+            updated[asset.localIdentifier] = asset
+        }
+        guard !updated.isEmpty else { return true }
+        assets = assets.map { updated[$0.localIdentifier] ?? $0 }
+        func swap(_ sections: [GalleryDateSection]) -> [GalleryDateSection] {
+            sections.map { section in
+                var section = section
+                section.assets = section.assets.map { updated[$0.localIdentifier] ?? $0 }
+                return section
+            }
+        }
+        yearSections = swap(yearSections)
+        monthSections = swap(monthSections)
+        return true
+    }
+
+    /// Start loading the thumbnails a few screens ahead of the one at `identifier`.
+    func prefetch(around identifier: String, columns: Int, size: CGSize) {
+        guard let index = indexByID[identifier], columns > 0 else { return }
+        let bucket = index / (columns * 4)
+        guard bucket != lastPrefetchBucket else { return }
+        lastPrefetchBucket = bucket
+        let lower = max(0, index - columns * 6)
+        let upper = min(assets.count, index + columns * 12)
+        guard lower < upper else { return }
+        ThumbnailLoader.prefetch(Array(assets[lower..<upper]), size: size, contentMode: .fill)
+    }
+}
+
+/// Original filenames, shared by every grid and read in parallel: each one is a separate
+/// PhotoKit query, so a first filename sort of a large library is otherwise slow.
+enum FilenameCache {
+    private static let lock = NSLock()
+    private static var known: [String: String] = [:]
+
+    static func names(for assets: [PHAsset]) -> [String: String] {
+        lock.lock()
+        let cached = known
+        lock.unlock()
+        let missing = assets.filter { cached[$0.localIdentifier] == nil }
+        guard !missing.isEmpty else { return cached }
+        var found = [String](repeating: "", count: missing.count)
+        found.withUnsafeMutableBufferPointer { buffer in
+            let slots = buffer
+            DispatchQueue.concurrentPerform(iterations: missing.count) { index in
+                slots[index] = PhotoLibraryService.filename(of: missing[index])
+            }
+        }
+        lock.lock()
+        for (asset, name) in zip(missing, found) { known[asset.localIdentifier] = name }
+        let result = known
+        lock.unlock()
+        return result
     }
 }
 
@@ -178,7 +249,9 @@ struct AssetGridView<Empty: View>: View {
     @ObservedObject var model: AssetListModel
     @ViewBuilder var empty: () -> Empty
 
-    @EnvironmentObject private var queue: PortQueue
+    // Not an observed object: job progress must not re-render the grid. Tiles watch it.
+    @Environment(\.portQueue) private var queue
+    @Environment(\.displayScale) private var displayScale
     @AppStorage(AppSettings.replaceOriginalsKey) private var replaceOriginals = false
     @State private var selecting = false
     @State private var selection = Set<String>()
@@ -247,7 +320,7 @@ struct AssetGridView<Empty: View>: View {
             let count = columnCount(for: geometry.size.width)
             let width = max(0, geometry.size.width - CGFloat(count - 1) * 2) / CGFloat(count)
             ZStack {
-                gallery(columns: count, compact: width < 80)
+                gallery(columns: count, compact: width < 80, tile: width)
                     .scaleEffect(liveZoomScale, anchor: .center)
                     // Never animate grid positions, thumbnail sizes or finger movement.
                     .transaction { $0.animation = nil }
@@ -325,13 +398,20 @@ struct AssetGridView<Empty: View>: View {
         }
     }
 
-    private func gallery(columns: Int, compact: Bool) -> some View {
+    private func gallery(columns: Int, compact: Bool, tile: CGFloat) -> some View {
+        let pixels = CGSize(width: tile * displayScale, height: tile * displayScale)
+        return gallery(columns: columns, compact: compact) { asset in
+            model.prefetch(around: asset.localIdentifier, columns: columns, size: pixels)
+        }
+    }
+
+    private func gallery(columns: Int, compact: Bool, appeared: @escaping (PHAsset) -> Void) -> some View {
         ScrollView {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 2), count: columns), spacing: 2) {
                 if model.sort == .captured {
                     ForEach(compact ? model.yearSections : model.monthSections) { group in
                         Section {
-                            ForEach(group.assets, id: \.localIdentifier) { asset in cell(asset) }
+                            ForEach(group.assets, id: \.localIdentifier) { asset in cell(asset).onAppear { appeared(asset) } }
                         } header: {
                             Text(group.title)
                                 .font(.title3.weight(.semibold))
@@ -344,7 +424,7 @@ struct AssetGridView<Empty: View>: View {
                     }
                 } else {
                     // Capture-date grouping must not override a filename or saved-date sort.
-                    ForEach(model.assets, id: \.localIdentifier) { asset in cell(asset) }
+                    ForEach(model.assets, id: \.localIdentifier) { asset in cell(asset).onAppear { appeared(asset) } }
                 }
             }
             .scrollTargetLayout()
@@ -421,7 +501,7 @@ struct AssetGridView<Empty: View>: View {
 
     private func start() {
         let chosen = selectedAssets.filter(PhotoLibraryService.isHEIC)
-        queue.port(chosen)
+        queue?.port(chosen)
         withAnimation {
             selecting = false
             selection.removeAll()

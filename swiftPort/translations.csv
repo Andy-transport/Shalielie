@@ -239,3 +239,39 @@
 238,Settings page,Not Determined,尚未选择
 239,Settings page,No originals,没有原图
 240,Settings page,Open Shortcuts,打开快捷指令
+241,Added later,"%@, %@. Originals stay here until you restore or delete them.",%1$@，%2$@。原图会一直保留在这里，直到你恢复或删除。
+242,Backup Bin,%lld Selected,已选择 %lld 项
+243,Backup Bin,%lld days,%lld 天
+244,Errors,A bundled StylePort resource is missing: %@.,缺少内置的 StylePort 资源：%@。
+245,Added later,Add Photographic Style Again,再次添加摄影风格
+246,Added later,Add Texture & Grain Again,再次添加质感与颗粒
+247,Backup Bin,All Items,所有项目
+248,Backup Bin,All Types,所有类型
+249,Backup Bin,Aspect Ratio Grid,宽高比网格
+250,Added later,Checked when you add it (in iCloud),添加时检查（在 iCloud 中）
+251,Added later,Checking…,检查中…
+252,Backup Bin,Delete %lld originals permanently?,永久删除这 %lld 张原图？
+253,Backup Bin,Display Options,显示选项
+254,Backup Bin,"Each original goes back with its date, location, favorite and albums. The styled versions stay in your library.",每张原图都会连同其日期、位置、收藏状态和相簿一起恢复。风格版仍保留在图库中。
+255,Backup Bin,Favorites,个人收藏
+256,Backup Bin,Filter:,筛选：
+258,Backup Bin,No Matching Originals,没有符合条件的原图
+259,Backup Bin,Not in Albums,不在相簿中
+260,Errors,Photos access is required to retrieve the original HEIC and Live Photo video.,需要照片访问权限才能读取 HEIC 原图和实况照片视频。
+261,Errors,Photos add access is required to save the StylePort result.,需要添加照片的权限才能保存结果。
+262,Added later,Removed from Favorites,已取消收藏
+263,Added later,Replace Again,再次替换
+264,Added later,Replace this photo with its styled version?,用风格版替换这张照片？
+265,Added later,Replace with Photographic Style,用摄影风格替换
+266,Added later,Replace with Texture & Grain,用质感与颗粒替换
+267,Backup Bin,Restore,恢复
+268,Backup Bin,Restore %lld originals to your library?,将这 %lld 张原图恢复到图库？
+269,Backup Bin,Restore All,全部恢复
+270,Backup Bin,Select Items,选择项目
+271,Backup Bin,Still Photos,静态照片
+272,Added later,The original Live Photo is unchanged.,原始实况照片保持不变。
+273,Added later,"The original, with its motion, is in the Backup Bin.",原图连同其动态效果已放入备份箱。
+274,Errors,The selected Photos asset is no longer available.,所选照片已不可用。
+275,Errors,The selected asset's original photo is not HEIC.,所选照片的原图不是 HEIC。
+276,Backup Bin,Today,今天
+277,Added later,unknown error,未知错误

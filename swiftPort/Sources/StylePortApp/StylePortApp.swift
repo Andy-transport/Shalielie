@@ -13,9 +13,22 @@ struct StylePortApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(queue)
+                .environment(\.portQueue, queue)
                 .environmentObject(backups)
                 .task { queue.backups = backups }
         }
+    }
+}
+
+private struct PortQueueKey: EnvironmentKey {
+    static let defaultValue: PortQueue? = nil
+}
+
+extension EnvironmentValues {
+    /// The queue without observing it, for views that start jobs but don't show progress.
+    var portQueue: PortQueue? {
+        get { self[PortQueueKey.self] }
+        set { self[PortQueueKey.self] = newValue }
     }
 }
 

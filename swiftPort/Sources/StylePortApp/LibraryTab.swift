@@ -5,7 +5,7 @@ import UniformTypeIdentifiers
 /// Every photo the app may see: the whole library with full access, or the person's
 /// selection with limited access.
 struct LibraryTab: View {
-    @EnvironmentObject private var queue: PortQueue
+    @Environment(\.portQueue) private var queue
     @AppStorage(AppSettings.librarySortKey) private var sort = LibrarySort.captured
     @AppStorage(AppSettings.libraryAscendingKey) private var ascending = false
     @StateObject private var model = AssetListModel(
@@ -50,7 +50,7 @@ struct LibraryTab: View {
                     allowedContentTypes: [.heic, .heif, .quickTimeMovie],
                     allowsMultipleSelection: true
                 ) { result in
-                    if case .success(let urls) = result { queue.port(files: urls) }
+                    if case .success(let urls) = result { queue?.port(files: urls) }
                 }
         }
         .task {
