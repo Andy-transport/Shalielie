@@ -506,7 +506,7 @@ struct AssetGridView<Empty: View>: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
-        .floatingGlass()
+        .floatingBar()
         .frame(maxWidth: 640)
         .padding(.horizontal, 12)
         .padding(.bottom, 8)

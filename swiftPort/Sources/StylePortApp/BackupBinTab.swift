@@ -241,7 +241,7 @@ struct BackupBinTab: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 12)
-        .floatingGlass()
+        .floatingBar()
         .frame(maxWidth: 560)
         .padding(.horizontal, 12)
         .padding(.bottom, 8)

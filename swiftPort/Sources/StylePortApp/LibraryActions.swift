@@ -125,8 +125,13 @@ struct LibrarySelectionActions: View {
             Button { sheet = .date } label: { Label("Adjust Date & Time…", systemImage: "calendar.badge.clock") }
             Button { sheet = .location } label: { Label("Adjust Location…", systemImage: "mappin.and.ellipse") }
         } label: {
-            if busy { ProgressView() }
-            else { Label("Actions", systemImage: "ellipsis.circle").labelStyle(.iconOnly) }
+            Group {
+                if busy { ProgressView() }
+                else { Label("Actions", systemImage: "ellipsis.circle").labelStyle(.iconOnly).font(.title2) }
+            }
+            // A full 44 pt target: the bare symbol was too small to hit.
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
         }
         .disabled(assets.isEmpty || busy)
         .confirmationDialog(allHidden ? L("Unhide selected photos?") : L("Hide selected photos?"), isPresented: $hiding) {

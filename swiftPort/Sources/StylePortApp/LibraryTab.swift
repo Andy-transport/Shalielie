@@ -41,7 +41,7 @@ struct LibraryTab: View {
                                 Label("Import HEIC (and MOV) Files…", systemImage: "folder")
                             }
                         } label: {
-                            Label("More", systemImage: "ellipsis.circle")
+                            Label("Add", systemImage: "plus")
                         }
                     }
                 }

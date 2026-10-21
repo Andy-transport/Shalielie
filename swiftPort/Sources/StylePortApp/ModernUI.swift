@@ -65,6 +65,15 @@ extension View {
         }
     }
 
+    /// A floating bar of controls: solid enough to read over photos, and it takes every tap on
+    /// it, so a tap between its buttons never reaches the grid behind.
+    func floatingBar() -> some View {
+        background(.thickMaterial, in: Capsule())
+            .floatingGlass()
+            .contentShape(Capsule())
+            .onTapGesture {}
+    }
+
     /// Use the system's Liquid Glass on iOS 26+, with material fallbacks on older devices.
     @ViewBuilder
     func floatingGlass() -> some View {
