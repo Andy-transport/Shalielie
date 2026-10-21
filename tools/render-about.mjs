@@ -13,9 +13,9 @@ import { readFileSync, writeFileSync } from "node:fs";
 const REPO = "nathanatgit/Shalielie";
 const BLOB = `https://github.com/${REPO}/blob/master/`;
 const PAGES = [
-  { src: "README.md", out: "web/about.html", lang: "en", title: "About · Photographic Style Port",
+  { src: "README.md", out: "web/about.html", lang: "en", title: "About · Palettify",
     back: "Back to the converter", other: "中文", otherHref: "about.zh.html" },
-  { src: "README.zh-CN.md", out: "web/about.zh.html", lang: "zh-Hans", title: "关于 · 风格调色板移植工具",
+  { src: "README.zh-CN.md", out: "web/about.zh.html", lang: "zh-Hans", title: "关于 · 盘它",
     back: "返回转换页面", other: "English", otherHref: "about.html" },
 ];
 // Shared with the profile README (github.com/nathanatgit/nathanatgit), so it is hotlinked.

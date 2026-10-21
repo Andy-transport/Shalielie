@@ -1,4 +1,4 @@
-# Photographic Style Port — browser build
+# Palettify — browser build
 
 The static site published to GitHub Pages. Everything runs in the visitor's browser; photos
 are never uploaded.

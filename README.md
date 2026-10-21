@@ -1,8 +1,10 @@
 # Photographic Style Port
 
+<img src="https://raw.githubusercontent.com/nathanatgit/Shalielie/master/web/icons/icon-512.png" width="96" height="96" alt="Palettify icon">
+
 **English** | [简体中文](README.zh-CN.md)
 
-Current version: v0.7.0
+Current version: v0.7.1
 
 This is an experimental tool that takes a HEIC from an iPhone **older than the iPhone 16**
 (iPhone 15, 14, 13 … — any model whose photos match a supported tile layout) and adds the
@@ -29,7 +31,7 @@ The tool is currently at the *functionality* stage. The goal right now is to mak
 
 Fine-tuning comes next. Bringing the rendered look of styles, and the finer detail of Texture and Grain, closer to photos taken on newer iPhones will be the focus once the core work is complete. Until then, small differences from a native photo are expected. Feedback and sample photos are very welcome.
 
-**Contents:** [Browser](#use-it-in-a-browser) · [Binary](#download-a-binary) ·
+**Contents:** [Browser](#use-it-in-a-browser) · [iOS app](#ios-app) · [Binary](#download-a-binary) ·
 [From source](#install-from-source) · [Usage](#usage) · [What it does](#what-it-actually-does) ·
 [Known issues and limits](#known-issues-and-limits) · [Testing a port](#testing-a-port) ·
 [Version history](#version-history) · [AI agents](#use-from-an-ai-agent) ·
@@ -52,6 +54,18 @@ It runs the same porting logic as the Python tool, checked against it item by it
 [`web/README.md`](web/README.md) for how that is verified, and for the two iPhone quirks it
 works around. The command-line tool remains the reference implementation and is the one to use
 for batches or for the encoder-based linear thumbnail.
+
+## iOS app
+
+**Palettify** (盘它 in Chinese) is a native iPhone and iPad app built on the same porter. It
+styles photos straight from your library, Live Photos included, either as new photos or in place
+of the originals, which it keeps in a Backup Bin so you can restore them. It also adds an "Add
+Photographic Style" action to Shortcuts. Its source is in [`swiftPort/`](swiftPort/).
+
+**[Download the iOS app](https://github.com/nathanatgit/Shalielie/releases)** — look for the
+newest `ios-v…` pre-release and download `Palettify-unsigned.ipa`. It is not on the App Store:
+install it with a sideloading tool such as Sideloadly or AltStore, which signs it with your own
+Apple ID. It needs iOS 17 or later; Texture/Grain needs iOS 27.
 
 ## Download a binary
 
@@ -212,10 +226,10 @@ device — is documented in **[facts.md](facts.md)**.
   from the photo itself, never invented.
 - **Not validated by Apple, and results vary by photo.** Try the flags above before concluding
   it does not work.
-- **The standalone iOS app** lives in the `agent/swift-port` branch, co-authored by
+- **The [iOS app](#ios-app)** is a pre-release, co-authored by
   [@lzh20025](https://github.com/lzh20025), who added its Live Photo support
-  ([#7](https://github.com/nathanatgit/Shalielie/pull/7)). It is a pre-release: an unsigned IPA
-  for sideloading in [ios-v0.7.0-beta.1](https://github.com/nathanatgit/Shalielie/releases/tag/ios-v0.7.0-beta.1).
+  ([#7](https://github.com/nathanatgit/Shalielie/pull/7)). It is installed by sideloading an
+  unsigned IPA.
 
 Open metadata questions are tracked in [facts.md](facts.md) (donor-derived values).
 
@@ -273,6 +287,7 @@ thumbnail differently. Only the no-encoder mode is reproducible byte for byte, a
 | v0.6.2      | Style items added to the photo's own item graph; 90°/270° rotation fixed      | Any tile layout of a known size; re-saved photos without thumbnail/`tmap`; sky/foliage glow on 270° photos gone ✅ |
 | v0.6.3      | 48 MP photos (8064×6048) on the photo's own item graph                       | 48 MP photos from older iPhones port, with and without an encoder ✅ |
 | v0.7.0      | Live Photos: a dropped HEIC + MOV pair; the video gets the iOS 27 style tracks and timed metadata | Photos' editor opens iPhone 15 Pro Live Photos with style and motion (iOS 27.0.1) ✅ |
+| v0.7.1      | The iOS app Palettify (盘它) joins the main branch; the browser build is renamed to match | Porting unchanged from v0.7.0; app builds in CI ☑️ |
 
 **Reverse-engineering tests of key assumptions**
 

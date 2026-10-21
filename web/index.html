@@ -3,20 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Photographic Style Port</title>
+<title>Palettify</title>
 <meta name="description" content="Adds the Photographic Styles palette, introduced with iPhone 16, to HEIC photos from earlier iPhones, plus the Texture and Grain controls on iOS 27. Runs entirely in your browser; photos are never uploaded.">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#f5f6f8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#111317" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Style Port">
-<meta property="og:title" content="Photographic Style Port">
+<meta name="apple-mobile-web-app-title" content="Palettify">
+<meta property="og:title" content="Palettify">
 <meta property="og:description" content="Adds the Photographic Styles palette, introduced with iPhone 16, to HEIC photos from earlier iPhones, plus the Texture and Grain controls on iOS 27. Runs entirely in your browser; photos are never uploaded.">
 <meta property="og:type" content="website">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230062cc'/%3E%3Ccircle cx='16' cy='16' r='7' fill='none' stroke='white' stroke-width='2.5'/%3E%3Ccircle cx='16' cy='16' r='2.5' fill='white'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
 <style>
   /* Light by default; dark from the system or an explicit data-theme. One accent: blue. */
   :root {
@@ -68,7 +68,7 @@
 
   /* Header */
   .top { display: flex; align-items: center; gap: .75rem; padding-bottom: .9rem; border-bottom: 1px solid var(--line); }
-  .logo { width: 36px; height: 36px; flex: none; }
+  .logo { width: 36px; height: 36px; flex: none; border-radius: 8px; }
   .title { flex: 1; min-width: 0; }
   h1 { font-size: 1.3rem; line-height: 1.25; margin: 0; letter-spacing: -.01em; text-wrap: balance; }
   .tagline { display: block; margin-top: .1rem; font-size: .85rem; color: var(--muted); }
@@ -202,13 +202,9 @@
 <body>
 <main>
   <header class="top">
-    <svg class="logo" viewBox="0 0 36 36" aria-hidden="true">
-      <rect width="36" height="36" rx="8" fill="#0062cc"/>
-      <circle cx="18" cy="18" r="8" fill="none" stroke="#fff" stroke-width="2.5"/>
-      <circle cx="18" cy="18" r="2.8" fill="#fff"/>
-    </svg>
+    <img class="logo" src="icons/icon-192.png" width="36" height="36" alt="" aria-hidden="true">
     <div class="title">
-      <h1 data-i18n="meta.title">Photographic Style Port</h1>
+      <h1 data-i18n="meta.title">Palettify</h1>
       <span class="tagline" data-i18n="app.tagline"></span>
     </div>
     <div class="top-actions">

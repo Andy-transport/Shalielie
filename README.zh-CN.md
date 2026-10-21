@@ -1,8 +1,10 @@
 # Photographic Style Port
 
+<img src="https://raw.githubusercontent.com/nathanatgit/Shalielie/master/web/icons/icon-512.png" width="96" height="96" alt="Palettify icon">
+
 [English](README.md) | **简体中文**
 
-当前版本：v0.7.0
+当前版本：v0.7.1
 
 注意这是一个实验性工具：它为 **iPhone 16 之前**的 iPhone（iPhone 15、14、13 …… 只要照片符合受支持的
 tile 布局即可）拍摄的 HEIC 照片补上 iPhone 16/17 照片所携带的元数据，让编辑照片时，呈现 **摄影风格**（即 Apple 官方所称的“调色板”）。
@@ -24,7 +26,7 @@ tile 布局即可）拍摄的 HEIC 照片补上 iPhone 16/17 照片所携带的�
 
 风格调节效果、以及质感/颗粒的细节效果微调，将在主体工作完成后进行，使其更接近新款 iPhone 原生**摄影风格**的调节表现。在此之前，与原生照片存在差异属于预期情况。欢迎反馈问题和提供样图。
 
-**目录：** [网页版](#在浏览器中使用) · [可执行文件](#下载可执行文件) · [从源码安装](#从源码安装) · [用法](#用法) · [工作原理](#工作原理) · [已知问题与限制](#已知问题与限制) · [测试移植结果](#测试移植结果for-ai-testing) · [版本历史](#版本历史) · [AI 智能体](#通过-ai-智能体使用) · [开发者工具](#开发者工具)
+**目录：** [网页版](#在浏览器中使用) · [iOS 应用](#ios-应用) · [可执行文件](#下载可执行文件) · [从源码安装](#从源码安装) · [用法](#用法) · [工作原理](#工作原理) · [已知问题与限制](#已知问题与限制) · [测试移植结果](#测试移植结果for-ai-testing) · [版本历史](#版本历史) · [AI 智能体](#通过-ai-智能体使用) · [开发者工具](#开发者工具)
 
 ## 在浏览器中使用
 
@@ -38,6 +40,16 @@ tile 布局即可）拍摄的 HEIC 照片补上 iPhone 16/17 照片所携带的�
 
 网页版与 命令行/Python 工具使用同一套移植逻辑，见 [`web/README.md`](web/README.md)。
 批量处理或需要基于编码器，需要生成内嵌缩略图时请用 命令行/Python 版本。
+
+## iOS 应用
+
+**盘它**（英文名 Palettify）是基于同一移植逻辑的原生 iPhone 和 iPad 应用。它可以直接处理图库中的照片，
+包括实况照片；既可以存为新照片，也可以替换原图，被替换的原图会保存在“备份”中，随时可以恢复。它还在“快捷指令”中
+提供“添加摄影风格”操作。源码位于 [`swiftPort/`](swiftPort/)。
+
+**[下载 iOS 应用](https://github.com/nathanatgit/Shalielie/releases)**：找到最新的 `ios-v…` 预发布版，
+下载 `Palettify-unsigned.ipa`。应用未上架 App Store，需要用 Sideloadly 或 AltStore 等侧载工具安装，
+它们会用你自己的 Apple ID 为应用签名。需要 iOS 17 或更高版本；质感/颗粒需要 iOS 27。
 
 ## 下载可执行文件
 
@@ -178,7 +190,7 @@ iOS 27 的 `texture_styles` 项，以及随之出现的 12 个 2026 语义遮罩
 - **质感/颗粒需要打开照片的手机运行 iOS 27。**
 - **无法把普通照片变成“人像”照片。** 人像数据只会从照片本身复制，绝不会凭空生成。
 - **未经 Apple 验证，效果因照片而异。** 在放弃之前，可以请先试试上面的不同的运行参数。
-- 独立 iOS 应用在 `agent/swift-port` 分支中，由 [@lzh20025](https://github.com/lzh20025) 共同开发，实况照片支持由其完成（[#7](https://github.com/nathanatgit/Shalielie/pull/7)）。目前为预发布版：可侧载的未签名 IPA 见 [ios-v0.7.0-beta.1](https://github.com/nathanatgit/Shalielie/releases/tag/ios-v0.7.0-beta.1)。
+- [iOS 应用](#ios-应用)目前为预发布版，由 [@lzh20025](https://github.com/lzh20025) 共同开发，实况照片支持由其完成（[#7](https://github.com/nathanatgit/Shalielie/pull/7)）。安装方式为侧载未签名的 IPA。
 
 未解决的元数据问题（仍来自 donor 的数值等）记录在 [facts.md](facts.md) 中。
 
@@ -235,6 +247,7 @@ iOS 27 的 `texture_styles` 项，以及随之出现的 12 个 2026 语义遮罩
 | v0.6.2      | 风格数据加入照片自己的 item graph；修正 90°/270° 旋转        | 已知尺寸的任意 tile 布局；无缩略图/`tmap` 的照片可用；270° 照片天空和树木的异常发光消失 ✅ |
 | v0.6.3      | 4800 万像素照片（8064×6048）加入照片自己的 item graph          | 旧机型的 4800 万像素照片可移植，有无编码器均可 ✅ |
 | v0.7.0      | 实况照片：拖入的 HEIC + MOV 一起处理；视频补上 iOS 27 的风格轨道和定时元数据 | iPhone 15 Pro 的实况照片可在照片 App 中编辑，风格和动态效果都在（iOS 27.0.1）✅ |
+| v0.7.1      | iOS 应用“盘它”（Palettify）并入主分支；网页版随之改名 | 移植逻辑与 v0.7.0 相同；应用在 CI 中构建通过 ☑️ |
 
 **针对部分假设的逆向工程测试**
 

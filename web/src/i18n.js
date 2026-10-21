@@ -43,7 +43,7 @@ export const STRINGS = {
     "lang.name": "中文",
     "about.name": "About this page",
     "about.href": "about.html",
-    "meta.title": "Photographic Styles Palette Port",
+    "meta.title": "Palettify",
     "app.tagline": "The Photographic Styles palette for photos from older iPhones",
 
     "h.notice": "Before you start",
@@ -129,7 +129,7 @@ export const STRINGS = {
     "lang.name": "English",
     "about.name": "关于此页面",
     "about.href": "about.zh.html",
-    "meta.title": "风格调色板移植工具",
+    "meta.title": "盘它",
     "app.tagline": "让旧款 iPhone 拍摄的照片也能使用摄影风格调色板",
 
     "h.notice": "注意事项",
