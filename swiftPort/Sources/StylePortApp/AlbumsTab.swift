@@ -77,6 +77,7 @@ final class AlbumsModel: NSObject, ObservableObject, PHPhotoLibraryChangeObserve
 struct AlbumsTab: View {
     @StateObject private var model = AlbumsModel()
     @State private var status = PhotoLibraryService.status
+    @AppStorage("albumsGridLayout") private var gridLayout = false
 
     var body: some View {
         NavigationStack {
@@ -96,6 +97,18 @@ struct AlbumsTab: View {
                 }
             }
             .navigationTitle("Albums")
+            .toolbar {
+                if status == .authorized || status == .limited {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button {
+                            gridLayout.toggle()
+                        } label: {
+                            Label(gridLayout ? "List" : "Grid",
+                                  systemImage: gridLayout ? "list.bullet" : "square.grid.2x2")
+                        }
+                    }
+                }
+            }
             .navigationDestination(for: AlbumItem.self) { album in
                 AlbumScreen(album: album)
             }
@@ -106,7 +119,21 @@ struct AlbumsTab: View {
         }
     }
 
+    @ViewBuilder
     private var albumList: some View {
+        Group {
+            if gridLayout { albumGrid } else { albumRows }
+        }
+        .overlay {
+            if model.isLoading {
+                ProgressView()
+            } else if model.myAlbums.isEmpty && model.mediaTypes.isEmpty {
+                ContentUnavailableView("No Albums", systemImage: "rectangle.stack")
+            }
+        }
+    }
+
+    private var albumRows: some View {
         List {
             if !model.myAlbums.isEmpty {
                 Section("My Albums") {
@@ -119,13 +146,61 @@ struct AlbumsTab: View {
                 }
             }
         }
-        .overlay {
-            if model.isLoading {
-                ProgressView()
-            } else if model.myAlbums.isEmpty && model.mediaTypes.isEmpty {
-                ContentUnavailableView("No Albums", systemImage: "rectangle.stack")
+    }
+
+    private var albumGrid: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 8) {
+                if !model.myAlbums.isEmpty { gridSection("My Albums", model.myAlbums) }
+                if !model.mediaTypes.isEmpty { gridSection("Media Types", model.mediaTypes) }
+            }
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
+        }
+    }
+
+    private func gridSection(_ title: LocalizedStringKey, _ albums: [AlbumItem]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.title3.weight(.semibold))
+                .padding(.top, 12)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 14)], spacing: 18) {
+                ForEach(albums) { AlbumCard(album: $0) }
             }
         }
+    }
+}
+
+private func albumCountText(_ count: Int) -> String {
+    count == 1 ? L("1 photo") : L("\(count) photos")
+}
+
+private struct AlbumCard: View {
+    let album: AlbumItem
+
+    var body: some View {
+        NavigationLink(value: album) {
+            VStack(alignment: .leading, spacing: 6) {
+                Color.clear
+                    .aspectRatio(1, contentMode: .fit)
+                    .overlay {
+                        if let asset = album.keyAsset {
+                            AssetImage(asset: asset)
+                        } else {
+                            Rectangle().fill(.quaternary)
+                                .overlay { Image(systemName: "photo").foregroundStyle(.secondary) }
+                        }
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                Text(album.title)
+                    .font(.subheadline.weight(.medium))
+                    .lineLimit(1)
+                Text(albumCountText(album.count))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.plain)
     }
 }
 
@@ -148,7 +223,7 @@ private struct AlbumRow: View {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(album.title)
                         .font(.body)
-                    Text(album.count == 1 ? L("1 photo") : L("\(album.count) photos"))
+                    Text(albumCountText(album.count))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
