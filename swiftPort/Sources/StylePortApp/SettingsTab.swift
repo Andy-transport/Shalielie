@@ -117,7 +117,7 @@ struct SettingsTab: View {
                         Label("About Palettify", systemImage: "info.circle")
                     }
                     Link(destination: AppSettings.repositoryURL) {
-                        Label("Source Code on GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
+                        Label { Text("Source Code on GitHub") } icon: { GitHubMark() }
                     }
                 } header: {
                     Text("About")
@@ -178,7 +178,7 @@ struct AboutView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                 Link(destination: AppSettings.repositoryURL) {
-                    Label("github.com/nathanatgit/Shalielie", systemImage: "link")
+                    Label { Text("github.com/nathanatgit/Shalielie") } icon: { GitHubMark() }
                 }
             }
         }
@@ -254,6 +254,17 @@ struct PrivacyView: View {
         .readableWidth()
         .navigationTitle("Privacy")
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+/// GitHub's mark (from Primer Octicons), tinted like the SF Symbols beside it.
+private struct GitHubMark: View {
+    var body: some View {
+        Image("GitHubMark")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 20, height: 20)
+            .accessibilityHidden(true)
     }
 }
 
