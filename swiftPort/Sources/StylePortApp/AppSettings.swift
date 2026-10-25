@@ -28,7 +28,7 @@ enum AppSettings {
     static var texture: Bool { UserDefaults.standard.bool(forKey: textureKey) }
 
     static var displayName: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "Palettify"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "浮光"
     }
 
     static var appVersion: String {
