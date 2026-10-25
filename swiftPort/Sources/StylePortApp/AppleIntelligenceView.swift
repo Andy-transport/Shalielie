@@ -39,7 +39,7 @@ struct AppleIntelligenceView: View {
                             .font(.title)
                             .frame(width: 72, height: 72)
                             .glassCircle()
-                        Text(loadingPhoto ? "正在读取照片…" : "清理")
+                        Text(loadingPhoto ? "正在读取照片…" : "消除")
                             .font(.headline)
                         Text("选择照片消除")
                             .font(.subheadline)
