@@ -1,6 +1,7 @@
 import Photos
 import StylePortCore
 import SwiftUI
+import UIKit
 
 struct SettingsTab: View {
     @EnvironmentObject private var backups: BackupStore
@@ -152,6 +153,8 @@ struct SettingsTab: View {
 }
 
 struct AboutView: View {
+    @State private var authorCopied = false
+
     var body: some View {
         List {
             Section {
@@ -180,9 +183,39 @@ struct AboutView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
+
+            Section("作者") {
+                Button {
+                    UIPasteboard.general.string = "351453703"
+                    authorCopied = true
+                } label: {
+                    HStack(spacing: 14) {
+                        Image("AuthorAvatar")
+                            .resizable()
+                            .frame(width: 56, height: 56)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .accessibilityHidden(true)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("作者").font(.headline)
+                            Text("抖音：351453703")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Image(systemName: "doc.on.doc")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+            }
         }
         .readableWidth()
         .navigationTitle("About")
+        .alert("已复制抖音号", isPresented: $authorCopied) {
+            Button("确定") { authorCopied = false }
+        } message: {
+            Text("抖音号 351453703 已复制，到抖音搜索即可找到作者。")
+        }
         .navigationBarTitleDisplayMode(.inline)
     }
 }
