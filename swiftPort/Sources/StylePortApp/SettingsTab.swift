@@ -236,7 +236,7 @@ struct AboutView: View {
                             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                             .accessibilityHidden(true)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("作者").font(.headline)
+                            Text("Мороз").font(.headline)
                             Text("抖音：351453703")
                                 .font(.subheadline)
                                 .foregroundStyle(.secondary)
