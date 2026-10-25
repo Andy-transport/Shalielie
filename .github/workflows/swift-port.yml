@@ -63,8 +63,8 @@ jobs:
       - name: Verify packaged app identity
         run: |
           app="$RUNNER_TEMP/StylePort-iOS/Build/Products/Release-iphoneos/StylePort.app"
-          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Info.plist")" = "1.1.3"
-          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$app/Info.plist")" = "6"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Info.plist")" = "1.1.4"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleVersion' "$app/Info.plist")" = "7"
           test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleDisplayName' "$app/Info.plist")" = "Floating light"
       - name: Upload unsigned iOS and iPadOS Simulator app
         uses: actions/upload-artifact@v7
