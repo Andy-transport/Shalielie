@@ -114,7 +114,7 @@ struct SettingsTab: View {
                     NavigationLink {
                         AboutView()
                     } label: {
-                        Label("关于浮光", systemImage: "info.circle")
+                        Label("About Floating light", systemImage: "info.circle")
                     }
                     Link(destination: AppSettings.repositoryURL) {
                         Label { Text("Source Code on GitHub") } icon: { GitHubMark() }
@@ -124,7 +124,7 @@ struct SettingsTab: View {
                 }
             }
             .readableWidth()
-            .navigationTitle("浮光")
+            .navigationTitle("Floating light")
         }
         .onChange(of: scenePhase) { _, phase in
             // Access can change in Settings while the app is in the background.
@@ -237,12 +237,12 @@ struct PrivacyView: View {
                 Feature(
                     symbol: "iphone",
                     title: "Everything stays on this device",
-                    text: "Photos are processed on your iPhone or iPad and never uploaded. 浮光 has no servers, no accounts, no analytics and no ads."
+                    text: "Photos are processed on your iPhone or iPad and never uploaded. Floating light has no servers, no accounts, no analytics and no ads."
                 )
                 Feature(
                     symbol: "photo.on.rectangle",
                     title: "Only the photos you allow",
-                    text: "With limited access 浮光 sees only the photos you select. Photos stored in iCloud are downloaded by iOS when you style them."
+                    text: "With limited access Floating light sees only the photos you select. Photos stored in iCloud are downloaded by iOS when you style them."
                 )
                 Feature(
                     symbol: "lock.shield",
