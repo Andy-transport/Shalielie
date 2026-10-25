@@ -77,10 +77,13 @@ struct PhotoAdjustment: Equatable {
     var lut: PhotoLUT = .none
     var lutIntensity: Double = 1
     var paletteIntensity: Double = 1
+    /// Centre crop aspect ratio (width / height), nil = original.
+    var cropAspect: Double? = nil
 
     var isDefault: Bool {
         brightness == 0 && contrast == 1 && saturation == 1 && warmth == 0
             && texture == .standard && textureIntensity == 0 && lut == .none && paletteIntensity == 1
+            && cropAspect == nil
     }
 
     func apply(to image: UIImage) -> UIImage? {
@@ -109,7 +112,20 @@ struct PhotoAdjustment: Equatable {
             output = applyTexture(output, intensity: textureIntensity)
         }
         let context = CIContext(options: nil)
-        guard let rendered = context.createCGImage(output, from: output.extent) else { return nil }
+        guard var rendered = context.createCGImage(output, from: output.extent) else { return nil }
+        if let ratio = cropAspect {
+            let w = rendered.width, h = rendered.height
+            let current = Double(w) / Double(h)
+            var cropRect: CGRect
+            if ratio > current {
+                let ch = Double(w) / ratio
+                cropRect = CGRect(x: 0, y: Int((Double(h) - ch) / 2), width: w, height: Int(ch))
+            } else {
+                let cw = Double(h) * ratio
+                cropRect = CGRect(x: Int((Double(w) - cw) / 2), y: 0, width: Int(cw), height: h)
+            }
+            if let cropped = rendered.cropping(to: cropRect) { rendered = cropped }
+        }
         return UIImage(cgImage: rendered, scale: image.scale, orientation: image.imageOrientation)
     }
 
@@ -312,30 +328,47 @@ struct AppleStylePaletteIcon: View {
 }
 
 private enum EditorTab: String, CaseIterable {
-    case texture
+    case styles
     case tone
-    case lut
-    case palette
+    case crop
+    case tools
     case erase
 
     var title: String {
         switch self {
-        case .texture: return "质感"
-        case .tone: return "调色"
-        case .lut: return "LUT"
-        case .palette: return "调色盘"
-        case .erase: return "消除"
+        case .styles: return "Styles"
+        case .tone: return "影调"
+        case .crop: return "Crop"
+        case .tools: return "Tools"
+        case .erase: return "Erase"
         }
     }
 
     var systemImage: String {
         switch self {
-        case .texture: return "sparkles"
-        case .tone: return "slider.horizontal.3"
-        case .lut: return "square.stack.3d"
-        case .palette: return "circle.grid.3x3"
+        case .styles: return "circle.grid.3x3"
+        case .tone: return ""
+        case .crop: return "crop"
+        case .tools: return "wand.and.stars"
         case .erase: return "eraser.fill"
         }
+    }
+}
+
+/// 影调自拟图标：不是系统图标，是代码画的明暗渐变圆，
+/// 左上亮、右下暗，代表影调（亮度 / 对比的明暗范围）。
+private struct ToneIcon: View {
+    var body: some View {
+        Circle()
+            .fill(
+                LinearGradient(
+                    colors: [.white, .gray, .black],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(Circle().stroke(Color.black.opacity(0.2), lineWidth: 1))
+            .frame(width: 28, height: 28)
     }
 }
 
@@ -355,7 +388,7 @@ struct AdjustPreviewView: View {
     @AppStorage(AppSettings.appleStyleKey) private var appleStyleRaw = "standard"
 
     private var appleStyle: AppleStyle { AppleStyle(rawValue: appleStyleRaw) ?? .standard }
-    @State private var tab = EditorTab.texture
+    @State private var tab = EditorTab.styles
     @State private var compareOn = false
     @State private var showingOriginal = false
     @State private var divider: CGFloat = 0.5
@@ -422,8 +455,8 @@ struct AdjustPreviewView: View {
                     .font(.subheadline.weight(.semibold))
                     .padding(.horizontal, 18)
                     .padding(.vertical, 10)
-                    .background(Color.black.opacity(0.08), in: Capsule())
                     .foregroundStyle(.black)
+                    .floatingGlass()
                     .buttonStyle(.plain)
                 Spacer()
                 Button {
@@ -438,15 +471,15 @@ struct AdjustPreviewView: View {
                     .font(.subheadline.weight(.semibold))
                     .padding(.horizontal, 18)
                     .padding(.vertical, 10)
-                    .background(Color.black.opacity(0.08), in: Capsule())
                     .foregroundStyle(adjusted == nil || saving ? .secondary : .black)
+                    .floatingGlass()
                 }
                 .buttonStyle(.plain)
                 .disabled(adjusted == nil || saving)
             }
             HStack {
                 Spacer()
-                Text(tab == .palette ? "STYLES" : tab.title)
+                Text(tab == .styles ? "STYLES" : tab.title)
                     .font(.title3.weight(.medium))
                     .tracking(2)
                     .foregroundStyle(.secondary)
@@ -468,8 +501,7 @@ struct AdjustPreviewView: View {
                 .foregroundStyle(.black)
                 .padding(.horizontal, 18)
                 .padding(.vertical, 10)
-                .background(Color.white, in: Capsule())
-                .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
+                .floatingGlass()
             }
         }
         .padding(.horizontal, 16)
@@ -533,16 +565,16 @@ struct AdjustPreviewView: View {
                 .foregroundStyle(.black)
                 .padding(.top, 8)
 
-            if tab == .texture {
-                textureControls
-            } else if tab == .lut {
-                lutControls
-            } else if tab == .palette {
+            if tab == .styles {
                 paletteControls
+            } else if tab == .tone {
+                toneControls
+            } else if tab == .crop {
+                cropControls
+            } else if tab == .tools {
+                toolsControls
             } else if tab == .erase {
                 eraseControls
-            } else {
-                toneControls
             }
 
             // Photos-style bottom pill: icon + label per tab, selected
@@ -553,9 +585,13 @@ struct AdjustPreviewView: View {
                     Button { tab = item } label: {
                         VStack(spacing: 4) {
                             ZStack(alignment: .top) {
-                                Image(systemName: item.systemImage)
-                                    .font(.title3)
-                                    .frame(height: 28)
+                                if item == .tone {
+                                    ToneIcon()
+                                } else {
+                                    Image(systemName: item.systemImage)
+                                        .font(.title3)
+                                        .frame(height: 28)
+                                }
                                 if selected {
                                     Triangle()
                                         .fill(Color.yellow)
@@ -573,8 +609,7 @@ struct AdjustPreviewView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .background(Color.white, in: Capsule())
-            .shadow(color: .black.opacity(0.12), radius: 10, y: 2)
+            .floatingGlass()
             .padding(.horizontal, 16)
 
             HStack {
@@ -599,10 +634,10 @@ struct AdjustPreviewView: View {
 
     private var bottomStyleName: String {
         switch tab {
-        case .palette: return appleStyle.title
-        case .texture: return adjustment.texture.title
-        case .lut: return adjustment.lut.title
-        case .tone: return "调整"
+        case .styles: return appleStyle.title
+        case .tone: return "影调"
+        case .crop: return "裁剪"
+        case .tools: return "工具"
         case .erase: return "消除"
         }
     }
@@ -862,6 +897,55 @@ struct AdjustPreviewView: View {
                 .font(.footnote).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 16)
+        }
+    }
+
+    /// Crop: centre crop to a chosen aspect ratio, live in preview,
+    /// applied on save. Original = no crop.
+    private var cropControls: some View {
+        VStack(spacing: 12) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    cropChip(title: "原图", ratio: nil)
+                    cropChip(title: "1:1", ratio: 1)
+                    cropChip(title: "4:3", ratio: 4.0 / 3.0)
+                    cropChip(title: "3:2", ratio: 3.0 / 2.0)
+                    cropChip(title: "16:9", ratio: 16.0 / 9.0)
+                    cropChip(title: "9:16", ratio: 9.0 / 16.0)
+                }
+                .padding(.horizontal, 16)
+            }
+            Text("居中裁剪，预览即时可见，点完成保存时生效。")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 16)
+        }
+    }
+
+    private func cropChip(title: String, ratio: Double?) -> some View {
+        let selected = adjustment.cropAspect == ratio
+        return Button { adjustment.cropAspect = ratio } label: {
+            VStack(spacing: 6) {
+                Image(systemName: "crop")
+                    .font(.title3)
+                    .frame(width: 56, height: 56)
+                    .background(selected ? Color.black : Color.black.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .foregroundStyle(selected ? .white : .black)
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundStyle(.black)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Tools: 质感 + LUT, both in one tab.
+    private var toolsControls: some View {
+        VStack(spacing: 16) {
+            textureControls
+            Divider().padding(.horizontal, 16)
+            lutControls
         }
     }
 
