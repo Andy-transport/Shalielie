@@ -1,4 +1,5 @@
 import CoreGraphics
+import CoreML
 import Photos
 import SwiftUI
 import UIKit
@@ -19,7 +20,18 @@ private struct EraseStroke {
 /// sea) and will look soft / smeared on large objects or complex
 /// textures. That limit is stated in the UI, not hidden.
 struct EraseView: View {
-    let asset: PHAsset
+    let asset: PHAsset?
+    let initialImage: UIImage?
+
+    init(asset: PHAsset) {
+        self.asset = asset
+        self.initialImage = nil
+    }
+
+    init(image: UIImage) {
+        self.asset = nil
+        self.initialImage = image
+    }
 
     @Environment(\.dismiss) private var dismiss
     @State private var original: UIImage?
@@ -29,6 +41,8 @@ struct EraseView: View {
     @State private var currentStroke: EraseStroke?
     @State private var brush: CGFloat = 28
     @State private var erasing = false
+    @State private var aiErasing = false
+    @State private var downloadingModel = false
     @State private var saving = false
     @State private var message: String?
 
@@ -52,9 +66,14 @@ struct EraseView: View {
             Text(message ?? "")
         }
         .task {
-            let loaded = await loadOriginal()
-            original = loaded
-            current = loaded
+            if let initialImage {
+                original = initialImage
+                current = initialImage
+            } else {
+                let loaded = await loadOriginal()
+                original = loaded
+                current = loaded
+            }
         }
     }
 
@@ -195,7 +214,19 @@ struct EraseView: View {
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 16)
-            Text("本机涂抹填充：小面积、背景简单的地方效果最好；大面积或复杂纹理会模糊，不是 AI 生成填充。完成后存为新照片，不改原图。")
+            Button {
+                Task { await applyAIErase() }
+            } label: {
+                Label(aiErasing ? "AI 消除中…" : (downloadingModel ? "正在下载 AI 模型…" : "AI 消除"), systemImage: "sparkles")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color.white.opacity(0.15), in: Capsule())
+                    .foregroundStyle(.white)
+            }
+            .disabled(strokes.isEmpty || aiErasing || erasing || downloadingModel || current == nil)
+            .padding(.horizontal, 16)
+            Text("普通消除是本机扩散填充，小面积、背景简单的地方效果最好；AI 消除用 LaMa 模型生成填充，首次使用时下载模型（约 60MB 以上），照片不出手机。完成后存为新照片，不改原图。")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -208,6 +239,7 @@ struct EraseView: View {
     }
 
     private func loadOriginal() async -> UIImage? {
+        guard let asset else { return nil }
         let options = PHImageRequestOptions()
         options.deliveryMode = .highQualityFormat
         options.isNetworkAccessAllowed = true
@@ -266,6 +298,82 @@ struct EraseView: View {
         }
     }
 }
+
+
+    // MARK: - AI erase (LaMa, on-device)
+
+    /// LaMaFP16_512 from the open-source Inpaint-iOS project (GPL-3.0,
+    /// based on advimman/lama). The model is NOT bundled in the IPA:
+    /// on first AI erase it is downloaded to Documents, three files
+    /// totalling roughly 60MB+, and reused afterwards. If the download
+    /// only yields a tiny placeholder file (e.g. a Git LFS pointer),
+    /// that is treated as a failure with a clear message, not a crash.
+    static var modelDirectory: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("LaMaFP16_512.mlpackage")
+    }
+
+    static var modelFiles: [(relative: String, url: URL)] {
+        let base = "https://raw.githubusercontent.com/wudijimao/Inpaint-iOS/main/Inpaint/LaMaFP16_512.mlpackage"
+        return [
+            ("Manifest.json", URL(string: base + "/Manifest.json")!),
+            ("Data/com.apple.CoreML/model.mlmodel", URL(string: base + "/Data/com.apple.CoreML/model.mlmodel")!),
+            ("Data/com.apple.CoreML/weights/weight.bin", URL(string: base + "/Data/com.apple.CoreML/weights/weight.bin")!),
+        ]
+    }
+
+    private func downloadModelIfNeeded() async throws {
+        let directory = Self.modelDirectory
+        let weightURL = directory.appendingPathComponent("Data/com.apple.CoreML/weights/weight.bin")
+        if FileManager.default.fileExists(atPath: weightURL.path) {
+            let size = (try? FileManager.default.attributesOfItem(atPath: weightURL.path)[.size] as? Int) ?? 0
+            if size > 10_000_000 { return }
+            try? FileManager.default.removeItem(at: directory)
+        }
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        for (relative, url) in Self.modelFiles {
+            let destination = directory.appendingPathComponent(relative)
+            try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
+            let (tempURL, _) = try await URLSession.shared.download(from: url)
+            if FileManager.default.fileExists(atPath: destination.path) {
+                try FileManager.default.removeItem(at: destination)
+            }
+            try FileManager.default.moveItem(at: tempURL, to: destination)
+        }
+        let size = (try? FileManager.default.attributesOfItem(atPath: weightURL.path)[.size] as? Int) ?? 0
+        guard size > 10_000_000 else {
+            try? FileManager.default.removeItem(at: directory)
+            throw NSError(domain: "EraseView", code: 1, userInfo: [NSLocalizedDescriptionKey: "模型文件下载到的不是完整权重（可能是占位文件），AI 消除暂不可用，请重试或用普通消除。"])
+        }
+    }
+
+    private func applyAIErase() async {
+        guard let image = current, !strokes.isEmpty, !aiErasing, !erasing else { return }
+        aiErasing = true
+        defer { aiErasing = false }
+        do {
+            if !FileManager.default.fileExists(atPath: Self.modelDirectory.path) {
+                downloadingModel = true
+                defer { downloadingModel = false }
+                try await downloadModelIfNeeded()
+            } else {
+                try await downloadModelIfNeeded()
+            }
+            let strokes = strokes
+            let result = try await Task.detached(priority: .userInitiated) {
+                try aiInpaint(image: image, strokes: strokes)
+            }.value
+            guard let result else {
+                message = "AI 消除失败，请再试一次，或用普通消除。"
+                return
+            }
+            history.append(image)
+            current = result
+            self.strokes.removeAll()
+        } catch {
+            message = "AI 消除失败：\(error.localizedDescription)"
+        }
+    }
 
 /// Diffusion inpainting: masked pixels are filled layer by layer from
 /// already-filled neighbours, so each masked pixel is written once.
@@ -386,4 +494,120 @@ private func inpaint(image: UIImage, strokes: [EraseStroke]) -> UIImage? {
 
     guard let output = context.makeImage() else { return nil }
     return UIImage(cgImage: output, scale: image.scale, orientation: image.imageOrientation)
+}
+
+/// AI inpainting with LaMaFP16_512 (image + mask in, image out).
+/// Steps: render the brush strokes as a black/white mask, crop the
+/// painted area to a square, run the model at 512x512, blend only the
+/// masked area back (unmasked pixels stay exactly as they were), and
+/// paste the crop back into the full photo.
+private func aiInpaint(image: UIImage, strokes: [EraseStroke]) throws -> UIImage? {
+    guard let cgImage = image.cgImage else { return nil }
+    let width = cgImage.width
+    let height = cgImage.height
+    guard width > 0, height > 0, !strokes.isEmpty else { return nil }
+
+    // Mask image, in pixel coordinates.
+    let maskRenderer = UIGraphicsImageRenderer(size: CGSize(width: width, height: height))
+    let maskImage = maskRenderer.image { context in
+        UIColor.black.setFill()
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        UIColor.white.setStroke()
+        for stroke in strokes {
+            let path = UIBezierPath()
+            path.lineWidth = max(1, stroke.brush * CGFloat(width))
+            path.lineCapStyle = .round
+            path.lineJoinStyle = .round
+            guard let first = stroke.points.first else { continue }
+            path.move(to: CGPoint(x: first.x * CGFloat(width), y: first.y * CGFloat(height)))
+            for point in stroke.points.dropFirst() {
+                path.addLine(to: CGPoint(x: point.x * CGFloat(width), y: point.y * CGFloat(height)))
+            }
+            path.stroke()
+        }
+    }
+    guard let maskCG = maskImage.cgImage else { return nil }
+
+    // Square crop around the painted area, clamped to the photo.
+    var minX = CGFloat.greatestFiniteMagnitude
+    var minY = CGFloat.greatestFiniteMagnitude
+    var maxX: CGFloat = 0
+    var maxY: CGFloat = 0
+    var maxBrush: CGFloat = 0
+    for stroke in strokes {
+        maxBrush = max(maxBrush, stroke.brush * CGFloat(width))
+        for point in stroke.points {
+            minX = min(minX, point.x * CGFloat(width))
+            minY = min(minY, point.y * CGFloat(height))
+            maxX = max(maxX, point.x * CGFloat(width))
+            maxY = max(maxY, point.y * CGFloat(height))
+        }
+    }
+    minX -= maxBrush; minY -= maxBrush; maxX += maxBrush; maxY += maxBrush
+    var side = max(maxX - minX, maxY - minY, 64)
+    side = min(side, CGFloat(min(width, height)))
+    var originX = minX + (maxX - minX - side) / 2
+    var originY = minY + (maxY - minY - side) / 2
+    originX = min(max(originX, 0), CGFloat(width) - side)
+    originY = min(max(originY, 0), CGFloat(height) - side)
+    let crop = CGRect(x: originX, y: originY, width: side, height: side)
+    guard let croppedCG = cgImage.cropping(to: crop),
+          let croppedMaskCG = maskCG.cropping(to: crop) else { return nil }
+    let croppedImage = UIImage(cgImage: croppedCG)
+    let croppedMask = UIImage(cgImage: croppedMaskCG)
+
+    func resized(_ image: UIImage, to size: CGSize) -> UIImage {
+        UIGraphicsImageRenderer(size: size).image { _ in
+            image.draw(in: CGRect(origin: .zero, size: size))
+        }
+    }
+    let target = CGSize(width: 512, height: 512)
+    let resizedImage = resized(croppedImage, to: target)
+    let resizedMask = resized(croppedMask, to: target)
+    guard let resizedImageCG = resizedImage.cgImage,
+          let resizedMaskCG = resizedMask.cgImage else { return nil }
+    let imageBuffer = try MLFeatureValue(cgImage: resizedImageCG, pixelsWide: 512, pixelsHigh: 512, pixelFormatType: kCVPixelFormatType_32ARGB).imageBufferValue
+    let maskBuffer = try MLFeatureValue(cgImage: resizedMaskCG, pixelsWide: 512, pixelsHigh: 512, pixelFormatType: kCVPixelFormatType_OneComponent8).imageBufferValue
+    guard let imageBuffer, let maskBuffer else { return nil }
+
+    var configuration = MLModelConfiguration()
+    configuration.computeUnits = .cpuAndGPU
+    let model = try MLModel(contentsOf: EraseView.modelDirectory, configuration: configuration)
+    let input = try MLDictionaryFeatureProvider(dictionary: [
+        "image": MLFeatureValue(pixelBuffer: imageBuffer),
+        "mask": MLFeatureValue(pixelBuffer: maskBuffer),
+    ])
+    let output = try model.prediction(from: input)
+    guard let outBuffer = output.featureValue(for: "output")?.imageBufferValue else { return nil }
+    let outCI = CIImage(cvPixelBuffer: outBuffer)
+    let ciContext = CIContext(options: nil)
+    guard let outCG = ciContext.createCGImage(outCI, from: outCI.extent) else { return nil }
+    let outImage = UIImage(cgImage: outCG)
+
+    // Blend only the masked area, so unmasked pixels are untouched.
+    guard let blend = CIFilter(name: "CIBlendWithMask") else { return nil }
+    blend.setValue(CIImage(cgImage: outCG), forKey: kCIInputImageKey)
+    blend.setValue(CIImage(cgImage: resizedImageCG), forKey: kCIInputBackgroundImageKey)
+    blend.setValue(CIImage(cgImage: resizedMaskCG), forKey: "inputMaskImage")
+    guard let blended = blend.outputImage,
+          let blendedCG = ciContext.createCGImage(blended, from: blended.extent) else { return nil }
+    let blendedImage = UIImage(cgImage: blendedCG)
+    let blendedBack = resized(blendedImage, to: CGSize(width: side, height: side))
+    guard let blendedBackCG = blendedBack.cgImage else { return nil }
+
+    // Paste the blended crop back into the full photo, in pixels.
+    let colorSpace = CGColorSpaceCreateDeviceRGB()
+    guard let context = CGContext(
+        data: nil,
+        width: width,
+        height: height,
+        bitsPerComponent: 8,
+        bytesPerRow: width * 4,
+        space: colorSpace,
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+    ) else { return nil }
+    context.draw(cgImage, in: CGRect(x: 0, y: 0, width: width, height: height))
+    context.draw(blendedBackCG, in: crop)
+    guard let finalCG = context.makeImage() else { return nil }
+    return UIImage(cgImage: finalCG, scale: image.scale, orientation: image.imageOrientation)
 }

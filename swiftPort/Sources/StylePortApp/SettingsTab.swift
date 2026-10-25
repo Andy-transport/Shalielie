@@ -38,19 +38,22 @@ struct SettingsTab: View {
                 }
 
                 Section {
-                    HStack(spacing: 12) {
-                        Image("AppleIntelligence")
-                            .resizable()
-                            .frame(width: 28, height: 28)
-                            .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-                            .accessibilityHidden(true)
-                        Text("Apple智能与Siri")
-                            .foregroundStyle(.secondary)
-                        Spacer()
+                    NavigationLink {
+                        AppleIntelligenceView()
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image("AppleIntelligence")
+                                .resizable()
+                                .frame(width: 28, height: 28)
+                                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                                .accessibilityHidden(true)
+                            Text("Apple智能与Siri")
+                            Spacer()
+                            Text("照片消除")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
                     }
-                    .disabled(true)
-                    Toggle("Apple智能", isOn: .constant(true))
-                        .disabled(true)
                 }
 
                 Section {
