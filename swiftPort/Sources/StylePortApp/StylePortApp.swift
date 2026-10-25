@@ -84,8 +84,11 @@ struct RootView: View {
                             tabButton(title: "备份", systemImage: "archivebox", tab: 2)
                         }
                         .padding(.horizontal, 20)
-                        .padding(.vertical, 18)
-                        .floatingGlass()
+                        .padding(.vertical, 14)
+                        // Plain translucent capsule instead of floatingGlass:
+                        // the glass container was hiding the tab labels on
+                        // device, leaving icons with a large empty space.
+                        .background(Color.black.opacity(0.55), in: Capsule())
                         .contentShape(Capsule())
                         // High priority: a swipe starting on a tab button must
                         // switch tabs instead of being swallowed by the button.
@@ -139,11 +142,12 @@ struct RootView: View {
         } label: {
             VStack(spacing: 2) {
                 Image(systemName: systemImage)
-                    .font(.title)
+                    .font(.title2)
+                    .foregroundStyle(selectedTab == tab ? Color.accentColor : Color.white)
                 Text(title)
-                    .font(.subheadline)
+                    .font(.footnote)
+                    .foregroundStyle(selectedTab == tab ? Color.accentColor : Color.white)
             }
-            .foregroundStyle(selectedTab == tab ? Color.accentColor : Color.primary)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(selectedTab == tab ? Color.accentColor.opacity(0.25) : Color.clear, in: Capsule())
