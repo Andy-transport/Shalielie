@@ -316,6 +316,7 @@ private enum EditorTab: String, CaseIterable {
     case tone
     case lut
     case palette
+    case erase
 
     var title: String {
         switch self {
@@ -323,6 +324,7 @@ private enum EditorTab: String, CaseIterable {
         case .tone: return "调色"
         case .lut: return "LUT"
         case .palette: return "调色盘"
+        case .erase: return "消除"
         }
     }
 
@@ -332,6 +334,7 @@ private enum EditorTab: String, CaseIterable {
         case .tone: return "slider.horizontal.3"
         case .lut: return "square.stack.3d"
         case .palette: return "circle.grid.3x3"
+        case .erase: return "eraser.fill"
         }
     }
 }
@@ -536,6 +539,8 @@ struct AdjustPreviewView: View {
                 lutControls
             } else if tab == .palette {
                 paletteControls
+            } else if tab == .erase {
+                eraseControls
             } else {
                 toneControls
             }
@@ -598,6 +603,7 @@ struct AdjustPreviewView: View {
         case .texture: return adjustment.texture.title
         case .lut: return adjustment.lut.title
         case .tone: return "调整"
+        case .erase: return "消除"
         }
     }
 
@@ -854,6 +860,39 @@ struct AdjustPreviewView: View {
             .tint(.black)
             Text("上下拖改浓淡，左右拖改冷暖；调色页签里的暖色和饱和度会同步变化。拉杆拉到 0 是原图效果，拉到 100 是完整风格。")
                 .font(.footnote).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 16)
+        }
+    }
+
+    /// Erase, directly in photo editing: a tab in the bottom pill,
+    /// with an 打开消除 button that opens the same EraseView used
+    /// from the Apple Intelligence page. It works on this photo and
+    /// saves as a new copy, leaving the original untouched.
+    private var eraseControls: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "eraser.fill")
+                .font(.largeTitle)
+                .frame(width: 72, height: 72)
+                .background(Color.black.opacity(0.08), in: Circle())
+                .foregroundStyle(.black)
+            Text("涂抹不要的东西，把它消除")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button { showingErase = true } label: {
+                Text("打开消除")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color.black, in: Capsule())
+                    .foregroundStyle(.white)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 16)
+            Text("普通消除用本机扩散填充，AI 消除用 LaMa 模型生成填充。合规：涉及敏感标识的照片不得消除。")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 16)
         }

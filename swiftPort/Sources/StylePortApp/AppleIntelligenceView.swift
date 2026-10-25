@@ -33,46 +33,51 @@ struct AppleIntelligenceView: View {
                 }
                 .padding(.vertical, 4)
                 Toggle("Apple智能", isOn: $enabled)
-                if enabled {
-                    HStack(spacing: 10) {
-                        SiriOrb()
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Siri 光效").font(.subheadline.weight(.medium))
-                            Text("彩色光沿屏幕边缘流动").font(.footnote).foregroundStyle(.secondary)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                }
             }
 
             Section {
-                PhotosPicker(selection: $pickerItem, matching: .images) {
-                    VStack(spacing: 10) {
-                        Image(systemName: "eraser.fill")
-                            .font(.title)
-                            .frame(width: 72, height: 72)
-                            .glassCircle()
+                HStack(spacing: 14) {
+                    Image(systemName: "eraser.fill")
+                        .font(.title)
+                        .frame(width: 72, height: 72)
+                        .glassCircle()
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(loadingPhoto ? "正在读取照片…" : "消除")
                             .font(.headline)
                         Text("选择照片消除")
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
+                    Spacer()
+                    PhotosPicker(selection: $pickerItem, matching: .images) {
+                        Text("打开")
+                            .font(.headline)
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 10)
+                            .background(Color.accentColor, in: Capsule())
+                            .foregroundStyle(.white)
+                    }
+                    .disabled(loadingPhoto)
                 }
-                .disabled(loadingPhoto)
+                .padding(.vertical, 8)
                 Text("选一张照片，手指涂抹不要的东西：普通消除用本机扩散填充，AI 消除用 LaMa 模型生成填充（首次使用时下载模型，照片不出手机）。完成后存为新照片，不改原图。合规：涉及敏感标识的照片不得消除，消除页会先做合规审查。")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             } header: {
                 Text("照片消除")
             } footer: {
-                Text("也可以在照片详情页的调整编辑器里点橡皮图标打开同一个消除页。")
+                Text("也可以在照片详情页的调整编辑器里点底部的消除页签打开同一个消除页。")
             }
         }
         .onChange(of: enabled) { _, value in
-            if value { playBundledSound("SiriChime") }
+            if value {
+                playBundledSound("SiriChime")
+                activationGlow = true
+                Task {
+                    try? await Task.sleep(for: .seconds(3))
+                    activationGlow = false
+                }
+            }
         }
         .onAppear {
             // Sound and animation start in the same moment: play the
@@ -104,13 +109,11 @@ struct AppleIntelligenceView: View {
                 EraseView(image: eraseImage)
             }
         }
-            // Apple Intelligence Siri edge glow: when Apple Intelligence
-            // is on, a colourful gradient light wraps the screen edges,
-            // like invoking Siri in iOS 18. It is purely visual and
-            // never blocks taps. On opening this page the glow and the
-            // sound start together (activationGlow), even if the toggle
-            // is off, so sound and animation are simultaneous.
-            if enabled || activationGlow {
+            // Siri edge glow, only 3 seconds at a time: it lights up
+            // together with the sound when this page opens or when the
+            // Apple Intelligence toggle is turned on, then goes out.
+            // It never stays on permanently.
+            if activationGlow {
                 SiriGlowBorder()
                     .allowsHitTesting(false)
             }
@@ -162,46 +165,6 @@ private struct SiriGlowBorder: View {
                 angle = 360
             }
             withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) {
-                breathing = true
-            }
-        }
-    }
-}
-
-/// Siri orb preview: a small colourful ball with a breathing glow,
-/// shown on this page when Apple Intelligence is on.
-private struct SiriOrb: View {
-    @State private var angle: Double = 0
-    @State private var breathing = false
-
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(
-                    AngularGradient(
-                        gradient: Gradient(colors: [.pink, .orange, .purple, .blue, .cyan, .pink]),
-                        center: .center,
-                        angle: .degrees(angle)
-                    )
-                )
-                .blur(radius: 10)
-                .opacity(0.7)
-                .scaleEffect(breathing ? 1.15 : 1.0)
-            Circle()
-                .fill(
-                    AngularGradient(
-                        gradient: Gradient(colors: [.pink, .orange, .purple, .blue, .cyan, .pink]),
-                        center: .center,
-                        angle: .degrees(angle)
-                    )
-                )
-        }
-        .frame(width: 36, height: 36)
-        .onAppear {
-            withAnimation(.linear(duration: 4).repeatForever(autoreverses: false)) {
-                angle = 360
-            }
-            withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
                 breathing = true
             }
         }
