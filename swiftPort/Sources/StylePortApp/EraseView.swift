@@ -432,7 +432,7 @@ struct EraseView: View {
         }
     }
 
-    static func downloadModelIfNeeded(progress: (@escaping (Double) -> Void)? = nil) async throws {
+    static func downloadModelIfNeeded(progress: ((Double) -> Void)? = nil) async throws {
         let directory = Self.modelDirectory
         let weightURL = directory.appendingPathComponent("Data/com.apple.CoreML/weights/weight.bin")
         if FileManager.default.fileExists(atPath: weightURL.path) {
