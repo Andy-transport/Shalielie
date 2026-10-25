@@ -34,7 +34,7 @@ struct LibraryTab: View {
                 .toolbar {
                     if libraryRevealed {
                         ToolbarItem(placement: .topBarLeading) {
-                            Button("首页") { libraryRevealed = false }
+                            Button("首页") { withAnimation(.easeInOut(duration: 0.35)) { libraryRevealed = false } }
                         }
                     }
                     ToolbarItemGroup(placement: .topBarTrailing) {
@@ -135,7 +135,7 @@ struct LibraryTab: View {
     }
 
     private func reveal() {
-        libraryRevealed = true
+        withAnimation(.easeInOut(duration: 0.35)) { libraryRevealed = true }
         if status == .authorized || status == .limited { model.load() }
     }
 
@@ -150,6 +150,10 @@ struct LibraryTab: View {
         case .authorized, .limited:
             if libraryRevealed {
                 gridContent
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing).combined(with: .opacity),
+                        removal: .move(edge: .trailing).combined(with: .opacity)
+                    ))
             } else {
                 PickglowHomeView(
                     status: status,
@@ -159,6 +163,10 @@ struct LibraryTab: View {
                     onBrowseAll: reveal,
                     onConvert: { showingConvert = true }
                 )
+                .transition(.asymmetric(
+                    insertion: .move(edge: .leading).combined(with: .opacity),
+                    removal: .move(edge: .leading).combined(with: .opacity)
+                ))
                 .sheet(isPresented: $showingConvert) { ConvertToHEIFView() }
             }
         case .notDetermined:

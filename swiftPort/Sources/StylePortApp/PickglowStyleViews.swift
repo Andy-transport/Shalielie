@@ -156,6 +156,7 @@ struct PickglowHomeView: View {
     var onConvert: () -> Void = {}
 
     @State private var showingSettings = false
+    @State private var appeared = false
 
     var body: some View {
         ScrollView {
@@ -265,6 +266,10 @@ struct PickglowHomeView: View {
             .frame(maxWidth: .infinity)
         }
         .background(Color(uiColor: .systemGroupedBackground))
+        .opacity(appeared ? 1 : 0)
+        .offset(y: appeared ? 0 : 16)
+        .animation(.easeOut(duration: 0.45), value: appeared)
+        .onAppear { appeared = true }
         .sheet(isPresented: $showingSettings) {
             SettingsTab()
         }
