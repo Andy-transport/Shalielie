@@ -512,23 +512,6 @@
         }
       }
     },
-    "Adds the Photographic Styles palette to HEIC photos, or Texture & Grain to photos that already have a style. Live Photos found in the library keep their motion when saved to Photos.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adds the Photographic Styles palette to HEIC photos, or Texture & Grain to photos that already have a style. Live Photos found in the library keep their motion when saved to Photos."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "为 HEIC 照片添加摄影风格色板，或为已有风格的照片添加质感与颗粒。图库中的实况照片存入“照片”时会保留动态效果。"
-          }
-        }
-      }
-    },
     "Adds the iOS 27 Texture and Grain controls, and Soft Skin for portraits with face data. Photos from iPhone 16 and 17 that already have a style get just these.": {
       "extractionState": "manual",
       "localizations": {
@@ -542,23 +525,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "添加 iOS 27 的质感与颗粒控制项，并为带人脸数据的人像添加“柔肤”。iPhone 16 和 17 拍摄的、已有风格的照片只会添加这些。"
-          }
-        }
-      }
-    },
-    "Adds the style palette introduced with iPhone 16 to HEIC photos from earlier iPhones, so you can change the style in Photos and change it back.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adds the style palette introduced with iPhone 16 to HEIC photos from earlier iPhones, so you can change the style in Photos and change it back."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "为早期 iPhone 拍摄的 HEIC 照片加上 iPhone 16 引入的风格色板，让你可以在“照片”中更改风格，也可以改回去。"
           }
         }
       }
@@ -814,23 +780,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "分析每张照片"
-          }
-        }
-      }
-    },
-    "Analyzing measures the photo's own tones for the palette instead of using the reference photo's. Texture & Grain adds the iOS 27 controls, and Soft Skin when the photo has the face data for it.": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Analyzing measures the photo's own tones for the palette instead of using the reference photo's. Texture & Grain adds the iOS 27 controls, and Soft Skin when the photo has the face data for it."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "分析会根据照片自身的色调生成色板，而不是使用参考照片的色调。质感与颗粒会添加 iOS 27 的相关控制项；当照片有人脸数据时，还会添加“柔肤”。"
           }
         }
       }
@@ -2412,23 +2361,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "一切皆有可能"
-          }
-        }
-      }
-    },
-    "Photographic Styles palette": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Photographic Styles palette"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "摄影风格色板"
           }
         }
       }
