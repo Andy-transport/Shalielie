@@ -46,9 +46,6 @@ struct EraseView: View {
     @State private var saving = false
     @State private var message: String?
     @State private var complianceBlocked = false
-    @State private var complianceConfirmed = false
-    @State private var showingCompliance = false
-    @State private var compliancePendingAI = false
     @State private var complianceScanning = true
 
     var body: some View {
@@ -85,22 +82,6 @@ struct EraseView: View {
                 }.value
             }
             complianceScanning = false
-        }
-        .alert(
-            "合规确认",
-            isPresented: $showingCompliance
-        ) {
-            Button("确认不涉及，继续消除") {
-                complianceConfirmed = true
-                let useAI = compliancePendingAI
-                Task { if useAI { await applyAIErase() } else { await applyErase() } }
-            }
-            Button("涉及上述标识，取消", role: .cancel) {
-                complianceBlocked = true
-                message = "按合规要求，涉及国旗、国徽、党旗、党徽、红旗的照片不得消除，本照片的消除功能已停用。"
-            }
-        } message: {
-            Text("请确认：本照片不涉及中华人民共和国国旗、国徽、党旗、党徽、红旗等标识。涉及上述标识的照片不得消除。")
         }
     }
 
@@ -197,12 +178,12 @@ struct EraseView: View {
                 Text("正在做合规审查…")
                     .font(.footnote).foregroundStyle(.secondary)
             } else if complianceBlocked {
-                Text("合规审查：本照片疑似或已确认涉及中华人民共和国国旗、国徽、党旗、党徽、红旗，按合规要求消除功能已停用。")
+                Text("合规审查：本照片疑似或已确认涉及敏感标识，按合规要求消除功能已停用。")
                     .font(.footnote).foregroundStyle(.red)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 16)
             } else {
-                Text("合规：涉及中华人民共和国国旗、国徽、党旗、党徽、红旗的照片不得消除。")
+                Text("合规：涉及敏感标识的照片不得消除。")
                     .font(.footnote).foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 16)
@@ -301,7 +282,6 @@ struct EraseView: View {
     private func applyErase() async {
         guard let image = current, !strokes.isEmpty, !erasing else { return }
         guard !complianceBlocked else { return }
-        guard complianceConfirmed else { compliancePendingAI = false; showingCompliance = true; return }
         erasing = true
         defer { erasing = false }
         let strokes = strokes
@@ -393,7 +373,6 @@ struct EraseView: View {
     private func applyAIErase() async {
         guard let image = current, !strokes.isEmpty, !aiErasing, !erasing else { return }
         guard !complianceBlocked else { return }
-        guard complianceConfirmed else { compliancePendingAI = true; showingCompliance = true; return }
         aiErasing = true
         defer { aiErasing = false }
         do {
@@ -659,8 +638,7 @@ private func aiInpaint(image: UIImage, strokes: [EraseStroke]) throws -> UIImage
 
 /// Best-effort on-device compliance pre-check, not a legal identifier:
 /// a photo with a large strong-red area plus a compact yellow element
-/// (stars / hammer-and-sickle / emblem gold, as on the national flag,
-/// party flag and national emblem) is treated as suspect and its
+/// (the pattern used by the protected symbols) is treated as suspect and its
 /// elimination is blocked. A plain red flag with no yellow element, or
 /// a small emblem, will not be caught by this scan, so the user
 /// declaration in EraseView is the second layer. False positives are
