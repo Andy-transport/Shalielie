@@ -180,7 +180,6 @@ struct SettingsTab: View {
                 }
             }
             .readableWidth()
-            .navigationTitle("Floating light")
         }
         .onChange(of: scenePhase) { _, phase in
             // Access can change in Settings while the app is in the background.
@@ -222,7 +221,7 @@ struct AboutView: View {
                     Text("Photographic Styles for every iPhone photo")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    Text(verbatim: "Version 1.1.3（6）")
+                    Text(verbatim: "Version 1.1.3")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                     Text("该app由Muse和Claud编译")
