@@ -49,9 +49,6 @@ struct SettingsTab: View {
                                 .accessibilityHidden(true)
                             Text("Apple智能与Siri")
                             Spacer()
-                            Text("照片消除")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
                         }
                     }
                 }
