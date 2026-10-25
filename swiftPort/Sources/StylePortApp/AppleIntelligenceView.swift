@@ -123,36 +123,46 @@ struct AppleIntelligenceView: View {
 /// inner line, like the light Siri shows when it is listening.
 private struct SiriGlowBorder: View {
     @State private var angle: Double = 0
+    @State private var breathing = false
 
+    // Like the Siri settings page in the screenshot: NOT a sharp
+    // border line, but a soft, diffuse halo leaking in from the
+    // screen edges, stronger at the corners, pink/orange on the
+    // left, purple/blue on the right and bottom. Two wide, heavily
+    // blurred gradient strokes give that soft light, not a line.
     var body: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: 48, style: .continuous)
                 .stroke(
                     AngularGradient(
-                        gradient: Gradient(colors: [.pink, .orange, .yellow, .green, .blue, .purple, .pink]),
+                        gradient: Gradient(colors: [.pink, .orange, .purple, .blue, .cyan, .pink]),
                         center: .center,
                         angle: .degrees(angle)
                     ),
-                    lineWidth: 10
+                    lineWidth: 64
                 )
-                .blur(radius: 16)
-                .opacity(0.85)
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .blur(radius: 42)
+                .opacity(breathing ? 0.75 : 0.55)
+            RoundedRectangle(cornerRadius: 48, style: .continuous)
                 .stroke(
                     AngularGradient(
-                        gradient: Gradient(colors: [.pink, .orange, .yellow, .green, .blue, .purple, .pink]),
+                        gradient: Gradient(colors: [.pink, .orange, .purple, .blue, .cyan, .pink]),
                         center: .center,
                         angle: .degrees(angle)
                     ),
-                    lineWidth: 3
+                    lineWidth: 22
                 )
-                .opacity(0.95)
+                .blur(radius: 18)
+                .opacity(0.55)
         }
-        .padding(2)
+        .padding(0)
         .ignoresSafeArea()
         .onAppear {
-            withAnimation(.linear(duration: 4).repeatForever(autoreverses: false)) {
+            withAnimation(.linear(duration: 6).repeatForever(autoreverses: false)) {
                 angle = 360
+            }
+            withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) {
+                breathing = true
             }
         }
     }
@@ -169,7 +179,7 @@ private struct SiriOrb: View {
             Circle()
                 .fill(
                     AngularGradient(
-                        gradient: Gradient(colors: [.pink, .orange, .yellow, .green, .blue, .purple, .pink]),
+                        gradient: Gradient(colors: [.pink, .orange, .purple, .blue, .cyan, .pink]),
                         center: .center,
                         angle: .degrees(angle)
                     )
@@ -180,7 +190,7 @@ private struct SiriOrb: View {
             Circle()
                 .fill(
                     AngularGradient(
-                        gradient: Gradient(colors: [.pink, .orange, .yellow, .green, .blue, .purple, .pink]),
+                        gradient: Gradient(colors: [.pink, .orange, .purple, .blue, .cyan, .pink]),
                         center: .center,
                         angle: .degrees(angle)
                     )
