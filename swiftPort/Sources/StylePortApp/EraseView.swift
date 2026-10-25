@@ -47,6 +47,7 @@ struct EraseView: View {
     @State private var message: String?
     @State private var complianceBlocked = false
     @State private var complianceScanning = true
+    @State private var eraseAnimationAngle: Double = 0
 
     var body: some View {
         ZStack {
@@ -66,6 +67,16 @@ struct EraseView: View {
             Button("确定") { message = nil }
         } message: {
             Text(message ?? "")
+        }
+        .onChange(of: erasing) { _, value in
+            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                eraseAnimationAngle = value ? 360 : 0
+            }
+        }
+        .onChange(of: aiErasing) { _, value in
+            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                eraseAnimationAngle = value ? 360 : 0
+            }
         }
         .task {
             if let initialImage {
@@ -142,6 +153,40 @@ struct EraseView: View {
                             }
                         }
                         .stroke(Color.red.opacity(0.55), style: StrokeStyle(lineWidth: brush, lineCap: .round, lineJoin: .round))
+                        // Apple-style colourful animation while erasing:
+                        // a rainbow gradient that shimmers over the painted
+                        // area, plus a soft colourful glow over the photo.
+                        // It runs while the erase (normal or AI) is working,
+                        // then fades when the result appears.
+                        if erasing || aiErasing {
+                            Path { path in
+                                for stroke in strokes {
+                                    guard let first = stroke.points.first else { continue }
+                                    path.move(to: CGPoint(x: first.x * displayWidth, y: first.y * displayHeight))
+                                    for point in stroke.points.dropFirst() {
+                                        path.addLine(to: CGPoint(x: point.x * displayWidth, y: point.y * displayHeight))
+                                    }
+                                }
+                            }
+                            .stroke(
+                                AngularGradient(
+                                    gradient: Gradient(colors: [.pink, .orange, .yellow, .green, .blue, .purple, .pink]),
+                                    center: .center,
+                                    angle: .degrees(eraseAnimationAngle)
+                                ),
+                                style: StrokeStyle(lineWidth: brush, lineCap: .round, lineJoin: .round)
+                            )
+                            .opacity(0.95)
+                            LinearGradient(
+                                colors: [.pink.opacity(0.28), .yellow.opacity(0.28), .green.opacity(0.28), .blue.opacity(0.28), .purple.opacity(0.28)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                            .hueRotation(.degrees(eraseAnimationAngle))
+                            .frame(width: displayWidth, height: displayHeight)
+                            .blur(radius: 24)
+                            .opacity(0.55)
+                        }
                     }
                     .frame(width: size.width, height: size.height)
                     .gesture(
@@ -292,6 +337,9 @@ struct EraseView: View {
             message = "消除失败，请再试一次。"
             return
         }
+        // Let the colourful animation play briefly before revealing the result,
+        // like Apple's Clean Up shimmer, instead of swapping instantly.
+        try? await Task.sleep(for: .milliseconds(700))
         history.append(image)
         current = result
         self.strokes.removeAll()
