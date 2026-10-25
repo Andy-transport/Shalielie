@@ -21,7 +21,7 @@ struct WelcomeView: View {
                         .resizable()
                         .frame(width: 40, height: 40)
                         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    Text("Palettify").font(.title3.bold())
+                    Text("浮光").font(.title3.bold())
                 }
                 Spacer()
                 Button("跳过") { onSkip() }
@@ -164,7 +164,7 @@ struct PickglowHomeView: View {
                         .resizable()
                         .frame(width: 44, height: 44)
                         .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
-                    Text("Palettify").font(.largeTitle.bold())
+                    Text("浮光").font(.largeTitle.bold())
                     Spacer()
                     Button { showingSettings = true } label: {
                         Image(systemName: "gearshape")
