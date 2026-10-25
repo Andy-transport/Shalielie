@@ -273,36 +273,48 @@ enum CubeLUT {
 
 
 private enum EditorTab: String, CaseIterable {
-    case tone
-    case lut
+    // Pill order follows this order: left 质感, middle Lut, right 影调,
+    // as in the reference screenshot.
     case styles
+    case lut
+    case tone
 
     var title: String {
         switch self {
         case .tone: return "影调"
-        case .lut: return "LUT"
+        case .lut: return "Lut"
         case .styles: return "质感"
         }
     }
 
     var systemImage: String {
         switch self {
-        case .tone: return ""
-        case .lut: return "square.stack.3d"
-        case .styles: return "circle.grid.3x3"
+        case .tone: return "arrow.triangle.2.circlepath"
+        case .lut: return "photo.stack"
+        case .styles: return ""
         }
     }
 }
 
-/// 影调自拟图标：不是系统图标，是代码画的明暗渐变圆，
-/// 左上亮、右下暗，代表影调（亮度 / 对比的明暗范围）。
-private struct ToneIcon: View {
+/// 质感 pill 图标：截图里的样子，圆角方框里是圆点网格。
+/// 颜色跟随 pill 的选中/未选中前景色，不写死。
+private struct StylesPillIcon: View {
     var body: some View {
-        Image("ToneIcon")
-            .renderingMode(.template)
-            .resizable()
-            .scaledToFit()
-            .frame(width: 28, height: 28)
+        ZStack {
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(lineWidth: 1.5)
+            VStack(spacing: 3) {
+                ForEach(0..<4, id: \.self) { row in
+                    HStack(spacing: 3) {
+                        ForEach(0..<4, id: \.self) { col in
+                            Circle()
+                                .frame(width: row == 1 && col == 1 ? 3.5 : 2.5, height: row == 1 && col == 1 ? 3.5 : 2.5)
+                        }
+                    }
+                }
+            }
+        }
+        .frame(width: 28, height: 28)
     }
 }
 
@@ -330,17 +342,32 @@ struct AdjustPreviewView: View {
     @State private var message: String?
     @State private var showingShare = false
     @State private var panelVisible = false
-    @State private var showingEraseDirect = false
     @State private var showingInfo = false
     @State private var textureTicksVisible = false
+    @AppStorage(AppSettings.adjustmentHapticsKey) private var adjustmentHaptics = true
+    @State private var lastHapticStep = Int.min
+
+    /// Taptic Engine feedback for adjustment, gated by the Settings switch.
+    /// Tap feedback fires on every tap; step feedback fires only when the
+    /// step index changes, so a continuous drag ticks once per step.
+    private func playAdjustmentTap() {
+        guard adjustmentHaptics else { return }
+        UISelectionFeedbackGenerator().selectionChanged()
+    }
+
+    private func playAdjustmentHaptic(step: Int) {
+        guard adjustmentHaptics, step != lastHapticStep else { return }
+        lastHapticStep = step
+        UISelectionFeedbackGenerator().selectionChanged()
+    }
 
     var body: some View {
-        ZStack {
-            // Fill the whole sheet, including the top safe area, with black.
-            // Previously only the VStack had a black background, so the
-            // sheet's light background showed as a white band above the
-            // top bar and clipped its buttons.
-            Color(uiColor: .systemBackground).ignoresSafeArea()
+        // Top-aligned and scrollable: the old centred ZStack put a VStack
+        // taller than the screen in the middle, so it clipped BOTH ends —
+        // 取消 / 完成 at the top and the footer note at the bottom.
+        // Now the top bar always starts at the top, and a tall panel
+        // scrolls instead of pushing content off either edge.
+        ScrollView {
             VStack(spacing: 0) {
                 topBar
                 photoArea
@@ -348,6 +375,7 @@ struct AdjustPreviewView: View {
                 bottomPanel
             }
         }
+        .background(Color(uiColor: .systemBackground).ignoresSafeArea())
         .presentationBackground(Color(uiColor: .systemBackground))
         .alert(
             "调整",
@@ -367,9 +395,6 @@ struct AdjustPreviewView: View {
         }
         .sheet(isPresented: $showingShare) {
             if let adjusted { AdjustedShareSheet(image: adjusted) }
-        }
-        .fullScreenCover(isPresented: $showingEraseDirect) {
-            EraseView(asset: asset)
         }
         .task {
             original = await loadOriginal()
@@ -420,12 +445,6 @@ struct AdjustPreviewView: View {
                     .foregroundStyle(.secondary)
                 Spacer()
                 HStack(spacing: 16) {
-                    Button { showingEraseDirect = true } label: {
-                        Image("EraseIcon")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 24, height: 24)
-                    }
                     Button { if adjusted != nil { showingShare = true } } label: {
                         Image(systemName: "square.and.arrow.up")
                     }
@@ -495,14 +514,25 @@ struct AdjustPreviewView: View {
 
     private var bottomPanel: some View {
         VStack(spacing: 16) {
-            // Panel content is NOT shown synchronously with the pill:
-            // tapping a pill item opens its page (panel) below.
+            // Pill and panel are mutually exclusive, never shown together:
+            // tapping a pill item hides the pill and switches to that
+            // tab's panel; the panel's 返回 button goes back to the pill.
             if panelVisible {
+                HStack {
+                    Button { panelVisible = false } label: {
+                        Label("返回", systemImage: "chevron.left")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+
                 Text(bottomStyleName)
                     .font(.title3.weight(.medium))
                     .tracking(2)
                     .foregroundStyle(.primary)
-                    .padding(.top, 8)
 
                 if tab == .styles {
                     stylesControls
@@ -511,18 +541,17 @@ struct AdjustPreviewView: View {
                 } else if tab == .lut {
                     lutControls
                 }
-            }
-
+            } else {
             // Photos-style bottom pill: icon + label per tab, selected
             // tab gets a small yellow triangle marker above its icon.
             HStack(spacing: 0) {
                 ForEach(EditorTab.allCases, id: \.self) { item in
                     let selected = item == tab
-                    Button { tab = item; panelVisible = true } label: {
+                    Button { tab = item; panelVisible = true; playAdjustmentTap() } label: {
                         VStack(spacing: 4) {
                             ZStack(alignment: .top) {
-                                if item == .tone {
-                                    ToneIcon()
+                                if item == .styles {
+                                    StylesPillIcon()
                                 } else {
                                     Image(systemName: item.systemImage)
                                         .font(.title3)
@@ -552,6 +581,7 @@ struct AdjustPreviewView: View {
             .floatingGlass()
             .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
             .padding(.horizontal, 16)
+            }
 
             HStack {
                 Button { adjustment = PhotoAdjustment() } label: {
@@ -576,7 +606,7 @@ struct AdjustPreviewView: View {
     private var bottomStyleName: String {
         switch tab {
         case .tone: return "影调"
-        case .lut: return "LUT"
+        case .lut: return "Lut"
         case .styles: return "质感"
         }
     }
@@ -618,6 +648,7 @@ struct AdjustPreviewView: View {
                                 adjustment.texture = texture
                                 if adjustment.textureIntensity == 0 { adjustment.textureIntensity = 0.5 }
                                 textureTicksVisible = true
+                                playAdjustmentTap()
                             } label: {
                                 VStack(spacing: 8) {
                                     textureChipIcon(for: texture)
@@ -705,6 +736,7 @@ struct AdjustPreviewView: View {
                     .onChanged { value in
                         let x = min(max(value.location.x / geometry.size.width, 0), 1)
                         adjustment.textureIntensity = (x * 124).rounded() / 124
+                        playAdjustmentHaptic(step: Int((x * 124).rounded()))
                     }
             )
         }
@@ -743,6 +775,7 @@ struct AdjustPreviewView: View {
                         Button {
                             adjustment.lut = lut
                             if adjustment.lutIntensity == 0 { adjustment.lutIntensity = 1 }
+                            playAdjustmentTap()
                         } label: {
                             VStack(spacing: 8) {
                                 lutChipIcon(for: lut, selected: selected)
@@ -772,6 +805,9 @@ struct AdjustPreviewView: View {
             )
             .padding(.horizontal, 16)
             .tint(.primary)
+            .onChange(of: adjustment.lutIntensity) { _, new in
+                playAdjustmentHaptic(step: Int((new * 20).rounded()))
+            }
         }
     }
 
@@ -801,6 +837,9 @@ struct AdjustPreviewView: View {
                     .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
             }
             Slider(value: value, in: range).tint(.primary)
+                .onChange(of: value.wrappedValue) { _, new in
+                    playAdjustmentHaptic(step: Int((new * 20).rounded()))
+                }
         }
     }
 

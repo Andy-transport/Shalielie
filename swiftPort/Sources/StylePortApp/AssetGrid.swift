@@ -407,9 +407,9 @@ struct AssetGridView<Empty: View>: View {
         .onChange(of: previewRoute) { _, route in
             photoDetailState.isPresented = route != nil
         }
-        .onDisappear {
-            photoDetailState.isPresented = false
-        }
+        // No onDisappear reset here: it raced the viewer's own appearance
+        // and could clear the flag after the viewer had set it. The viewer
+        // now clears it in its own onDisappear.
         .confirmationDialog(
             replaceTitle,
             isPresented: $confirmingReplace,

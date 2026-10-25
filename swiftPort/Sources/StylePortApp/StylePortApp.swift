@@ -64,6 +64,25 @@ struct RootView: View {
             }
         }
         .environmentObject(photoDetailState)
+        // No bottom pill anymore: tabs switch by a horizontal swipe on
+        // the content itself. Simultaneous so vertical grid scrolling
+        // still works, and disabled while a photo viewer is open so a
+        // swipe there pages photos instead of switching tabs.
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 30)
+                .onEnded { value in
+                    guard !photoDetailState.isPresented else { return }
+                    let delta = value.translation
+                    guard abs(delta.width) > abs(delta.height) else { return }
+                    withAnimation {
+                        if delta.width < -30 {
+                            selectTab(min(2, selectedTab + 1))
+                        } else if delta.width > 30 {
+                            selectTab(max(0, selectedTab - 1))
+                        }
+                    }
+                }
+        )
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 12) {
                 if let status = queue.statusLine {
@@ -77,29 +96,10 @@ struct RootView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
                 if showingBottomBar {
-                    HStack(spacing: 14) {
-                        HStack(spacing: 32) {
-                            tabButton(title: "图库", systemImage: "photo.stack", tab: 0)
-                            tabButton(title: "相簿", systemImage: "square.stack", tab: 1)
-                            tabButton(title: "备份", systemImage: "archivebox", tab: 2)
-                        }
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 14)
-                        .floatingGlass()
-                        .gesture(
-                            DragGesture(minimumDistance: 30)
-                                .onEnded { value in
-                                    withAnimation {
-                                        if value.translation.width < -30 {
-                                            selectTab(min(2, selectedTab + 1))
-                                        } else if value.translation.width > 30 {
-                                            selectTab(max(0, selectedTab - 1))
-                                        }
-                                    }
-                                }
-                        )
+                    HStack {
+                        Spacer()
                         Button { showingSettings = true } label: {
-                            Image(systemName: "gearshape")
+                            Image(systemName: "person.fill")
                                 .font(.title2)
                                 .frame(width: 56, height: 56)
                                 .glassCircle()
@@ -129,20 +129,6 @@ struct RootView: View {
         if tab == 0 { libraryRevealed = true }
     }
 
-    private func tabButton(title: String, systemImage: String, tab: Int) -> some View {
-        Button {
-            selectTab(tab)
-        } label: {
-            VStack(spacing: 2) {
-                Image(systemName: systemImage)
-                    .font(.title2)
-                Text(title)
-                    .font(.footnote)
-            }
-            .foregroundStyle(selectedTab == tab ? Color.accentColor : Color.primary)
-        }
-        .buttonStyle(.plain)
-    }
 }
 
 private struct ActivityCapsule: View {

@@ -9,6 +9,7 @@ enum AppSettings {
     static let libraryAscendingKey = "libraryAscending"
     static let gridTileSizeKey = "libraryGridTileSize"
     static let welcomeSeenKey = "welcomeSeen"
+    static let adjustmentHapticsKey = "adjustmentHaptics"
 
     static let repositoryURL = URL(string: "https://github.com/nathanatgit/Shalielie")!
 
@@ -20,12 +21,14 @@ enum AppSettings {
             librarySortKey: LibrarySort.captured.rawValue,
             libraryAscendingKey: false,
             welcomeSeenKey: false,
+            adjustmentHapticsKey: true,
         ])
     }
 
     static var replaceOriginals: Bool { UserDefaults.standard.bool(forKey: replaceOriginalsKey) }
     static var analyzePhoto: Bool { UserDefaults.standard.bool(forKey: analyzePhotoKey) }
     static var texture: Bool { UserDefaults.standard.bool(forKey: textureKey) }
+    static var adjustmentHaptics: Bool { UserDefaults.standard.bool(forKey: adjustmentHapticsKey) }
 
     static var displayName: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "Floating light"

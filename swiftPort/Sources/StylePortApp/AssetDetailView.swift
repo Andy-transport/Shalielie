@@ -14,6 +14,7 @@ struct AssetDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @EnvironmentObject private var queue: PortQueue
+    @EnvironmentObject private var photoDetailState: PhotoDetailState
     @AppStorage(AppSettings.replaceOriginalsKey) private var replaceOriginals = false
     @State private var selectedIdentifier: String
     @State private var pagerID: String?
@@ -75,6 +76,11 @@ struct AssetDetailView: View {
             } else { ProgressView() }
         }
         .background(Color(uiColor: .systemBackground))
+        // Hide the root tab pill while this viewer is on screen, directly
+        // from the viewer itself: relying only on the grid's route change
+        // left the pill visible over the viewer's own controls.
+        .onAppear { photoDetailState.isPresented = true }
+        .onDisappear { photoDetailState.isPresented = false }
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden()
         .toolbar(.hidden, for: .tabBar)

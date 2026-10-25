@@ -8,6 +8,7 @@ struct SettingsTab: View {
     @AppStorage(AppSettings.replaceOriginalsKey) private var replaceOriginals = false
     @AppStorage(AppSettings.analyzePhotoKey) private var analyzePhoto = true
     @AppStorage(AppSettings.textureKey) private var texture = true
+    @AppStorage(AppSettings.adjustmentHapticsKey) private var adjustmentHaptics = true
     @State private var access = PhotoLibraryService.status
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dismiss) private var dismiss
@@ -61,6 +62,14 @@ struct SettingsTab: View {
                     Text("Style")
                 } footer: {
                     Text("分析会测量照片自身的色调，而不是参考照片的色调。质感与颗粒会加入 iOS 27 的控制项，照片有人脸数据时还会加入柔肤。")
+                }
+
+                Section {
+                    Toggle("调节震动", isOn: $adjustmentHaptics)
+                } header: {
+                    Text("编辑")
+                } footer: {
+                    Text("调节亮度、对比度、质感、LUT 时用震动反馈每一步，关闭后调节不再震动。")
                 }
 
                 Section("Photos & Backups") {
