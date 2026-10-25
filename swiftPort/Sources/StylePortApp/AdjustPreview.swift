@@ -358,6 +358,7 @@ struct AdjustPreviewView: View {
     @State private var message: String?
     @State private var showingShare = false
     @State private var showingInfo = false
+    @State private var showingErase = false
 
     var body: some View {
         ZStack {
@@ -393,6 +394,9 @@ struct AdjustPreviewView: View {
         }
         .sheet(isPresented: $showingShare) {
             if let adjusted { AdjustedShareSheet(image: adjusted) }
+        }
+        .fullScreenCover(isPresented: $showingErase) {
+            EraseView(asset: asset)
         }
         .task {
             original = await loadOriginal()
@@ -430,6 +434,13 @@ struct AdjustPreviewView: View {
             }
             Spacer()
             HStack(spacing: 12) {
+                Button { showingErase = true } label: {
+                    Image(systemName: "eraser.fill")
+                        .font(.headline)
+                        .frame(width: 48, height: 48)
+                        .background(Color.white.opacity(0.15), in: Circle())
+                }
+                .accessibilityLabel("消除不要的东西")
                 Button { if adjusted != nil { showingShare = true } } label: {
                     Image(systemName: "square.and.arrow.up")
                         .font(.headline)
