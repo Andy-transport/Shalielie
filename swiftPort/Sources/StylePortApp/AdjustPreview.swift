@@ -438,8 +438,8 @@ struct AdjustPreviewView: View {
                     Image(systemName: "eraser.fill")
                         .font(.headline)
                         .frame(width: 48, height: 48)
-                        .background(Color.white.opacity(0.15), in: Circle())
                 }
+                .glassCircle()
                 .accessibilityLabel("消除不要的东西")
                 Button { if adjusted != nil { showingShare = true } } label: {
                     Image(systemName: "square.and.arrow.up")

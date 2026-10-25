@@ -34,7 +34,19 @@ struct AppleIntelligenceView: View {
 
             Section {
                 PhotosPicker(selection: $pickerItem, matching: .images) {
-                    Label(loadingPhoto ? "正在读取照片…" : "选择照片消除", systemImage: "eraser.fill")
+                    VStack(spacing: 10) {
+                        Image(systemName: "eraser.fill")
+                            .font(.title)
+                            .frame(width: 72, height: 72)
+                            .glassCircle()
+                        Text(loadingPhoto ? "正在读取照片…" : "清理")
+                            .font(.headline)
+                        Text("选择照片消除")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
                 }
                 .disabled(loadingPhoto)
                 Text("选一张照片，手指涂抹不要的东西：普通消除用本机扩散填充，AI 消除用 LaMa 模型生成填充（首次使用时下载模型，照片不出手机）。完成后存为新照片，不改原图。")
