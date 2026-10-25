@@ -73,17 +73,18 @@ struct SettingsTab: View {
                                     Button {
                                         appleStyleRaw = style.rawValue
                                     } label: {
-                                        VStack(spacing: 6) {
-                                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                                .fill(LinearGradient(colors: [style.gradientTop, style.gradientBottom], startPoint: .top, endPoint: .bottom))
-                                                .frame(width: 72, height: 72)
+                                        VStack(spacing: 8) {
+                                            Text(style.title)
+                                                .font(.subheadline.weight(.medium))
+                                                .foregroundStyle(.primary)
+                                                .padding(.horizontal, 12)
+                                                .padding(.vertical, 5)
+                                                .background(Color.secondary.opacity(0.25), in: Capsule())
+                                            AppleStylePaletteIcon(style: style, size: 72)
                                                 .overlay(
                                                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                                                         .stroke(style.rawValue == appleStyleRaw ? Color.white : Color.clear, lineWidth: 2)
                                                 )
-                                            Text(style.title)
-                                                .font(.subheadline.weight(.medium))
-                                                .foregroundStyle(style.rawValue == appleStyleRaw ? .primary : .secondary)
                                         }
                                     }
                                     .buttonStyle(.plain)
@@ -156,7 +157,7 @@ struct SettingsTab: View {
                     NavigationLink {
                         AboutView()
                     } label: {
-                        Label("About Floating light", systemImage: "info.circle")
+                        Label("关于浮光", systemImage: "info.circle")
                     }
                 } header: {
                     Text("About")
@@ -249,7 +250,7 @@ struct AboutView: View {
             }
         }
         .readableWidth()
-        .navigationTitle("About")
+        .navigationTitle("关于浮光")
         .alert("已复制抖音号", isPresented: $authorCopied) {
             Button("确定") { authorCopied = false }
         } message: {

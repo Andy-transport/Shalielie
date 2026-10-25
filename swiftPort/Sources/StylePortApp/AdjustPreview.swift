@@ -277,6 +277,39 @@ enum AppleStyle: String, CaseIterable, Identifiable {
     }
 }
 
+/// A palette square like Apple's: gradient + dot grid + one white dot.
+/// The dot position comes from the style's preset, so each style's icon
+/// looks different, just like the Photos palette squares. No slider
+/// underneath: the Chinese title below the icon is the only label.
+struct AppleStylePaletteIcon: View {
+    let style: AppleStyle
+    let size: CGFloat
+
+    var body: some View {
+        let values = style.preset
+        let dotX = CGFloat(values.3 / 2 + 0.5) * size
+        let dotY = CGFloat(0.5 - (values.2 - 1) / 2) * size
+        ZStack {
+            LinearGradient(colors: [style.gradientTop, style.gradientBottom], startPoint: .top, endPoint: .bottom)
+            ForEach(0..<9, id: \.self) { row in
+                ForEach(0..<9, id: \.self) { col in
+                    Circle()
+                        .fill(Color.white.opacity(0.35))
+                        .frame(width: max(size / 18, 3), height: max(size / 18, 3))
+                        .position(x: size * CGFloat(col + 1) / 10, y: size * CGFloat(row + 1) / 10)
+                }
+            }
+            Circle()
+                .fill(Color.white)
+                .frame(width: size * 0.22, height: size * 0.22)
+                .shadow(color: .black.opacity(0.35), radius: 3)
+                .position(x: dotX, y: dotY)
+        }
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: size * 0.22, style: .continuous))
+    }
+}
+
 private enum EditorTab: String, CaseIterable {
     case texture
     case tone
@@ -567,6 +600,31 @@ struct AdjustPreviewView: View {
         }
     }
 
+    /// Brand marks for the LUT chips, drawn in code (no image assets):
+    /// Ricoh as its RICOH wordmark, Leica as its red dot + Leica wordmark.
+    private func lutChipIcon(for lut: PhotoLUT, selected: Bool) -> some View {
+        Group {
+            if lut == .ricoh {
+                Text("RICOH")
+                    .font(.system(size: 13, weight: .heavy))
+                    .tracking(1)
+            } else if lut == .leica {
+                VStack(spacing: 2) {
+                    Circle().fill(Color(red: 0.89, green: 0.02, blue: 0.08))
+                        .frame(width: 16, height: 16)
+                    Text("Leica")
+                        .font(.system(size: 11, weight: .bold, design: .serif))
+                }
+            } else {
+                Image(systemName: "slash.circle")
+                    .font(.title3)
+            }
+        }
+        .frame(width: 68, height: 68)
+        .background(selected ? Color.white : Color.white.opacity(0.15), in: Circle())
+        .foregroundStyle(selected ? .black : .white)
+    }
+
     private var lutControls: some View {
         VStack(spacing: 14) {
             ScrollView(.horizontal, showsIndicators: false) {
@@ -578,11 +636,7 @@ struct AdjustPreviewView: View {
                             if adjustment.lutIntensity == 0 { adjustment.lutIntensity = 1 }
                         } label: {
                             VStack(spacing: 8) {
-                                Image(systemName: lut == .none ? "slash.circle" : "square.stack.3d")
-                                    .font(.title3)
-                                    .frame(width: 68, height: 68)
-                                    .background(selected ? Color.white : Color.white.opacity(0.15), in: Circle())
-                                    .foregroundStyle(selected ? .black : .white)
+                                lutChipIcon(for: lut, selected: selected)
                                 Text(lut.title)
                                     .font(.subheadline)
                                     .foregroundStyle(.white)
@@ -631,17 +685,18 @@ struct AdjustPreviewView: View {
                                 adjustment.saturation = values.2
                                 adjustment.warmth = values.3
                             } label: {
-                                VStack(spacing: 6) {
-                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .fill(LinearGradient(colors: [style.gradientTop, style.gradientBottom], startPoint: .top, endPoint: .bottom))
-                                        .frame(width: 56, height: 56)
+                                VStack(spacing: 8) {
+                                    Text(style.title)
+                                        .font(.caption.weight(.medium))
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 10)
+                                        .padding(.vertical, 4)
+                                        .background(Color.white.opacity(0.25), in: Capsule())
+                                    AppleStylePaletteIcon(style: style, size: 56)
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 12, style: .continuous)
                                                 .stroke(style.rawValue == appleStyleRaw ? Color.white : Color.clear, lineWidth: 2)
                                         )
-                                    Text(style.title)
-                                        .font(.caption.weight(.medium))
-                                        .foregroundStyle(style.rawValue == appleStyleRaw ? .white : .secondary)
                                 }
                             }
                             .buttonStyle(.plain)
