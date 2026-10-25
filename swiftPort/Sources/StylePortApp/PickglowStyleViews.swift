@@ -1,19 +1,6 @@
-import AVFoundation
 import Photos
 import SwiftUI
 import UIKit
-
-/// Play a bundled sound asset once. Previously defined in the deleted
-/// Apple Intelligence page; moved here because the home speaker switch
-/// still uses it as its test sound when turned on.
-private var bundledSoundPlayer: AVAudioPlayer?
-
-func playBundledSound(_ name: String) {
-    guard let asset = NSDataAsset(name: name),
-          let player = try? AVAudioPlayer(data: asset.data) else { return }
-    bundledSoundPlayer = player
-    player.play()
-}
 
 /// Pickglow-style welcome screen. Every row is a real action, not a picture:
 /// 选择照片 goes to photo selection, 添加风格 goes to the library grid where
@@ -170,7 +157,6 @@ struct PickglowHomeView: View {
 
     @State private var showingSettings = false
     @State private var appeared = false
-    @AppStorage("speakerEnabled") private var speakerEnabled = true
 
     var body: some View {
         ScrollView {
@@ -263,11 +249,7 @@ struct PickglowHomeView: View {
                 }
                 .buttonStyle(.plain)
 
-                // Home-page permissions: photo access status, plus a
-                // speaker row. iOS has no separate speaker permission
-                // dialog, so this row is the app's speaker switch:
-                // on = Siri sound plays through the speaker, off = muted.
-                // Turning it on plays the Siri sound once as a test.
+                // Home-page permissions: photo access status only.
                 VStack(alignment: .leading, spacing: 12) {
                     Text("权限").font(.headline)
                     HStack {
@@ -277,19 +259,9 @@ struct PickglowHomeView: View {
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                     }
-                    Divider()
-                    HStack {
-                        Label("扬声器", systemImage: "speaker.wave.2")
-                        Spacer()
-                        Toggle("", isOn: $speakerEnabled)
-                            .labelsHidden()
-                    }
                 }
                 .padding(16)
                 .glassCard()
-                .onChange(of: speakerEnabled) { _, value in
-                    if value { playBundledSound("SiriChime") }
-                }
             }
             .padding(20)
             .frame(maxWidth: 720)
