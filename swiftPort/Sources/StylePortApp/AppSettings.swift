@@ -8,6 +8,7 @@ enum AppSettings {
     static let librarySortKey = "librarySort"
     static let libraryAscendingKey = "libraryAscending"
     static let gridTileSizeKey = "libraryGridTileSize"
+    static let welcomeSeenKey = "welcomeSeen"
 
     static let repositoryURL = URL(string: "https://github.com/nathanatgit/Shalielie")!
 
@@ -17,7 +18,8 @@ enum AppSettings {
             analyzePhotoKey: true,
             textureKey: true,
             librarySortKey: LibrarySort.captured.rawValue,
-            libraryAscendingKey: false
+            libraryAscendingKey: false,
+            welcomeSeenKey: false
         ])
     }
 
