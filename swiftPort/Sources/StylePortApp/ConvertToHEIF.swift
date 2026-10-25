@@ -104,19 +104,32 @@ struct ConvertToHEIFView: View {
             }
             .navigationTitle("转换 HEIF")
             .navigationBarTitleDisplayMode(.inline)
-            .fileImporter(
-                isPresented: $importing,
-                allowedContentTypes: Self.allowedTypes,
-                allowsMultipleSelection: true
-            ) { result in
-                switch result {
-                case .success(let urls):
-                    do { files = try copyImportedFiles(urls) }
-                    catch let importError { self.error = importError.localizedDescription }
-                case .failure(let err):
-                    error = err.localizedDescription
-                }
-            }
+            .background(
+                // UIDocumentPicker directly, instead of SwiftUI's
+                // fileImporter: tapping 打开 in the SwiftUI picker
+                // sometimes delivered nothing (no file, no error),
+                // while the UIKit picker used on the home page
+                // reliably calls back. Empty picks now show an
+                // error instead of silently doing nothing.
+                FilePickerPresenter(
+                    isPresented: $importing,
+                    allowedTypes: Self.allowedTypes,
+                    onResult: { result in
+                        switch result {
+                        case .success(let urls):
+                            if urls.isEmpty {
+                                error = "没有选中文件，请重新选择。"
+                            } else {
+                                do { files = try copyImportedFiles(urls) }
+                                catch let importError { self.error = importError.localizedDescription }
+                            }
+                        case .failure(let err):
+                            if err is CancellationError { return }
+                            error = err.localizedDescription
+                        }
+                    }
+                )
+            )
             .alert("转换失败", isPresented: Binding(get: { error != nil }, set: { if !$0 { error = nil } })) {
                 Button("确定") { error = nil }
             } message: { Text(error ?? "") }
