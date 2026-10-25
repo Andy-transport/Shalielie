@@ -70,8 +70,8 @@ struct ConvertToHEIFView: View {
                                 .font(.headline)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 14)
-                                .background(Color.accentColor, in: Capsule())
-                                .foregroundStyle(.white)
+                                .background(Color.black.opacity(0.08), in: Capsule())
+                                .foregroundStyle(.black)
                         }
                         .buttonStyle(.plain)
                         .disabled(converting || synthesizing)

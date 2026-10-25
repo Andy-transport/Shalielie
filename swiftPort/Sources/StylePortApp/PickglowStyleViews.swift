@@ -169,13 +169,6 @@ struct PickglowHomeView: View {
                         .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
                     Text("Floating light").font(.largeTitle.bold())
                     Spacer()
-                    Button { showingSettings = true } label: {
-                        Image(systemName: "gearshape")
-                            .font(.title3)
-                            .frame(width: 48, height: 48)
-                            .glassCircle()
-                    }
-                    .buttonStyle(.plain)
                 }
 
                 ZStack {
@@ -288,6 +281,20 @@ struct PickglowHomeView: View {
             .padding(20)
             .frame(maxWidth: 720)
             .frame(maxWidth: .infinity)
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            HStack {
+                Spacer()
+                Button { showingSettings = true } label: {
+                    Image(systemName: "gearshape")
+                        .font(.title3)
+                        .frame(width: 48, height: 48)
+                        .glassCircle()
+                }
+                .buttonStyle(.plain)
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 8)
         }
         .background(Color(uiColor: .systemGroupedBackground))
         .opacity(appeared ? 1 : 0)

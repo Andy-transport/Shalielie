@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 @main
 struct StylePortApp: App {
@@ -7,6 +8,7 @@ struct StylePortApp: App {
 
     init() {
         AppSettings.registerDefaults()
+        UNUserNotificationCenter.current().delegate = EraseNotificationDelegate.shared
     }
 
     var body: some Scene {
@@ -32,47 +34,12 @@ extension EnvironmentValues {
     }
 }
 
-enum AppTab: Int, CaseIterable {
-    case library, albums, backups, me
-}
-
 struct RootView: View {
     @EnvironmentObject private var queue: PortQueue
     @State private var showingActivity = false
-    @State private var tab = AppTab.library
-
-    /// "Me" sits apart from the other tabs, at the bottom right, on iOS 26 (the search role is
-    /// the system's detached trailing tab); earlier systems show it as a normal tab.
-    @ViewBuilder
-    private var tabs: some View {
-        if #available(iOS 18.0, *) {
-            TabView(selection: $tab) {
-                Tab("Library", systemImage: "photo.on.rectangle", value: AppTab.library) { LibraryTab() }
-                Tab("Albums", systemImage: "rectangle.stack", value: AppTab.albums) { AlbumsTab() }
-                Tab("Backup Bin", systemImage: "archivebox", value: AppTab.backups) { BackupBinTab() }
-                Tab("Floating light", systemImage: "person.crop.circle", value: AppTab.me, role: .search) { SettingsTab() }
-            }
-        } else {
-            TabView(selection: $tab) {
-                LibraryTab()
-                    .tabItem { Label("Library", systemImage: "photo.on.rectangle") }
-                    .tag(AppTab.library)
-                AlbumsTab()
-                    .tabItem { Label("Albums", systemImage: "rectangle.stack") }
-                    .tag(AppTab.albums)
-                BackupBinTab()
-                    .tabItem { Label("Backup Bin", systemImage: "archivebox") }
-                    .tag(AppTab.backups)
-                SettingsTab()
-                    .tabItem { Label("Floating light", systemImage: "person.crop.circle") }
-                    .tag(AppTab.me)
-            }
-        }
-    }
 
     var body: some View {
-        tabs
-        .modernTabBar()
+        LibraryTab()
         .safeAreaInset(edge: .bottom, spacing: 0) {
             if let status = queue.statusLine {
                 Button {
@@ -82,7 +49,7 @@ struct RootView: View {
                     ActivityCapsule(status: status, isRunning: queue.isRunning)
                 }
                 .buttonStyle(.plain)
-                .padding(.bottom, 56)
+                .padding(.bottom, 16)
                 .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }

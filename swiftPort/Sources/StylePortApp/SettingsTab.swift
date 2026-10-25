@@ -8,10 +8,9 @@ struct SettingsTab: View {
     @AppStorage(AppSettings.replaceOriginalsKey) private var replaceOriginals = false
     @AppStorage(AppSettings.analyzePhotoKey) private var analyzePhoto = true
     @AppStorage(AppSettings.textureKey) private var texture = true
-    @AppStorage(AppSettings.photographicStyleEnabledKey) private var photographicStyleEnabled = true
-    @AppStorage(AppSettings.appleStyleKey) private var appleStyleRaw = "standard"
     @State private var access = PhotoLibraryService.status
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage("lamaModelDownloadProgress") private var downloadProgress: Double = -1
 
     var body: some View {
         NavigationStack {
@@ -49,6 +48,17 @@ struct SettingsTab: View {
                                 .accessibilityHidden(true)
                             Text("Apple智能与Siri")
                             Spacer()
+                            if downloadProgress >= 0 && !EraseView.isModelReady {
+                                Image("DownloadIcon")
+                                    .resizable()
+                                    .renderingMode(.template)
+                                    .scaledToFit()
+                                    .frame(width: 20, height: 20)
+                                    .foregroundStyle(downloadProgress >= 0.99 ? Color.green : downloadProgress >= 0.30 ? Color.orange : Color.gray)
+                                Text("\(Int(downloadProgress * 100))%")
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                     }
                 }
@@ -77,42 +87,7 @@ struct SettingsTab: View {
                 } header: {
                     Text("Style")
                 } footer: {
-                    Text("Analyzing measures the photo's own tones for the palette instead of using the reference photo's. Texture & Grain adds the iOS 27 controls, and Soft Skin when the photo has the face data for it.")
-                }
-
-                Section {
-                    Toggle("摄影风格", isOn: $photographicStyleEnabled)
-                    if photographicStyleEnabled {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 16) {
-                                ForEach(AppleStyle.allCases) { style in
-                                    Button {
-                                        appleStyleRaw = style.rawValue
-                                    } label: {
-                                        VStack(spacing: 8) {
-                                            Text(style.title)
-                                                .font(.subheadline.weight(.medium))
-                                                .foregroundStyle(.primary)
-                                                .padding(.horizontal, 12)
-                                                .padding(.vertical, 5)
-                                                .background(Color.secondary.opacity(0.25), in: Capsule())
-                                            AppleStylePaletteIcon(style: style, size: 72)
-                                                .overlay(
-                                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                                        .stroke(style.rawValue == appleStyleRaw ? Color.white : Color.clear, lineWidth: 2)
-                                                )
-                                        }
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                            .padding(.vertical, 4)
-                        }
-                    }
-                } header: {
-                    Text("摄影风格")
-                } footer: {
-                    Text("开启后，调色盘默认用所选风格，拖动白点可再微调；风格是按苹果调色盘复刻的预设，保存为新照片。在 App 内对任意照片都可用，系统相机拍摄时的摄影风格仍受机型限制。")
+                    Text("Analyzing measures the photo's own tones instead of using the reference photo's. Texture & Grain adds the iOS 27 controls, and Soft Skin when the photo has the face data for it.")
                 }
 
                 Section("Photos & Backups") {

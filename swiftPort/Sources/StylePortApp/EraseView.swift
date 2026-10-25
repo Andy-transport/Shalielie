@@ -403,7 +403,36 @@ struct EraseView: View {
         return size > 10_000_000
     }
 
-    static func downloadModelIfNeeded() async throws {
+    /// Download delegate that reports overall progress across all
+    /// model files, so the Apple Intelligence page can show a %.
+    private final class ModelDownloadDelegate: NSObject, URLSessionDownloadDelegate {
+        var totalBytes: Int64 = 0
+        var completedBytes: Int64 = 0
+        var onProgress: ((Double) -> Void)?
+        var continuation: CheckedContinuation<URL, Error>?
+
+        func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+            guard totalBytes > 0 else { return }
+            let overall = completedBytes + totalBytesWritten
+            let progress = min(1, Double(overall) / Double(totalBytes))
+            Task { @MainActor in self.onProgress?(progress) }
+        }
+
+        func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+            completedBytes += downloadTask.countOfBytesReceived
+            continuation?.resume(returning: location)
+            continuation = nil
+        }
+
+        func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+            if let error {
+                continuation?.resume(throwing: error)
+                continuation = nil
+            }
+        }
+    }
+
+    static func downloadModelIfNeeded(progress: (@escaping (Double) -> Void)? = nil) async throws {
         let directory = Self.modelDirectory
         let weightURL = directory.appendingPathComponent("Data/com.apple.CoreML/weights/weight.bin")
         if FileManager.default.fileExists(atPath: weightURL.path) {
@@ -412,10 +441,29 @@ struct EraseView: View {
             try? FileManager.default.removeItem(at: directory)
         }
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        // Total size first, via HEAD, so the % is real, not guessed.
+        var total: Int64 = 0
+        for (_, url) in Self.modelFiles {
+            var request = URLRequest(url: url)
+            request.httpMethod = "HEAD"
+            if let (_, response) = try? await URLSession.shared.data(for: request),
+               let http = response as? HTTPURLResponse,
+               http.expectedContentLength > 0 {
+                total += http.expectedContentLength
+            }
+        }
+        let delegate = ModelDownloadDelegate()
+        delegate.totalBytes = total
+        delegate.onProgress = progress
+        let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+        defer { session.finishTasksAndInvalidate() }
         for (relative, url) in Self.modelFiles {
             let destination = directory.appendingPathComponent(relative)
             try FileManager.default.createDirectory(at: destination.deletingLastPathComponent(), withIntermediateDirectories: true)
-            let (tempURL, _) = try await URLSession.shared.download(from: url)
+            let tempURL = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<URL, Error>) in
+                delegate.continuation = continuation
+                session.downloadTask(with: url).resume()
+            }
             if FileManager.default.fileExists(atPath: destination.path) {
                 try FileManager.default.removeItem(at: destination)
             }

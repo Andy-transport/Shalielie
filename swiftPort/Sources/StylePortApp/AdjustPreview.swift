@@ -272,111 +272,17 @@ enum CubeLUT {
     }
 }
 
-/// Apple photographic-style palettes from the user's screenshots:
-/// the six squares shown in Photos (Standard plus the five undertone
-/// palettes). Apple's own internal style data is private, so these are
-/// look-alike presets: each one sets brightness / contrast / saturation /
-/// warmth to match that palette's feel, and gives the draggable palette
-/// square that palette's gradient. The user can still drag the dot to
-/// fine-tune afterwards.
-enum AppleStyle: String, CaseIterable, Identifiable {
-    case standard
-    case amber
-    case roseGold
-    case gold
-    case neutral
-    case cool
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .standard: return "标准"
-        case .amber: return "琥珀色"
-        case .roseGold: return "玫瑰金"
-        case .gold: return "金色"
-        case .neutral: return "中性"
-        case .cool: return "冷调"
-        }
-    }
-
-    var imageName: String {
-        switch self {
-        case .standard: return "AppleStyleStandard"
-        case .amber: return "AppleStyleAmber"
-        case .roseGold: return "AppleStyleRoseGold"
-        case .gold: return "AppleStyleGold"
-        case .neutral: return "AppleStyleNeutral"
-        case .cool: return "AppleStyleCool"
-        }
-    }
-
-    var gradientTop: Color {
-        switch self {
-        case .standard: return Color(red: 0.75, green: 0.82, blue: 0.88)
-        case .amber: return Color(red: 0.95, green: 0.65, blue: 0.45)
-        case .roseGold: return Color(red: 0.90, green: 0.65, blue: 0.60)
-        case .gold: return Color(red: 0.98, green: 0.75, blue: 0.20)
-        case .neutral: return Color(red: 0.85, green: 0.82, blue: 0.88)
-        case .cool: return Color(red: 0.65, green: 0.82, blue: 0.95)
-        }
-    }
-
-    var gradientBottom: Color {
-        switch self {
-        case .standard: return Color(red: 0.15, green: 0.22, blue: 0.28)
-        case .amber: return Color(red: 0.35, green: 0.20, blue: 0.12)
-        case .roseGold: return Color(red: 0.35, green: 0.28, blue: 0.25)
-        case .gold: return Color(red: 0.35, green: 0.25, blue: 0.10)
-        case .neutral: return Color(red: 0.25, green: 0.25, blue: 0.30)
-        case .cool: return Color(red: 0.15, green: 0.20, blue: 0.30)
-        }
-    }
-
-    /// Preset tone values (brightness, contrast, saturation, warmth).
-    var preset: (Double, Double, Double, Double) {
-        switch self {
-        case .standard: return (0, 1, 1, 0)
-        case .amber: return (0.05, 1.05, 1.15, 0.45)
-        case .roseGold: return (0.05, 1.0, 1.10, 0.35)
-        case .gold: return (0.08, 1.05, 1.20, 0.60)
-        case .neutral: return (0, 0.95, 0.90, 0)
-        case .cool: return (0, 1.0, 1.05, -0.50)
-        }
-    }
-}
-
-/// A palette square like Apple's: gradient + dot grid + one white dot.
-/// The dot position comes from the style's preset, so each style's icon
-/// looks different, just like the Photos palette squares. No slider
-/// underneath: the Chinese title below the icon is the only label.
-struct AppleStylePaletteIcon: View {
-    let style: AppleStyle
-    let size: CGFloat
-
-    var body: some View {
-        Image(style.imageName)
-            .resizable()
-            .scaledToFit()
-            .frame(width: size, height: size)
-            .clipShape(RoundedRectangle(cornerRadius: size * 0.22, style: .continuous))
-    }
-}
 
 private enum EditorTab: String, CaseIterable {
     case styles
     case tone
-    case crop
     case tools
-    case erase
 
     var title: String {
         switch self {
-        case .styles: return "风格"
+        case .styles: return "质感"
         case .tone: return "影调"
-        case .crop: return "裁剪"
         case .tools: return "工具"
-        case .erase: return "消除"
         }
     }
 
@@ -384,9 +290,7 @@ private enum EditorTab: String, CaseIterable {
         switch self {
         case .styles: return "circle.grid.3x3"
         case .tone: return ""
-        case .crop: return "crop"
         case .tools: return "wand.and.stars"
-        case .erase: return "eraser.fill"
         }
     }
 }
@@ -395,15 +299,10 @@ private enum EditorTab: String, CaseIterable {
 /// 左上亮、右下暗，代表影调（亮度 / 对比的明暗范围）。
 private struct ToneIcon: View {
     var body: some View {
-        Circle()
-            .fill(
-                LinearGradient(
-                    colors: [.white, .gray, .black],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .overlay(Circle().stroke(Color.black.opacity(0.2), lineWidth: 1))
+        Image("ToneIcon")
+            .renderingMode(.template)
+            .resizable()
+            .scaledToFit()
             .frame(width: 28, height: 28)
     }
 }
@@ -414,14 +313,10 @@ private enum ToolsTool {
     case reframe
 }
 
-private enum StylesSegment {
-    case palette
-    case texture
-}
 
 /// Photos-style light editor: white background, Cancel/Done pills
 /// on top, photo in the middle, style name and a bottom pill for
-/// 质感 / 调色 / LUT / 调色盘, like the iPhone Photos STYLES editor.
+/// 质感 / 调色 / LUT, like the iPhone Photos STYLES editor.
 /// Every control works: texture chips, intensity, tone sliders, compare,
 /// press-and-hold original, reset, share, info, and 完成 (save a new copy).
 struct AdjustPreviewView: View {
@@ -431,13 +326,9 @@ struct AdjustPreviewView: View {
     @State private var original: UIImage?
     @State private var adjusted: UIImage?
     @State private var adjustment = PhotoAdjustment()
-    @AppStorage(AppSettings.photographicStyleEnabledKey) private var photographicStyleEnabled = true
     @AppStorage("appleIntelligenceEnabled") private var appleIntelligenceEnabled = true
-    @AppStorage(AppSettings.appleStyleKey) private var appleStyleRaw = "standard"
 
-    private var appleStyle: AppleStyle { AppleStyle(rawValue: appleStyleRaw) ?? .standard }
     @State private var tab = EditorTab.styles
-    @State private var stylesSegment = StylesSegment.palette
     @State private var toolsTool = ToolsTool.lut
     @State private var compareOn = false
     @State private var showingOriginal = false
@@ -536,9 +427,14 @@ struct AdjustPreviewView: View {
                 Spacer()
                 HStack(spacing: 16) {
                     Button { showingErase = true } label: {
-                        Image(systemName: "eraser.fill")
+                        Image("EraseIcon")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 20, height: 20)
                     }
                     .accessibilityLabel("消除不要的东西")
+                    .disabled(!appleIntelligenceEnabled)
+                    .opacity(appleIntelligenceEnabled ? 1 : 0.5)
                     Button { if adjusted != nil { showingShare = true } } label: {
                         Image(systemName: "square.and.arrow.up")
                     }
@@ -619,12 +515,8 @@ struct AdjustPreviewView: View {
                 stylesControls
             } else if tab == .tone {
                 toneControls
-            } else if tab == .crop {
-                cropControls
             } else if tab == .tools {
                 toolsControls
-            } else if tab == .erase {
-                eraseControls
             }
 
             // Photos-style bottom pill: icon + label per tab, selected
@@ -638,14 +530,13 @@ struct AdjustPreviewView: View {
                                 if item == .tone {
                                     ToneIcon()
                                 } else if item == .tools {
-                                    // Tools icon: user's woven-loops image, tinted
-                                    // consistent blue (template rendering).
+                                    // Tools icon: user's woven-loops image, in the
+                                    // same monochrome template style as the others.
                                     Image("ToolsIcon")
                                         .renderingMode(.template)
                                         .resizable()
                                         .scaledToFit()
                                         .frame(width: 28, height: 28)
-                                        .foregroundStyle(Color.blue)
                                 } else {
                                     Image(systemName: item.systemImage)
                                         .font(.title3)
@@ -669,6 +560,7 @@ struct AdjustPreviewView: View {
                 }
             }
             .floatingGlass()
+            .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
             .padding(.horizontal, 16)
 
             HStack {
@@ -680,7 +572,7 @@ struct AdjustPreviewView: View {
                 .buttonStyle(.plain)
                 .disabled(adjustment.isDefault)
                 Spacer()
-                Text("质感、调色、LUT 与调色盘全部可直接使用。完成后存为新照片。")
+                Text("质感、调色、LUT 全部可直接使用。完成后存为新照片。")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.trailing)
@@ -693,11 +585,9 @@ struct AdjustPreviewView: View {
 
     private var bottomStyleName: String {
         switch tab {
-        case .styles: return appleStyle.title
+        case .styles: return "质感"
         case .tone: return "影调"
-        case .crop: return "裁剪"
         case .tools: return "工具"
-        case .erase: return "消除"
         }
     }
 
@@ -762,16 +652,39 @@ struct AdjustPreviewView: View {
                     .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
             }
             .padding(.horizontal, 16)
-            Slider(
-                value: Binding(
-                    get: { adjustment.textureIntensity },
-                    set: { adjustment.textureIntensity = $0 }
-                ),
-                in: 0...1
-            )
-            .padding(.horizontal, 16)
-            .tint(.yellow)
+            textureTickSlider
+                .padding(.horizontal, 16)
         }
+    }
+
+    /// Texture intensity as a tick bar, no slider: 125 ticks in total.
+    /// Colours are grey-yellow: the tick at the current value is
+    /// taller and yellow, the rest are short and grey. Dragging
+    /// across the bar snaps the intensity to the nearest step.
+    private var textureTickSlider: some View {
+        GeometryReader { geometry in
+            let spacing: CGFloat = 1
+            let tickWidth = max(1, (geometry.size.width - spacing * 124) / 125)
+            let current = Int((adjustment.textureIntensity * 124).rounded())
+            HStack(spacing: spacing) {
+                ForEach(0..<125, id: \.self) { i in
+                    let isCurrent = i == current
+                    RoundedRectangle(cornerRadius: 1, style: .continuous)
+                        .fill(isCurrent ? Color.yellow : Color.black.opacity(0.25))
+                        .frame(width: tickWidth, height: isCurrent ? 28 : 16)
+                }
+            }
+            .frame(height: 28)
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { value in
+                        let x = min(max(value.location.x / geometry.size.width, 0), 1)
+                        adjustment.textureIntensity = (x * 124).rounded() / 124
+                    }
+            )
+        }
+        .frame(height: 28)
     }
 
     /// Brand marks for the LUT chips: Ricoh as its RICOH wordmark drawn
@@ -838,192 +751,19 @@ struct AdjustPreviewView: View {
         }
     }
 
-    /// Truly adjustable palette, like the iPhone style palette: a dot grid
-    /// with a draggable white dot. Horizontal = warmth (left cool, right
-    /// warm), vertical = saturation (top vivid, bottom muted). Dragging
-    /// writes straight into the same warmth/saturation the tone sliders
-    /// show, so the preview updates live and saving keeps the result.
-    private var paletteControls: some View {
-        VStack(spacing: 12) {
-            if photographicStyleEnabled {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(AppleStyle.allCases) { style in
-                            Button {
-                                appleStyleRaw = style.rawValue
-                                let values = style.preset
-                                adjustment.paletteIntensity = 1
-                                adjustment.brightness = values.0
-                                adjustment.contrast = values.1
-                                adjustment.saturation = values.2
-                                adjustment.warmth = values.3
-                            } label: {
-                                VStack(spacing: 8) {
-                                    Text(style.title)
-                                        .font(.caption.weight(.medium))
-                                        .foregroundStyle(.black)
-                                        .padding(.horizontal, 10)
-                                        .padding(.vertical, 4)
-                                        .background(Color.black.opacity(0.08), in: Capsule())
-                                    AppleStylePaletteIcon(style: style, size: 56)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                                .stroke(style.rawValue == appleStyleRaw ? Color.black : Color.clear, lineWidth: 2)
-                                        )
-                                }
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                }
-            }
-            GeometryReader { geometry in
-                let size = geometry.size
-                let pointX = CGFloat(adjustment.warmth / 2 + 0.5) * size.width
-                let pointY = CGFloat(0.5 - (adjustment.saturation - 1) / 2) * size.height
-                ZStack {
-                    LinearGradient(
-                        colors: photographicStyleEnabled
-                            ? [appleStyle.gradientTop, appleStyle.gradientBottom]
-                            : [Color(red: 0.55, green: 0.78, blue: 1.0), Color(red: 0.04, green: 0.1, blue: 0.22)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    ForEach(0..<9, id: \.self) { row in
-                        ForEach(0..<9, id: \.self) { col in
-                            Circle()
-                                .fill(Color.white.opacity(0.35))
-                                .frame(width: 5, height: 5)
-                                .position(
-                                    x: size.width * CGFloat(col + 1) / 10,
-                                    y: size.height * CGFloat(row + 1) / 10
-                                )
-                        }
-                    }
-                    Circle()
-                        .fill(Color.white)
-                        .frame(width: 36, height: 36)
-                        .shadow(color: .black.opacity(0.4), radius: 6)
-                        .position(x: pointX, y: pointY)
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { value in
-                            let x = min(max(value.location.x / size.width, 0), 1)
-                            let y = min(max(value.location.y / size.height, 0), 1)
-                            adjustment.warmth = Double(x - 0.5) * 2
-                            adjustment.saturation = 1 + Double(0.5 - y) * 2
-                        }
-                )
-            }
-            .frame(height: 280)
-            .padding(.horizontal, 16)
-            HStack {
-                Text("冷").font(.subheadline).foregroundStyle(.secondary)
-                Spacer()
-                Text("暖").font(.subheadline).foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 16)
-            HStack {
-                Text("冷暖 \(adjustment.warmth.formatted(.number.precision(.fractionLength(2))))")
-                    .font(.subheadline.weight(.medium)).foregroundStyle(.black)
-                Spacer()
-                Text("浓淡 \(adjustment.saturation.formatted(.number.precision(.fractionLength(2))))")
-                    .font(.subheadline.weight(.medium)).foregroundStyle(.black)
-            }
-            .padding(.horizontal, 16)
-            HStack {
-                Text("强度").font(.subheadline.weight(.medium)).foregroundStyle(.black)
-                Spacer()
-                Text("\(Int(adjustment.paletteIntensity * 100))")
-                    .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
-            }
-            .padding(.horizontal, 16)
-            Slider(
-                value: Binding(
-                    get: { adjustment.paletteIntensity },
-                    set: { adjustment.paletteIntensity = $0 }
-                ),
-                in: 0...1
-            )
-            .padding(.horizontal, 16)
-            .tint(.black)
-            Text("上下拖改浓淡，左右拖改冷暖；调色页签里的暖色和饱和度会同步变化。拉杆拉到 0 是原图效果，拉到 100 是完整风格。")
-                .font(.footnote).foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 16)
-        }
-    }
 
-    /// Styles tab, like the second screenshot: a segmented control on
-    /// top switching 调色板 / 质感, all in Chinese. 调色板 shows the
-    /// style chips + large palette pad; 质感 shows the texture chips
-    /// + intensity slider below.
+    /// 风格页签现在只剩质感。
     private var stylesControls: some View {
-        VStack(spacing: 14) {
-            Picker("风格", selection: $stylesSegment) {
-                Text("调色板").tag(StylesSegment.palette)
-                Text("质感").tag(StylesSegment.texture)
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 16)
-            if stylesSegment == .palette {
-                paletteControls
-            } else {
-                textureControls
-            }
-        }
+        textureControls
     }
 
-    /// Crop: centre crop to a chosen aspect ratio, live in preview,
-    /// applied on save. Original = no crop.
-    private var cropControls: some View {
-        VStack(spacing: 12) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    cropChip(title: "原图", ratio: nil)
-                    cropChip(title: "1:1", ratio: 1)
-                    cropChip(title: "4:3", ratio: 4.0 / 3.0)
-                    cropChip(title: "3:2", ratio: 3.0 / 2.0)
-                    cropChip(title: "16:9", ratio: 16.0 / 9.0)
-                    cropChip(title: "9:16", ratio: 9.0 / 16.0)
-                }
-                .padding(.horizontal, 16)
-            }
-            Text("居中裁剪，预览即时可见，点完成保存时生效。")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 16)
-        }
-    }
-
-    private func cropChip(title: String, ratio: Double?) -> some View {
-        let selected = adjustment.cropAspect == ratio
-        return Button { adjustment.cropAspect = ratio } label: {
-            VStack(spacing: 6) {
-                Image(systemName: "crop")
-                    .font(.title3)
-                    .frame(width: 56, height: 56)
-                    .background(selected ? Color.black : Color.black.opacity(0.08), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .foregroundStyle(selected ? .white : .black)
-                Text(title)
-                    .font(.subheadline)
-                    .foregroundStyle(.black)
-            }
-        }
-        .buttonStyle(.plain)
-    }
 
     /// Tools tab, all in Chinese: LUT is usable; 扩展 + 重构图 are
     /// shown grey and disabled (暂不可用), like the second screenshot
     /// where they appear greyed out. Tapping them does nothing.
     private var toolsControls: some View {
         VStack(spacing: 14) {
-            HStack(spacing: 16) {
+            HStack(spacing: 12) {
                 toolChip(title: "LUT", tool: .lut) {
                     Image(systemName: "square.stack.3d")
                         .font(.title3)
@@ -1035,8 +775,25 @@ struct AdjustPreviewView: View {
                 unavailableToolChip(title: "重构图") {
                     ReframeIcon()
                 }
+                Button { showingErase = true } label: {
+                    Text("AI消除")
+                        .font(.headline)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(Color.black.opacity(0.08), in: Capsule())
+                        .foregroundStyle(.black)
+                }
+                .buttonStyle(.plain)
+                .disabled(!appleIntelligenceEnabled)
+                .opacity(appleIntelligenceEnabled ? 1 : 0.5)
             }
             .padding(.horizontal, 16)
+            if !appleIntelligenceEnabled {
+                Text("需打开 Apple智能才能用 AI消除。")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal, 16)
+            }
             lutControls
         }
     }
@@ -1076,45 +833,6 @@ struct AdjustPreviewView: View {
         .buttonStyle(.plain)
     }
 
-    /// Erase, directly in photo editing: a tab in the bottom pill,
-    /// with an 打开消除 button that opens the same EraseView used
-    /// from the Apple Intelligence page. It works on this photo and
-    /// saves as a new copy, leaving the original untouched.
-    private var eraseControls: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "eraser.fill")
-                .font(.largeTitle)
-                .frame(width: 72, height: 72)
-                .background(Color.black.opacity(0.08), in: Circle())
-                .foregroundStyle(.black)
-            Text("涂抹不要的东西，把它消除")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-            Button { showingErase = true } label: {
-                Text("打开消除")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Color.black, in: Capsule())
-                    .foregroundStyle(.white)
-            }
-            .buttonStyle(.plain)
-            .disabled(!appleIntelligenceEnabled)
-            .opacity(appleIntelligenceEnabled ? 1 : 0.5)
-            .padding(.horizontal, 16)
-            if !appleIntelligenceEnabled {
-                Text("需打开 Apple智能才能用消除。")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            }
-            Text("普通消除用本机扩散填充，AI 消除用 LaMa 模型生成填充。合规：涉及敏感标识的照片不得消除。")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 16)
-        }
-    }
 
     private var toneControls: some View {
         VStack(spacing: 14) {
