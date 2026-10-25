@@ -273,13 +273,12 @@ struct AssetDetailView: View {
 
     private func controls(_ asset: PHAsset) -> some View {
         VStack(spacing: 10) {
-            styleButton
             HStack(spacing: 12) {
                 Button { prepareShare(asset) } label: {
                     if busy { ProgressView().frame(width: 44, height: 48) }
                     else { controlIcon("square.and.arrow.up") }
                 }
-                .floatingGlass().accessibilityLabel("Share").disabled(busy)
+                .glassCircle().accessibilityLabel("Share").disabled(busy)
                 Spacer(minLength: 0)
                 HStack(spacing: 4) {
                     Button { favorite(asset) } label: { controlIcon(asset.isFavorite ? "heart.fill" : "heart") }
@@ -291,11 +290,19 @@ struct AssetDetailView: View {
                     Button { showingAdjust = true } label: { controlIcon("slider.horizontal.3") }
                         .accessibilityLabel("Adjust & Preview")
                         .disabled(busy || running)
+                    Button {
+                        if replaceOriginals { confirmingReplace = true } else { queue.port([asset]) }
+                    } label: {
+                        if running { ProgressView().frame(width: 44, height: 48) }
+                        else { controlIcon("camera.filters") }
+                    }
+                    .accessibilityLabel(actionTitle)
+                    .disabled(running || blocked)
                 }
                 .padding(.horizontal, 8).floatingGlass()
                 Spacer(minLength: 0)
                 Button { confirmingDelete = true } label: { controlIcon("trash") }
-                    .floatingGlass().accessibilityLabel("Delete Photo").disabled(busy || running)
+                    .glassCircle().accessibilityLabel("Delete Photo").disabled(busy || running)
             }
             .foregroundStyle(.primary)
         }
@@ -303,21 +310,6 @@ struct AssetDetailView: View {
 
     private func controlIcon(_ name: String) -> some View {
         Image(systemName: name).font(.title3).frame(width: 44, height: 48).contentShape(Rectangle())
-    }
-
-    private var styleButton: some View {
-        Button {
-            guard let asset else { return }
-            if replaceOriginals { confirmingReplace = true } else { queue.port([asset]) }
-        } label: {
-            HStack(spacing: 8) {
-                if running { ProgressView() }
-                else { Image(systemName: "camera.filters") }
-                Text(running ? progressText : actionTitle).lineLimit(1)
-            }
-            .font(.subheadline.weight(.semibold)).padding(.horizontal, 16).padding(.vertical, 10)
-        }
-        .modernProminentButton().disabled(running || blocked)
     }
 
     private func infoPanel(_ asset: PHAsset) -> some View {
@@ -485,14 +477,6 @@ struct AssetDetailView: View {
         }
         if replaceOriginals { return texture ? L("Replace with Texture & Grain") : L("Replace with Photographic Style") }
         return texture ? L("Add Texture & Grain") : L("Add Photographic Style")
-    }
-    private var progressText: String {
-        switch job?.phase {
-        case .reading: return L("Reading original…")
-        case .porting: return L("Adding style…")
-        case .saving: return L("Saving…")
-        default: return L("Waiting…")
-        }
     }
 }
 

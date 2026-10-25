@@ -360,13 +360,20 @@ struct AdjustPreviewView: View {
     @State private var showingInfo = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            topBar
-            photoArea
-            compareBar
-            bottomPanel
+        ZStack {
+            // Fill the whole sheet, including the top safe area, with black.
+            // Previously only the VStack had a black background, so the
+            // sheet's light background showed as a white band above the
+            // top bar and clipped its buttons.
+            Color.black.ignoresSafeArea()
+            VStack(spacing: 0) {
+                topBar
+                photoArea
+                compareBar
+                bottomPanel
+            }
         }
-        .background(Color.black)
+        .presentationBackground(Color.black)
         .preferredColorScheme(.dark)
         .alert(
             "调整",
