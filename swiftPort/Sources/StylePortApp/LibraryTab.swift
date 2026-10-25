@@ -16,6 +16,8 @@ struct LibraryTab: View {
     )
     @State private var status = PhotoLibraryService.status
     @State private var importingFiles = false
+    @State private var importError: String?
+    @State private var showingConvert = false
     @AppStorage(AppSettings.welcomeSeenKey) private var welcomeSeen = false
     /// Pickglow-style start screen: the full grid is only shown after the
     /// person chooses to browse it, so launch never dumps all photos at once.
@@ -64,8 +66,29 @@ struct LibraryTab: View {
                     allowedContentTypes: [.heic, .heif, .quickTimeMovie],
                     allowsMultipleSelection: true
                 ) { result in
-                    if case .success(let urls) = result { queue?.port(files: urls) }
+                    switch result {
+                    case .success(let urls):
+                        do {
+                            // Copy while the picker still grants access: passing the
+                            // security-scoped URLs to the async port queue was the
+                            // import bug -- by the time the queue read them, access
+                            // was gone and the job failed silently.
+                            let copied = try copyImportedFiles(urls)
+                            guard !copied.isEmpty else {
+                                importError = "没有可导入的照片文件，请选择 HEIC 照片（可同时选同名 MOV 做实况照片）。"
+                                return
+                            }
+                            queue?.port(files: copied)
+                        } catch {
+                            importError = error.localizedDescription
+                        }
+                    case .failure(let error):
+                        importError = error.localizedDescription
+                    }
                 }
+                .alert("导入失败", isPresented: Binding(get: { importError != nil }, set: { if !$0 { importError = nil } })) {
+                    Button("确定") { importError = nil }
+                } message: { Text(importError ?? "") }
         }
         .task {
             status = await PhotoLibraryService.requestAccess()
@@ -93,6 +116,24 @@ struct LibraryTab: View {
         }
     }
 
+    /// Copy Files picks into the app temp folder immediately, while the
+    /// picker access is still live. Returns local (non-security-scoped) URLs.
+    private func copyImportedFiles(_ urls: [URL]) throws -> [URL] {
+        var copied: [URL] = []
+        for url in urls {
+            let granted = url.startAccessingSecurityScopedResource()
+            defer { if granted { url.stopAccessingSecurityScopedResource() } }
+            let directory = try TemporaryFiles.newDirectory()
+            let destination = directory.appendingPathComponent(url.lastPathComponent)
+            if FileManager.default.fileExists(atPath: destination.path) {
+                try FileManager.default.removeItem(at: destination)
+            }
+            try FileManager.default.copyItem(at: url, to: destination)
+            copied.append(destination)
+        }
+        return copied
+    }
+
     private func reveal() {
         libraryRevealed = true
         if status == .authorized || status == .limited { model.load() }
@@ -115,8 +156,10 @@ struct LibraryTab: View {
                     photoCount: model.assets.count,
                     onSelectPhotos: selectPhotos,
                     onImportFiles: { importingFiles = true },
-                    onBrowseAll: reveal
+                    onBrowseAll: reveal,
+                    onConvert: { showingConvert = true }
                 )
+                .sheet(isPresented: $showingConvert) { ConvertToHEIFView() }
             }
         case .notDetermined:
             ProgressView()
