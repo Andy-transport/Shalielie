@@ -38,6 +38,22 @@ struct SettingsTab: View {
                 }
 
                 Section {
+                    HStack(spacing: 12) {
+                        Image("AppleIntelligence")
+                            .resizable()
+                            .frame(width: 28, height: 28)
+                            .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+                            .accessibilityHidden(true)
+                        Text("Apple智能与Siri")
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                    .disabled(true)
+                    Toggle("Apple智能", isOn: .constant(true))
+                        .disabled(true)
+                }
+
+                Section {
                     Picker("When Styling a Photo", selection: $replaceOriginals) {
                         Text("Save as New").tag(false)
                         Text("Replace Original").tag(true)
