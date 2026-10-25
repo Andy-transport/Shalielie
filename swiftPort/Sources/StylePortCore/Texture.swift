@@ -5,8 +5,7 @@ import Foundation
 // same order with the same bytes, so all three builds write identical files.
 //
 // Photos offers the controls only when a style photo carries BOTH the texture_styles item
-// AND iOS 27's twelve 2026 semantic mattes; the item without the mattes removes the whole
-// style palette. For a scene with no people every matte is the same empty 768x576 frame.
+// AND iOS 27's twelve 2026 semantic mattes; the item without the mattes removes the whole style. For a scene with no people every matte is the same empty 768x576 frame.
 enum Texture {
     static let textureStylesURI = "tag:apple.com,2026:photo:metadata:texture_styles"
     static let personInstancesURI = "tag:apple.com,2026:photo:aux:semanticpersoninstances"

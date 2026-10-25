@@ -18,9 +18,8 @@ public struct SyntheticTile {
 /// the source image is resized to 4032x3024, split into 48 primary tiles,
 /// a flat gain map is split into 12 HDR tiles, a 416x312 thumbnail is added,
 /// and a minimal Apple EXIF (with MakerNote 0x54 injected) is synthesized.
-/// Texture/Grain items are added too, so Photos should show both the
-/// 调色板 (palette) tab and the 质感 (texture) tab with 标准 / 柔肤 / 光晕 /
-/// 胶片 / 颗粒. The flat gain map means the HDR reconstruction is SDR-like;
+/// Texture/Grain items are added too, so Photos should show the
+/// 质感 (texture) tab with 标准 / 柔肤 / 光晕 / 胶片 / 颗粒. The flat gain map means the HDR reconstruction is SDR-like;
 /// if Photos shows the photo too bright or too dark, the flat gain value
 /// is the first thing to tune in the next iteration.
 public enum SyntheticHDRPort {

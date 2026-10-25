@@ -32,7 +32,7 @@ public struct StylePortReport: Sendable {
     public let version: String
     public var mode: Mode
     public var warnings: [String]
-    public var decodedForPalette: Bool
+    public var decodedForStyle: Bool
     public var sceneStatistics: [String]
     public var lightMaps: [String]
     public var transplantedMattes: [String]
@@ -48,7 +48,7 @@ public struct StylePortReport: Sendable {
         self.version = version
         self.mode = mode
         warnings = []
-        decodedForPalette = false
+        decodedForStyle = false
         sceneStatistics = []
         lightMaps = []
         transplantedMattes = []
@@ -214,7 +214,7 @@ extension StylePorter {
             do {
                 let rgb = try NativeImageAnalyzer.rgb(from: source, width: 256, height: 192)
                 sortedLuma = StyleMaps.linearLuma(fromRGB: rgb).sorted()
-                report.decodedForPalette = true
+                report.decodedForStyle = true
                 let scene = try BinaryPlist.applySceneStatistics(
                     to: styles,
                     mode: .target,
@@ -224,11 +224,11 @@ extension StylePorter {
                 report.sceneStatistics = scene.1
             } catch {
                 report.warnings.append(
-                    "Palette analysis failed; donor statistics were kept: "
+                    "Style analysis failed; donor statistics were kept: "
                     + error.localizedDescription
                 )
             }
-            if report.decodedForPalette {
+            if report.decodedForStyle {
                 do {
                     let rgb = try NativeImageAnalyzer.rgb(
                         from: source,
