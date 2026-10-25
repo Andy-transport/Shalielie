@@ -4693,6 +4693,74 @@
           }
         }
       }
+    },
+    "Photos are processed on your iPhone or iPad and never uploaded. Floating light has no servers, no accounts, no analytics and no ads.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Photos are processed on your iPhone or iPad and never uploaded. Floating light has no servers, no accounts, no analytics and no ads."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "照片在你的 iPhone 或 iPad 上处理，绝不上传。浮光没有服务器、没有账号、没有数据分析，也没有广告。"
+          }
+        }
+      }
+    },
+    "With limited access Floating light sees only the photos you select. Photos stored in iCloud are downloaded by iOS when you style them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "With limited access Floating light sees only the photos you select. Photos stored in iCloud are downloaded by iOS when you style them."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在有限访问下，浮光只能看到你选择的照片。存储在 iCloud 中的照片会在你加风格时由 iOS 下载。"
+          }
+        }
+      }
+    },
+    "Floating light reads each original HEIC and its Live Photo video, and saves the styled result. Allow access in Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Floating light reads each original HEIC and its Live Photo video, and saves the styled result. Allow access in Settings."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浮光会读取每张 HEIC 原图及其实况照片视频，并保存加好风格的结果。请在“设置”中允许访问。"
+          }
+        }
+      }
+    },
+    "Floating light only sees the photos you choose. Select the photos you want to style.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Floating light only sees the photos you choose. Select the photos you want to style."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "浮光只能看到你选择的照片。请选择想要加风格的照片。"
+          }
+        }
+      }
     }
   }
 }
