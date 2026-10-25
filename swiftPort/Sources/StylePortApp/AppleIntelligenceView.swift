@@ -15,7 +15,8 @@ struct AppleIntelligenceView: View {
     @State private var loadingPhoto = false
 
     var body: some View {
-        Form {
+        ZStack {
+            Form {
             Section {
                 HStack(spacing: 14) {
                     Image("AppleIntelligence")
@@ -30,6 +31,16 @@ struct AppleIntelligenceView: View {
                 }
                 .padding(.vertical, 4)
                 Toggle("Apple智能", isOn: $enabled)
+                if enabled {
+                    HStack(spacing: 10) {
+                        SiriOrb()
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Siri 光效").font(.subheadline.weight(.medium))
+                            Text("彩色光沿屏幕边缘流动").font(.footnote).foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                }
             }
 
             Section {
@@ -76,6 +87,95 @@ struct AppleIntelligenceView: View {
         .fullScreenCover(isPresented: $showingErase) {
             if let eraseImage {
                 EraseView(image: eraseImage)
+            }
+        }
+            // Apple Intelligence Siri edge glow: when Apple Intelligence
+            // is on, a colourful gradient light wraps the screen edges,
+            // like invoking Siri in iOS 18. It is purely visual and
+            // never blocks taps.
+            if enabled {
+                SiriGlowBorder()
+                    .allowsHitTesting(false)
+            }
+        }
+    }
+}
+
+/// Siri edge glow: a colourful gradient border that slowly rotates
+/// around the screen edges, with a soft blurred halo behind a sharp
+/// inner line, like the light Siri shows when it is listening.
+private struct SiriGlowBorder: View {
+    @State private var angle: Double = 0
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(
+                    AngularGradient(
+                        gradient: Gradient(colors: [.pink, .orange, .yellow, .green, .blue, .purple, .pink]),
+                        center: .center,
+                        angle: .degrees(angle)
+                    ),
+                    lineWidth: 10
+                )
+                .blur(radius: 16)
+                .opacity(0.85)
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(
+                    AngularGradient(
+                        gradient: Gradient(colors: [.pink, .orange, .yellow, .green, .blue, .purple, .pink]),
+                        center: .center,
+                        angle: .degrees(angle)
+                    ),
+                    lineWidth: 3
+                )
+                .opacity(0.95)
+        }
+        .padding(2)
+        .ignoresSafeArea()
+        .onAppear {
+            withAnimation(.linear(duration: 4).repeatForever(autoreverses: false)) {
+                angle = 360
+            }
+        }
+    }
+}
+
+/// Siri orb preview: a small colourful ball with a breathing glow,
+/// shown on this page when Apple Intelligence is on.
+private struct SiriOrb: View {
+    @State private var angle: Double = 0
+    @State private var breathing = false
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    AngularGradient(
+                        gradient: Gradient(colors: [.pink, .orange, .yellow, .green, .blue, .purple, .pink]),
+                        center: .center,
+                        angle: .degrees(angle)
+                    )
+                )
+                .blur(radius: 10)
+                .opacity(0.7)
+                .scaleEffect(breathing ? 1.15 : 1.0)
+            Circle()
+                .fill(
+                    AngularGradient(
+                        gradient: Gradient(colors: [.pink, .orange, .yellow, .green, .blue, .purple, .pink]),
+                        center: .center,
+                        angle: .degrees(angle)
+                    )
+                )
+        }
+        .frame(width: 36, height: 36)
+        .onAppear {
+            withAnimation(.linear(duration: 4).repeatForever(autoreverses: false)) {
+                angle = 360
+            }
+            withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true)) {
+                breathing = true
             }
         }
     }
