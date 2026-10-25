@@ -58,7 +58,7 @@ struct WelcomeView: View {
                         welcomeRow(
                             systemImage: "photo",
                             title: "选择照片",
-                            subtitle: "从图库选择，或用「文件 · RAW」导入 JPG、RAW 与实况照片。",
+                            subtitle: "从图库选择，或用「文件」导入 JPG、RAW 与实况照片。",
                             action: onSelectPhotos
                         )
                         Divider().padding(.leading, 72)
@@ -238,7 +238,7 @@ struct PickglowHomeView: View {
                     }
                     .buttonStyle(.plain)
                     Button { onImportFiles() } label: {
-                        Label("文件 · RAW", systemImage: "folder")
+                        Label("文件", systemImage: "folder")
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
