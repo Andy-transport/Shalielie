@@ -336,11 +336,11 @@ private enum EditorTab: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .styles: return "Styles"
+        case .styles: return "风格"
         case .tone: return "影调"
-        case .crop: return "Crop"
-        case .tools: return "Tools"
-        case .erase: return "Erase"
+        case .crop: return "裁剪"
+        case .tools: return "工具"
+        case .erase: return "消除"
         }
     }
 
@@ -372,6 +372,11 @@ private struct ToneIcon: View {
     }
 }
 
+private enum StylesSegment {
+    case palette
+    case texture
+}
+
 /// Photos-style light editor: white background, Cancel/Done pills
 /// on top, photo in the middle, style name and a bottom pill for
 /// 质感 / 调色 / LUT / 调色盘, like the iPhone Photos STYLES editor.
@@ -389,6 +394,7 @@ struct AdjustPreviewView: View {
 
     private var appleStyle: AppleStyle { AppleStyle(rawValue: appleStyleRaw) ?? .standard }
     @State private var tab = EditorTab.styles
+    @State private var stylesSegment = StylesSegment.palette
     @State private var compareOn = false
     @State private var showingOriginal = false
     @State private var divider: CGFloat = 0.5
@@ -479,7 +485,7 @@ struct AdjustPreviewView: View {
             }
             HStack {
                 Spacer()
-                Text(tab == .styles ? "STYLES" : tab.title)
+                Text(tab.title)
                     .font(.title3.weight(.medium))
                     .tracking(2)
                     .foregroundStyle(.secondary)
@@ -566,13 +572,13 @@ struct AdjustPreviewView: View {
                 .padding(.top, 8)
 
             if tab == .styles {
-                paletteControls
+                stylesControls
             } else if tab == .tone {
                 toneControls
             } else if tab == .crop {
                 cropControls
             } else if tab == .tools {
-                toolsControls
+                lutControls
             } else if tab == .erase {
                 eraseControls
             }
@@ -682,8 +688,9 @@ struct AdjustPreviewView: View {
                                 VStack(spacing: 8) {
                                     textureChipIcon(for: texture)
                                         .frame(width: 68, height: 68)
-                                        .background(adjustment.texture == texture ? Color.black : Color.black.opacity(0.08), in: Circle())
-                                        .foregroundStyle(adjustment.texture == texture ? .white : .black)
+                                        .background(adjustment.texture == texture ? Color.white : Color.black.opacity(0.08), in: Circle())
+                                        .foregroundStyle(.black)
+                                        .shadow(color: adjustment.texture == texture ? .black.opacity(0.15) : .clear, radius: 8, y: 2)
                                     Text(texture.title)
                                         .font(.subheadline)
                                         .foregroundStyle(.black)
@@ -710,7 +717,7 @@ struct AdjustPreviewView: View {
                 in: 0...1
             )
             .padding(.horizontal, 16)
-            .tint(.black)
+            .tint(.yellow)
         }
     }
 
@@ -900,6 +907,26 @@ struct AdjustPreviewView: View {
         }
     }
 
+    /// Styles tab, like the second screenshot: a segmented control on
+    /// top switching 调色板 / 质感, all in Chinese. 调色板 shows the
+    /// style chips + large palette pad; 质感 shows the texture chips
+    /// + intensity slider below.
+    private var stylesControls: some View {
+        VStack(spacing: 14) {
+            Picker("风格", selection: $stylesSegment) {
+                Text("调色板").tag(StylesSegment.palette)
+                Text("质感").tag(StylesSegment.texture)
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal, 16)
+            if stylesSegment == .palette {
+                paletteControls
+            } else {
+                textureControls
+            }
+        }
+    }
+
     /// Crop: centre crop to a chosen aspect ratio, live in preview,
     /// applied on save. Original = no crop.
     private var cropControls: some View {
@@ -938,15 +965,6 @@ struct AdjustPreviewView: View {
             }
         }
         .buttonStyle(.plain)
-    }
-
-    /// Tools: 质感 + LUT, both in one tab.
-    private var toolsControls: some View {
-        VStack(spacing: 16) {
-            textureControls
-            Divider().padding(.horizontal, 16)
-            lutControls
-        }
     }
 
     /// Erase, directly in photo editing: a tab in the bottom pill,
