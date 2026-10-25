@@ -1,5 +1,5 @@
 /* App name under the icon */
-"CFBundleDisplayName" = "盘它";
-"CFBundleName" = "盘它";
-"NSPhotoLibraryUsageDescription" = "⌈盘它⌋读取你选择的照片的 HEIC 原图和实况照片视频。";
-"NSPhotoLibraryAddUsageDescription" = "⌈盘它⌋把加好风格的照片保存到你的图库。";
+"CFBundleDisplayName" = "浮光";
+"CFBundleName" = "浮光";
+"NSPhotoLibraryUsageDescription" = "⌈浮光⌋读取你选择的照片的 HEIC 原图和实况照片视频。";
+"NSPhotoLibraryAddUsageDescription" = "⌈浮光⌋把加好风格的照片保存到你的图库。";
