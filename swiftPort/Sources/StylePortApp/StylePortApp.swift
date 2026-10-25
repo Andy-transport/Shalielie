@@ -50,7 +50,7 @@ struct RootView: View {
                 Tab("Library", systemImage: "photo.on.rectangle", value: AppTab.library) { LibraryTab() }
                 Tab("Albums", systemImage: "rectangle.stack", value: AppTab.albums) { AlbumsTab() }
                 Tab("Backup Bin", systemImage: "archivebox", value: AppTab.backups) { BackupBinTab() }
-                Tab("Palettify", systemImage: "person.crop.circle", value: AppTab.me, role: .search) { SettingsTab() }
+                Tab("浮光", systemImage: "person.crop.circle", value: AppTab.me, role: .search) { SettingsTab() }
             }
         } else {
             TabView(selection: $tab) {
@@ -64,7 +64,7 @@ struct RootView: View {
                     .tabItem { Label("Backup Bin", systemImage: "archivebox") }
                     .tag(AppTab.backups)
                 SettingsTab()
-                    .tabItem { Label("Palettify", systemImage: "person.crop.circle") }
+                    .tabItem { Label("浮光", systemImage: "person.crop.circle") }
                     .tag(AppTab.me)
             }
         }
