@@ -1,6 +1,7 @@
 import Photos
 import SwiftUI
 import UniformTypeIdentifiers
+import UIKit
 
 /// Every photo the app may see: the whole library with full access, or the person's
 /// selection with limited access.
@@ -18,6 +19,7 @@ struct LibraryTab: View {
     @State private var importingFiles = false
     @State private var importError: String?
     @State private var showingConvert = false
+    @State private var convertFiles: [URL] = []
     @AppStorage(AppSettings.welcomeSeenKey) private var welcomeSeen = false
     /// Pickglow-style start screen: the full grid is only shown after the
     /// person chooses to browse it, so launch never dumps all photos at once.
@@ -61,31 +63,6 @@ struct LibraryTab: View {
                         }
                     }
                 }
-                .fileImporter(
-                    isPresented: $importingFiles,
-                    allowedContentTypes: [.heic, .heif, .quickTimeMovie],
-                    allowsMultipleSelection: true
-                ) { result in
-                    switch result {
-                    case .success(let urls):
-                        do {
-                            // Copy while the picker still grants access: passing the
-                            // security-scoped URLs to the async port queue was the
-                            // import bug -- by the time the queue read them, access
-                            // was gone and the job failed silently.
-                            let copied = try copyImportedFiles(urls)
-                            guard !copied.isEmpty else {
-                                importError = "没有可导入的照片文件，请选择 HEIC 照片（可同时选同名 MOV 做实况照片）。"
-                                return
-                            }
-                            queue?.port(files: copied)
-                        } catch {
-                            importError = error.localizedDescription
-                        }
-                    case .failure(let error):
-                        importError = error.localizedDescription
-                    }
-                }
                 .alert("导入失败", isPresented: Binding(get: { importError != nil }, set: { if !$0 { importError = nil } })) {
                     Button("确定") { importError = nil }
                 } message: { Text(importError ?? "") }
@@ -114,6 +91,14 @@ struct LibraryTab: View {
                 onBrowseAll: { reveal(); welcomeSeen = true }
             )
         }
+        .background(
+            FilePickerPresenter(
+                isPresented: $importingFiles,
+                allowedTypes: Self.filePickerTypes,
+                onResult: handlePickedFiles
+            )
+        )
+        .sheet(isPresented: $showingConvert) { ConvertToHEIFView(files: convertFiles) }
     }
 
     /// Copy Files picks into the app temp folder immediately, while the
@@ -132,6 +117,46 @@ struct LibraryTab: View {
             copied.append(destination)
         }
         return copied
+    }
+
+    /// File picker types: HEIC/HEIF/MOV for styling, plus JPEG/PNG/RAW
+    /// for conversion. Previously only HEIC/HEIF/MOV were allowed, so a
+    /// RAW or JPEG file picked from "文件 · RAW" was greyed out and the
+    /// button looked like it did nothing.
+    private static var filePickerTypes: [UTType] {
+        var types: [UTType] = [.jpeg, .png, .tiff, .heic, .heif, .rawImage, .quickTimeMovie]
+        for ext in ["dng", "cr2", "cr3", "nef", "arw", "raf", "orf", "rw2"] {
+            if let type = UTType(filenameExtension: ext) { types.append(type) }
+        }
+        return types
+    }
+
+    private func handlePickedFiles(_ result: Result<[URL], Error>) {
+        switch result {
+        case .success(let urls):
+            do {
+                let copied = try copyImportedFiles(urls)
+                guard !copied.isEmpty else {
+                    importError = "没有可导入的照片文件，请选择 HEIC 照片（可同时选同名 MOV 做实况照片）。"
+                    return
+                }
+                let stylable = copied.filter { ["heic", "heif", "mov", "mp4"].contains($0.pathExtension.lowercased()) }
+                let others = copied.filter { !stylable.contains($0) }
+                if !stylable.isEmpty { queue?.port(files: stylable) }
+                if !others.isEmpty {
+                    // JPG / RAW cannot be styled directly (styling needs an
+                    // original iPhone HEIC); open the converter with them
+                    // preloaded instead of failing silently.
+                    convertFiles = others
+                    showingConvert = true
+                }
+            } catch {
+                importError = error.localizedDescription
+            }
+        case .failure(let error):
+            if error is CancellationError { return }
+            importError = error.localizedDescription
+        }
     }
 
     private func reveal() {
@@ -167,7 +192,6 @@ struct LibraryTab: View {
                     insertion: .move(edge: .leading).combined(with: .opacity),
                     removal: .move(edge: .leading).combined(with: .opacity)
                 ))
-                .sheet(isPresented: $showingConvert) { ConvertToHEIFView() }
             }
         case .notDetermined:
             ProgressView()
@@ -201,6 +225,52 @@ struct LibraryTab: View {
                     description: Text("Photos you take or save appear here.")
                 )
             }
+        }
+    }
+}
+
+/// UIKit document picker, used instead of SwiftUI's fileImporter: the
+/// SwiftUI picker attached to the inner home/grid view did not open at
+/// all for some users (tapping "文件 · RAW" showed nothing). Presenting
+/// UIDocumentPickerViewController from a view controller at the
+/// NavigationStack level is the reliable path.
+struct FilePickerPresenter: UIViewControllerRepresentable {
+    @Binding var isPresented: Bool
+    let allowedTypes: [UTType]
+    let onResult: (Result<[URL], Error>) -> Void
+
+    func makeUIViewController(context: Context) -> UIViewController { UIViewController() }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        if isPresented, uiViewController.presentedViewController == nil {
+            let picker = UIDocumentPickerViewController(forOpeningContentTypes: allowedTypes, asCopy: true)
+            picker.allowsMultipleSelection = true
+            picker.delegate = context.coordinator
+            uiViewController.present(picker, animated: true)
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(isPresented: $isPresented, onResult: onResult)
+    }
+
+    class Coordinator: NSObject, UIDocumentPickerDelegate {
+        var isPresented: Binding<Bool>
+        var onResult: (Result<[URL], Error>) -> Void
+
+        init(isPresented: Binding<Bool>, onResult: @escaping (Result<[URL], Error>) -> Void) {
+            self.isPresented = isPresented
+            self.onResult = onResult
+        }
+
+        func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+            isPresented.wrappedValue = false
+            onResult(.success(urls))
+        }
+
+        func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
+            isPresented.wrappedValue = false
+            onResult(.failure(CancellationError()))
         }
     }
 }

@@ -19,7 +19,11 @@ import UniformTypeIdentifiers
 /// thumbnail item.
 struct ConvertToHEIFView: View {
     @State private var importing = false
-    @State private var files: [URL] = []
+    @State private var files: [URL]
+
+    init(files: [URL] = []) {
+        _files = State(initialValue: files)
+    }
     @State private var converting = false
     @State private var synthesizing = false
     @State private var done: [String] = []
