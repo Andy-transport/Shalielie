@@ -329,7 +329,7 @@ struct PhotoLibraryService: Sendable {
     }
 }
 
-private extension PhotoLibraryService {
+extension PhotoLibraryService {
     func requireAddAccess() async throws {
         let current = PHPhotoLibrary.authorizationStatus(for: .addOnly)
         let status = current == .notDetermined

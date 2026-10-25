@@ -108,7 +108,7 @@ struct ConvertToHEIFView: View {
                 switch result {
                 case .success(let urls):
                     do { files = try copyImportedFiles(urls) }
-                    catch { error = error.localizedDescription }
+                    catch let importError { self.error = importError.localizedDescription }
                 case .failure(let err):
                     error = err.localizedDescription
                 }
