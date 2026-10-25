@@ -45,6 +45,11 @@ struct EraseView: View {
     @State private var downloadingModel = false
     @State private var saving = false
     @State private var message: String?
+    @State private var complianceBlocked = false
+    @State private var complianceConfirmed = false
+    @State private var showingCompliance = false
+    @State private var compliancePendingAI = false
+    @State private var complianceScanning = true
 
     var body: some View {
         ZStack {
@@ -74,6 +79,28 @@ struct EraseView: View {
                 original = loaded
                 current = loaded
             }
+            if let original {
+                complianceBlocked = await Task.detached(priority: .userInitiated) {
+                    flagHeuristicSuspect(image: original)
+                }.value
+            }
+            complianceScanning = false
+        }
+        .alert(
+            "合规确认",
+            isPresented: $showingCompliance
+        ) {
+            Button("确认不涉及，继续消除") {
+                complianceConfirmed = true
+                let useAI = compliancePendingAI
+                Task { if useAI { await applyAIErase() } else { await applyErase() } }
+            }
+            Button("涉及上述标识，取消", role: .cancel) {
+                complianceBlocked = true
+                message = "按合规要求，涉及国旗、国徽、党旗、党徽、红旗的照片不得消除，本照片的消除功能已停用。"
+            }
+        } message: {
+            Text("请确认：本照片不涉及中华人民共和国国旗、国徽、党旗、党徽、红旗等标识。涉及上述标识的照片不得消除。")
         }
     }
 
@@ -166,6 +193,20 @@ struct EraseView: View {
 
     private var controls: some View {
         VStack(spacing: 14) {
+            if complianceScanning {
+                Text("正在做合规审查…")
+                    .font(.footnote).foregroundStyle(.secondary)
+            } else if complianceBlocked {
+                Text("合规审查：本照片疑似或已确认涉及中华人民共和国国旗、国徽、党旗、党徽、红旗，按合规要求消除功能已停用。")
+                    .font(.footnote).foregroundStyle(.red)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 16)
+            } else {
+                Text("合规：涉及中华人民共和国国旗、国徽、党旗、党徽、红旗的照片不得消除。")
+                    .font(.footnote).foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 16)
+            }
             HStack {
                 Text("笔刷").font(.subheadline.weight(.medium)).foregroundStyle(.white)
                 Spacer()
@@ -210,7 +251,7 @@ struct EraseView: View {
                         .background(Color.white, in: Capsule())
                         .foregroundStyle(.black)
                 }
-                .disabled(strokes.isEmpty || erasing || current == nil)
+                .disabled(strokes.isEmpty || erasing || current == nil || complianceBlocked || complianceScanning)
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 16)
@@ -224,7 +265,7 @@ struct EraseView: View {
                     .background(Color.white.opacity(0.15), in: Capsule())
                     .foregroundStyle(.white)
             }
-            .disabled(strokes.isEmpty || aiErasing || erasing || downloadingModel || current == nil)
+            .disabled(strokes.isEmpty || aiErasing || erasing || downloadingModel || current == nil || complianceBlocked || complianceScanning)
             .padding(.horizontal, 16)
             Text("普通消除是本机扩散填充，小面积、背景简单的地方效果最好；AI 消除用 LaMa 模型生成填充，首次使用时下载模型（约 60MB 以上），照片不出手机。完成后存为新照片，不改原图。")
                 .font(.footnote)
@@ -259,6 +300,8 @@ struct EraseView: View {
 
     private func applyErase() async {
         guard let image = current, !strokes.isEmpty, !erasing else { return }
+        guard !complianceBlocked else { return }
+        guard complianceConfirmed else { compliancePendingAI = false; showingCompliance = true; return }
         erasing = true
         defer { erasing = false }
         let strokes = strokes
@@ -349,6 +392,8 @@ struct EraseView: View {
 
     private func applyAIErase() async {
         guard let image = current, !strokes.isEmpty, !aiErasing, !erasing else { return }
+        guard !complianceBlocked else { return }
+        guard complianceConfirmed else { compliancePendingAI = true; showingCompliance = true; return }
         aiErasing = true
         defer { aiErasing = false }
         do {
@@ -610,4 +655,56 @@ private func aiInpaint(image: UIImage, strokes: [EraseStroke]) throws -> UIImage
     context.draw(blendedBackCG, in: crop)
     guard let finalCG = context.makeImage() else { return nil }
     return UIImage(cgImage: finalCG, scale: image.scale, orientation: image.imageOrientation)
+}
+
+/// Best-effort on-device compliance pre-check, not a legal identifier:
+/// a photo with a large strong-red area plus a compact yellow element
+/// (stars / hammer-and-sickle / emblem gold, as on the national flag,
+/// party flag and national emblem) is treated as suspect and its
+/// elimination is blocked. A plain red flag with no yellow element, or
+/// a small emblem, will not be caught by this scan, so the user
+/// declaration in EraseView is the second layer. False positives are
+/// possible on ordinary red-and-yellow photos; that is the conservative
+/// trade-off for this rule.
+private func flagHeuristicSuspect(image: UIImage) -> Bool {
+    guard let cgImage = image.cgImage else { return false }
+    let size = 256
+    let colorSpace = CGColorSpaceCreateDeviceRGB()
+    guard let context = CGContext(
+        data: nil,
+        width: size,
+        height: size,
+        bitsPerComponent: 8,
+        bytesPerRow: size * 4,
+        space: colorSpace,
+        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+    ) else { return false }
+    context.draw(cgImage, in: CGRect(x: 0, y: 0, width: size, height: size))
+    guard let data = context.data else { return false }
+    let pixels = data.bindMemory(to: UInt8.self, capacity: size * size * 4)
+    var redCount = 0
+    var yellowCount = 0
+    var yellowMinX = size, yellowMinY = size, yellowMaxX = 0, yellowMaxY = 0
+    for y in 0..<size {
+        for x in 0..<size {
+            let offset = (y * size + x) * 4
+            let r = Int(pixels[offset])
+            let g = Int(pixels[offset + 1])
+            let b = Int(pixels[offset + 2])
+            if r > 150 && g < 100 && b < 100 && r - g > 80 { redCount += 1 }
+            if r > 180 && g > 150 && b < 100 && r - b > 100 && g - b > 80 {
+                yellowCount += 1
+                yellowMinX = min(yellowMinX, x); yellowMaxX = max(yellowMaxX, x)
+                yellowMinY = min(yellowMinY, y); yellowMaxY = max(yellowMaxY, y)
+            }
+        }
+    }
+    let total = size * size
+    let redRatio = Double(redCount) / Double(total)
+    let yellowRatio = Double(yellowCount) / Double(total)
+    guard redRatio > 0.10, yellowRatio > 0.003, yellowCount > 0 else { return false }
+    let yellowWidth = Double(yellowMaxX - yellowMinX + 1) / Double(size)
+    let yellowHeight = Double(yellowMaxY - yellowMinY + 1) / Double(size)
+    // Stars / emblem gold sit in a compact area, not spread over the whole photo.
+    return yellowWidth < 0.6 && yellowHeight < 0.6
 }

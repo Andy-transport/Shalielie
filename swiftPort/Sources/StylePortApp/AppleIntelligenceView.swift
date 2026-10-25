@@ -49,7 +49,7 @@ struct AppleIntelligenceView: View {
                     .padding(.vertical, 8)
                 }
                 .disabled(loadingPhoto)
-                Text("选一张照片，手指涂抹不要的东西：普通消除用本机扩散填充，AI 消除用 LaMa 模型生成填充（首次使用时下载模型，照片不出手机）。完成后存为新照片，不改原图。")
+                Text("选一张照片，手指涂抹不要的东西：普通消除用本机扩散填充，AI 消除用 LaMa 模型生成填充（首次使用时下载模型，照片不出手机）。完成后存为新照片，不改原图。合规：涉及中华人民共和国国旗、国徽、党旗、党徽、红旗的照片不得消除，消除页会先做合规审查。")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             } header: {
