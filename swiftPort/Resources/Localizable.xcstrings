@@ -3453,23 +3453,6 @@
         }
       }
     },
-    "The styled photo is saved next to the original as a new photo, named with \"_PhotographicStyle\".": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The styled photo is saved next to the original as a new photo, named with \"_PhotographicStyle\"."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "风格版会作为新照片保存在原图旁，文件名带有“_PhotographicStyle”。"
-          }
-        }
-      }
-    },
     "The styled photo takes the original's place, with its date, location, favorite and albums. The original goes to the Backup Bin, so you can restore it.": {
       "extractionState": "manual",
       "localizations": {
@@ -4639,6 +4622,74 @@
           "stringUnit": {
             "state": "translated",
             "value": "所选照片的原图不是 HEIC。"
+          }
+        }
+      }
+    },
+    "The styled photo is saved next to the original as a new photo, named with \"_Floating_light\".": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The styled photo is saved next to the original as a new photo, named with \"_Floating_light\"."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "风格版会作为新照片保存在原图旁，文件名带有“_Floating_light”。"
+          }
+        }
+      }
+    },
+    "All Photos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "All Photos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "全部"
+          }
+        }
+      }
+    },
+    "Selected Photos": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selected Photos"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择范围"
+          }
+        }
+      }
+    },
+    "Select Range or All": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Select Range or All"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "选择范围或全部"
           }
         }
       }
