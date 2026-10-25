@@ -48,7 +48,7 @@ struct SettingsTab: View {
                     if replaceOriginals {
                         Text("The styled photo takes the original's place, with its date, location, favorite and albums. The original goes to the Backup Bin, so you can restore it.")
                     } else {
-                        Text("The styled photo is saved next to the original as a new photo, named with \"_PhotographicStyle\".")
+                        Text("The styled photo is saved next to the original as a new photo, named with \"_Floating_light\".")
                     }
                 }
 

@@ -364,7 +364,7 @@ struct OutputNames {
             video = original.video?.filename
             return
         }
-        let suffix = textureOnly ? "_TextureGrain" : "_PhotographicStyle"
+        let suffix = textureOnly ? "_Floating_light_TextureGrain" : "_Floating_light"
         let base = (original.filename as NSString).deletingPathExtension
         photo = base + suffix + ".HEIC"
         video = original.video.map {
