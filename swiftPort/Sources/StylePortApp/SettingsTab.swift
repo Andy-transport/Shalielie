@@ -208,6 +208,9 @@ struct AboutView: View {
                     Text("Version \(AppSettings.appVersion) · porter \(StylePorter.version)")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
+                    Text("该app由Muse和Claud编译")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
