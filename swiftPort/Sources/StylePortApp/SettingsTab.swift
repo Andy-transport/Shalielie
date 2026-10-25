@@ -10,7 +10,7 @@ struct SettingsTab: View {
     @AppStorage(AppSettings.textureKey) private var texture = true
     @State private var access = PhotoLibraryService.status
     @Environment(\.scenePhase) private var scenePhase
-    @AppStorage("lamaModelDownloadProgress") private var downloadProgress: Double = -1
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
@@ -33,33 +33,6 @@ struct SettingsTab: View {
                             }
                         }
                         .padding(.vertical, 4)
-                    }
-                }
-
-                Section {
-                    NavigationLink {
-                        AppleIntelligenceView()
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image("AppleIntelligence")
-                                .resizable()
-                                .frame(width: 28, height: 28)
-                                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-                                .accessibilityHidden(true)
-                            Text("Apple智能与Siri")
-                            Spacer()
-                            if downloadProgress >= 0 && !EraseView.isModelReady {
-                                Image("DownloadIcon")
-                                    .resizable()
-                                    .renderingMode(.template)
-                                    .scaledToFit()
-                                    .frame(width: 20, height: 20)
-                                    .foregroundStyle(downloadProgress >= 0.99 ? Color.green : downloadProgress >= 0.30 ? Color.orange : Color.gray)
-                                Text("\(Int(downloadProgress * 100))%")
-                                    .font(.subheadline)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
                     }
                 }
 
@@ -155,6 +128,12 @@ struct SettingsTab: View {
                 }
             }
             .readableWidth()
+            .navigationTitle("设置")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("完成") { dismiss() }
+                }
+            }
         }
         .onChange(of: scenePhase) { _, phase in
             // Access can change in Settings while the app is in the background.
@@ -310,11 +289,6 @@ struct PrivacyView: View {
                     symbol: "lock.shield",
                     title: "Backups are yours",
                     text: "The Backup Bin lives in the app's own storage on this device and is deleted with the app."
-                )
-                Feature(
-                    symbol: "brain",
-                    title: "本地智能",
-                    text: "照片本地消除，打开 Apple智能时首次下载模型。"
                 )
             }
         }

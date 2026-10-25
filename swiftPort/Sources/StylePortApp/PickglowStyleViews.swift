@@ -287,7 +287,7 @@ struct PickglowHomeView: View {
         .offset(y: appeared ? 0 : 16)
         .animation(.easeOut(duration: 0.45), value: appeared)
         .onAppear { appeared = true }
-        .sheet(isPresented: $showingSettings) {
+        .fullScreenCover(isPresented: $showingSettings) {
             SettingsTab()
         }
     }

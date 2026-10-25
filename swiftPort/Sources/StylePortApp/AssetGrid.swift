@@ -259,6 +259,7 @@ struct AssetGridView<Empty: View>: View {
     @State private var searchText = ""
     @State private var searchPresented = false
     @State private var previewRoute: AssetRoute?
+    @EnvironmentObject private var photoDetailState: PhotoDetailState
     /// The photo the viewer shows now; closing zooms back into its tile.
     @State private var zoomID: String?
     @Namespace private var zoomNamespace
@@ -402,6 +403,12 @@ struct AssetGridView<Empty: View>: View {
         .navigationDestination(item: $previewRoute) { route in
             AssetDetailView(identifier: route.identifier, assets: model.assets) { zoomID = $0 }
                 .zoomTransition(id: zoomID ?? route.identifier, in: zoomNamespace)
+        }
+        .onChange(of: previewRoute) { _, route in
+            photoDetailState.isPresented = route != nil
+        }
+        .onDisappear {
+            photoDetailState.isPresented = false
         }
         .confirmationDialog(
             replaceTitle,

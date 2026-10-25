@@ -276,13 +276,13 @@ enum CubeLUT {
 private enum EditorTab: String, CaseIterable {
     case styles
     case tone
-    case tools
+    case lut
 
     var title: String {
         switch self {
         case .styles: return "质感"
         case .tone: return "影调"
-        case .tools: return "工具"
+        case .lut: return "LUT"
         }
     }
 
@@ -290,7 +290,7 @@ private enum EditorTab: String, CaseIterable {
         switch self {
         case .styles: return "circle.grid.3x3"
         case .tone: return ""
-        case .tools: return "wand.and.stars"
+        case .lut: return "square.stack.3d"
         }
     }
 }
@@ -307,11 +307,7 @@ private struct ToneIcon: View {
     }
 }
 
-private enum ToolsTool {
-    case lut
-    case extend
-    case reframe
-}
+
 
 
 /// Photos-style light editor: white background, Cancel/Done pills
@@ -326,10 +322,8 @@ struct AdjustPreviewView: View {
     @State private var original: UIImage?
     @State private var adjusted: UIImage?
     @State private var adjustment = PhotoAdjustment()
-    @AppStorage("appleIntelligenceEnabled") private var appleIntelligenceEnabled = true
-
+    
     @State private var tab = EditorTab.styles
-    @State private var toolsTool = ToolsTool.lut
     @State private var compareOn = false
     @State private var showingOriginal = false
     @State private var divider: CGFloat = 0.5
@@ -337,7 +331,6 @@ struct AdjustPreviewView: View {
     @State private var message: String?
     @State private var showingShare = false
     @State private var showingInfo = false
-    @State private var showingErase = false
 
     var body: some View {
         ZStack {
@@ -372,9 +365,6 @@ struct AdjustPreviewView: View {
         }
         .sheet(isPresented: $showingShare) {
             if let adjusted { AdjustedShareSheet(image: adjusted) }
-        }
-        .fullScreenCover(isPresented: $showingErase) {
-            EraseView(asset: asset)
         }
         .task {
             original = await loadOriginal()
@@ -425,15 +415,6 @@ struct AdjustPreviewView: View {
                     .foregroundStyle(.secondary)
                 Spacer()
                 HStack(spacing: 16) {
-                    Button { showingErase = true } label: {
-                        Image("EraseIcon")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 20, height: 20)
-                    }
-                    .accessibilityLabel("消除不要的东西")
-                    .disabled(!appleIntelligenceEnabled)
-                    .opacity(appleIntelligenceEnabled ? 1 : 0.5)
                     Button { if adjusted != nil { showingShare = true } } label: {
                         Image(systemName: "square.and.arrow.up")
                     }
@@ -514,8 +495,8 @@ struct AdjustPreviewView: View {
                 stylesControls
             } else if tab == .tone {
                 toneControls
-            } else if tab == .tools {
-                toolsControls
+            } else if tab == .lut {
+                lutControls
             }
 
             // Photos-style bottom pill: icon + label per tab, selected
@@ -528,14 +509,6 @@ struct AdjustPreviewView: View {
                             ZStack(alignment: .top) {
                                 if item == .tone {
                                     ToneIcon()
-                                } else if item == .tools {
-                                    // Tools icon: user's woven-loops image, in the
-                                    // same monochrome template style as the others.
-                                    Image("ToolsIcon")
-                                        .renderingMode(.template)
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 28, height: 28)
                                 } else {
                                     Image(systemName: item.systemImage)
                                         .font(.title3)
@@ -591,7 +564,7 @@ struct AdjustPreviewView: View {
         switch tab {
         case .styles: return "质感"
         case .tone: return "影调"
-        case .tools: return "工具"
+        case .lut: return "LUT"
         }
     }
 
@@ -792,82 +765,6 @@ struct AdjustPreviewView: View {
     }
 
 
-    /// Tools tab, all in Chinese: LUT is usable; 扩展 + 重构图 are
-    /// shown grey and disabled (暂不可用), like the second screenshot
-    /// where they appear greyed out. Tapping them does nothing.
-    private var toolsControls: some View {
-        VStack(spacing: 14) {
-            HStack(spacing: 12) {
-                toolChip(title: "LUT", tool: .lut) {
-                    Image(systemName: "square.stack.3d")
-                        .font(.title3)
-                }
-                unavailableToolChip(title: "扩展") {
-                    ExtendIcon()
-                }
-                unavailableToolChip(title: "重构图") {
-                    ReframeIcon()
-                }
-                Button { showingErase = true } label: {
-                    Text("AI消除")
-                        .font(.headline)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
-                        .background(Color.primary.opacity(0.08), in: Capsule())
-                        .foregroundStyle(.primary)
-                }
-                .buttonStyle(.plain)
-                .disabled(!appleIntelligenceEnabled)
-                .opacity(appleIntelligenceEnabled ? 1 : 0.5)
-            }
-            .padding(.horizontal, 16)
-            if !appleIntelligenceEnabled {
-                Text("需打开 Apple智能才能用 AI消除。")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 16)
-            }
-            lutControls
-        }
-    }
-
-    /// A greyed-out, disabled tool chip: grey circle, grey icon and text,
-    /// no tap action. Used for 扩展 and 重构图, which are unavailable.
-    private func unavailableToolChip<Content: View>(title: String, @ViewBuilder icon: () -> Content) -> some View {
-        Button {} label: {
-            VStack(spacing: 8) {
-                icon()
-                    .frame(width: 68, height: 68)
-                    .background(Color.primary.opacity(0.08), in: Circle())
-                    .foregroundStyle(.secondary)
-                Text(title)
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .buttonStyle(.plain)
-        .disabled(true)
-        .opacity(0.6)
-    }
-
-    private func toolChip<Content: View>(title: String, tool: ToolsTool, @ViewBuilder icon: () -> Content) -> some View {
-        let selected = toolsTool == tool
-        return Button { toolsTool = tool } label: {
-            VStack(spacing: 8) {
-                icon()
-                    .frame(width: 68, height: 68)
-                    .background(selected ? Color.white : Color.primary.opacity(0.08), in: Circle())
-                    .foregroundStyle(selected ? .black : .primary)
-                    .shadow(color: selected ? .black.opacity(0.15) : .clear, radius: 8, y: 2)
-                Text(title)
-                    .font(.subheadline)
-                    .foregroundStyle(.primary)
-            }
-        }
-        .buttonStyle(.plain)
-    }
-
-
     private var toneControls: some View {
         VStack(spacing: 14) {
             editorSlider(title: "亮度", value: Binding(get: { adjustment.brightness }, set: { adjustment.brightness = $0 }), range: -1...1)
@@ -1012,35 +909,3 @@ private struct Triangle: Shape {
     }
 }
 
-/// Extend icon, like the second screenshot: a square with a hatched
-/// (striped) border, meaning the canvas is extended outward.
-private struct ExtendIcon: View {
-    var body: some View {
-        ZStack {
-            Rectangle()
-                .stroke(style: StrokeStyle(lineWidth: 2, dash: [4, 3]))
-                .frame(width: 34, height: 34)
-            Rectangle()
-                .stroke(lineWidth: 2)
-                .frame(width: 20, height: 20)
-        }
-    }
-}
-
-/// Reframe icon, like the second screenshot: three arrows, one up and
-/// two down-outward, meaning the framing is moved.
-private struct ReframeIcon: View {
-    var body: some View {
-        ZStack {
-            Image(systemName: "arrow.up")
-                .font(.headline)
-                .offset(y: -14)
-            Image(systemName: "arrow.down.left")
-                .font(.headline)
-                .offset(x: -14, y: 12)
-            Image(systemName: "arrow.down.right")
-                .font(.headline)
-                .offset(x: 14, y: 12)
-        }
-    }
-}

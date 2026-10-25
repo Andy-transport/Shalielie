@@ -1,5 +1,4 @@
 import SwiftUI
-import UserNotifications
 
 @main
 struct StylePortApp: App {
@@ -8,7 +7,6 @@ struct StylePortApp: App {
 
     init() {
         AppSettings.registerDefaults()
-        UNUserNotificationCenter.current().delegate = EraseNotificationDelegate.shared
     }
 
     var body: some Scene {
@@ -34,8 +32,15 @@ extension EnvironmentValues {
     }
 }
 
+/// Shared flag: true while a photo detail view is open in any grid.
+/// RootView hides the bottom bar while this is true.
+final class PhotoDetailState: ObservableObject {
+    @Published var isPresented = false
+}
+
 struct RootView: View {
     @EnvironmentObject private var queue: PortQueue
+    @StateObject private var photoDetailState = PhotoDetailState()
     @State private var showingActivity = false
     // 0 = 图库, 1 = 相簿, 2 = 备份. 人像不是页签, 是打开设置页的按钮.
     @State private var selectedTab = 0
@@ -44,7 +49,7 @@ struct RootView: View {
     @State private var showingSettings = false
 
     private var showingBottomBar: Bool {
-        !(selectedTab == 0 && !libraryRevealed)
+        !(selectedTab == 0 && !libraryRevealed) && !photoDetailState.isPresented
     }
 
     var body: some View {
@@ -58,6 +63,7 @@ struct RootView: View {
                 LibraryTab(libraryRevealed: $libraryRevealed)
             }
         }
+        .environmentObject(photoDetailState)
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 12) {
                 if let status = queue.statusLine {
@@ -71,49 +77,67 @@ struct RootView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
                 if showingBottomBar {
-                    HStack(spacing: 12) {
-                        HStack(spacing: 28) {
+                    HStack(spacing: 14) {
+                        HStack(spacing: 32) {
                             tabButton(title: "图库", systemImage: "photo.stack", tab: 0)
                             tabButton(title: "相簿", systemImage: "square.stack", tab: 1)
                             tabButton(title: "备份", systemImage: "archivebox", tab: 2)
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 14)
                         .floatingGlass()
+                        .gesture(
+                            DragGesture(minimumDistance: 30)
+                                .onEnded { value in
+                                    withAnimation {
+                                        if value.translation.width < -30 {
+                                            selectTab(min(2, selectedTab + 1))
+                                        } else if value.translation.width > 30 {
+                                            selectTab(max(0, selectedTab - 1))
+                                        }
+                                    }
+                                }
+                        )
                         Button { showingSettings = true } label: {
                             Image(systemName: "gearshape")
-                                .font(.title3)
-                                .frame(width: 48, height: 48)
+                                .font(.title2)
+                                .frame(width: 56, height: 56)
                                 .glassCircle()
                         }
                         .buttonStyle(.plain)
                     }
                     .padding(.horizontal, 20)
                     .padding(.bottom, 8)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
             }
         }
         .animation(.spring(duration: 0.3), value: queue.statusLine)
+        .animation(.easeInOut(duration: 0.25), value: showingBottomBar)
         .sheet(isPresented: $showingActivity) {
             ActivitySheet()
         }
-        .sheet(isPresented: $showingSettings) {
+        .fullScreenCover(isPresented: $showingSettings) {
             SettingsTab()
         }
     }
 
+    private func selectTab(_ tab: Int) {
+        selectedTab = tab
+        // 从相簿 / 备份切回图库时直接进网格, 不回主页
+        // (主页只能从网格的 首页 回去, 那时底部栏会隐藏).
+        if tab == 0 { libraryRevealed = true }
+    }
+
     private func tabButton(title: String, systemImage: String, tab: Int) -> some View {
         Button {
-            selectedTab = tab
-            // 从相簿 / 备份切回图库时直接进网格, 不回主页
-            // (主页只能从网格的 首页 回去, 那时底部栏会隐藏).
-            if tab == 0 { libraryRevealed = true }
+            selectTab(tab)
         } label: {
             VStack(spacing: 2) {
                 Image(systemName: systemImage)
-                    .font(.title3)
+                    .font(.title2)
                 Text(title)
-                    .font(.caption)
+                    .font(.footnote)
             }
             .foregroundStyle(selectedTab == tab ? Color.accentColor : Color.primary)
         }
