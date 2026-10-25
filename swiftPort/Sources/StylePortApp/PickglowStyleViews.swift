@@ -157,6 +157,7 @@ struct PickglowHomeView: View {
 
     @State private var showingSettings = false
     @State private var appeared = false
+    @AppStorage("speakerEnabled") private var speakerEnabled = true
 
     var body: some View {
         ScrollView {
@@ -260,6 +261,34 @@ struct PickglowHomeView: View {
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
+
+                // Home-page permissions: photo access status, plus a
+                // speaker row. iOS has no separate speaker permission
+                // dialog, so this row is the app's speaker switch:
+                // on = Siri sound plays through the speaker, off = muted.
+                // Turning it on plays the Siri sound once as a test.
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("权限").font(.headline)
+                    HStack {
+                        Label("照片", systemImage: "photo")
+                        Spacer()
+                        Text(photoAccessText)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    Divider()
+                    HStack {
+                        Label("扬声器", systemImage: "speaker.wave.2")
+                        Spacer()
+                        Toggle("", isOn: $speakerEnabled)
+                            .labelsHidden()
+                    }
+                }
+                .padding(16)
+                .glassCard()
+                .onChange(of: speakerEnabled) { _, value in
+                    if value { playBundledSound("SiriChime") }
+                }
             }
             .padding(20)
             .frame(maxWidth: 720)
@@ -272,6 +301,16 @@ struct PickglowHomeView: View {
         .onAppear { appeared = true }
         .sheet(isPresented: $showingSettings) {
             SettingsTab()
+        }
+    }
+
+    private var photoAccessText: String {
+        switch status {
+        case .authorized: return "全部"
+        case .limited: return "选择范围"
+        case .denied, .restricted: return "未允许"
+        case .notDetermined: return "未设置"
+        @unknown default: return "未知"
         }
     }
 }

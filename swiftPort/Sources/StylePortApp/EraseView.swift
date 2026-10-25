@@ -340,7 +340,6 @@ struct EraseView: View {
         // Let the colourful animation play briefly before revealing the result,
         // like Apple's Clean Up shimmer, instead of swapping instantly.
         try? await Task.sleep(for: .milliseconds(700))
-        playBundledSound("EraseDone")
         history.append(image)
         current = result
         self.strokes.removeAll()
@@ -437,8 +436,7 @@ struct EraseView: View {
                 message = "AI 消除失败，请再试一次，或用普通消除。"
                 return
             }
-            playBundledSound("EraseDone")
-            history.append(image)
+                history.append(image)
             current = result
             self.strokes.removeAll()
         } catch {

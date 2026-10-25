@@ -14,6 +14,7 @@ struct AppleIntelligenceView: View {
     @State private var eraseImage: UIImage?
     @State private var showingErase = false
     @State private var loadingPhoto = false
+    @State private var activationGlow = false
 
     var body: some View {
         ZStack {
@@ -73,6 +74,16 @@ struct AppleIntelligenceView: View {
         .onChange(of: enabled) { _, value in
             if value { playBundledSound("SiriChime") }
         }
+        .onAppear {
+            // Sound and animation start in the same moment: play the
+            // Siri sound and show the edge glow together for 3 seconds.
+            activationGlow = true
+            playBundledSound("SiriChime")
+            Task {
+                try? await Task.sleep(for: .seconds(3))
+                activationGlow = false
+            }
+        }
         .navigationTitle("Apple智能与Siri")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: pickerItem) { _, item in
@@ -96,8 +107,10 @@ struct AppleIntelligenceView: View {
             // Apple Intelligence Siri edge glow: when Apple Intelligence
             // is on, a colourful gradient light wraps the screen edges,
             // like invoking Siri in iOS 18. It is purely visual and
-            // never blocks taps.
-            if enabled {
+            // never blocks taps. On opening this page the glow and the
+            // sound start together (activationGlow), even if the toggle
+            // is off, so sound and animation are simultaneous.
+            if enabled || activationGlow {
                 SiriGlowBorder()
                     .allowsHitTesting(false)
             }
@@ -191,6 +204,9 @@ private struct SiriOrb: View {
 private var bundledSoundPlayer: AVAudioPlayer?
 
 func playBundledSound(_ name: String) {
+    // Home-page speaker permission: off means no sound at all.
+    // Default is on when the setting has never been touched.
+    if UserDefaults.standard.object(forKey: "speakerEnabled") as? Bool == false { return }
     guard let asset = NSDataAsset(name: name) else { return }
     do {
         bundledSoundPlayer = try AVAudioPlayer(data: asset.data)
