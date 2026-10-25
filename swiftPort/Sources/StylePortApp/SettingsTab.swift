@@ -80,6 +80,11 @@ struct SettingsTab: View {
                             Label("Open Settings", systemImage: "gearshape")
                         }
                     }
+                    Button {
+                        LimitedLibrary.openSettings()
+                    } label: {
+                        Label("Select Range or All", systemImage: "photo.badge.plus")
+                    }
                     LabeledContent {
                         Text(backupSummary)
                     } label: {
@@ -131,8 +136,8 @@ struct SettingsTab: View {
 
     private var accessTitle: String {
         switch access {
-        case .authorized: return L("Full Access")
-        case .limited: return L("Limited Access")
+        case .authorized: return L("All Photos")
+        case .limited: return L("Selected Photos")
         case .notDetermined: return L("Not Determined")
         default: return L("No Access")
         }
