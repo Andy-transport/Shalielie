@@ -79,11 +79,18 @@ struct PhotoAdjustment: Equatable {
     var paletteIntensity: Double = 1
     /// Centre crop aspect ratio (width / height), nil = original.
     var cropAspect: Double? = nil
+    /// Extend: fraction of width/height added on each side (0 = none).
+    var extendRatio: Double = 0
+    /// Reframe: crop scale (1 = none) + shift (-1...1) in each direction.
+    var reframeScale: Double = 1
+    var reframeDX: Double = 0
+    var reframeDY: Double = 0
 
     var isDefault: Bool {
         brightness == 0 && contrast == 1 && saturation == 1 && warmth == 0
             && texture == .standard && textureIntensity == 0 && lut == .none && paletteIntensity == 1
-            && cropAspect == nil
+            && cropAspect == nil && extendRatio == 0 && reframeScale == 1
+            && reframeDX == 0 && reframeDY == 0
     }
 
     func apply(to image: UIImage) -> UIImage? {
@@ -125,6 +132,40 @@ struct PhotoAdjustment: Equatable {
                 cropRect = CGRect(x: Int((Double(w) - cw) / 2), y: 0, width: Int(cw), height: h)
             }
             if let cropped = rendered.cropping(to: cropRect) { rendered = cropped }
+        }
+        // Reframe: crop to a smaller frame, shifted in the chosen direction.
+        if reframeScale < 1 {
+            let w = rendered.width, h = rendered.height
+            let cw = Int(Double(w) * reframeScale), ch = Int(Double(h) * reframeScale)
+            let maxX = w - cw, maxY = h - ch
+            let x = Int(Double(maxX) / 2 * (1 + reframeDX))
+            let y = Int(Double(maxY) / 2 * (1 + reframeDY))
+            if let cropped = rendered.cropping(to: CGRect(x: max(0, x), y: max(0, y), width: cw, height: ch)) {
+                rendered = cropped
+            }
+        }
+        // Extend: larger canvas, border filled with a blurred, enlarged
+        // copy of the photo as background, original sharp in the centre.
+        // This is a blurred-background fill, not AI generative outpainting.
+        if extendRatio > 0 {
+            let w = rendered.width, h = rendered.height
+            let nw = Int(Double(w) * (1 + 2 * extendRatio)), nh = Int(Double(h) * (1 + 2 * extendRatio))
+            let ox = (nw - w) / 2, oy = (nh - h) / 2
+            var bg = CIImage(cgImage: rendered)
+            if let blur = CIFilter(name: "CIGaussianBlur") {
+                blur.setValue(bg, forKey: kCIInputImageKey)
+                blur.setValue(NSNumber(value: 30), forKey: kCIInputRadiusKey)
+                if let blurred = blur.outputImage { bg = blurred.cropped(to: bg.extent) }
+            }
+            if let bgRendered = context.createCGImage(bg, from: bg.extent) {
+                let colorSpace = CGColorSpaceCreateDeviceRGB()
+                if let ctx = CGContext(data: nil, width: nw, height: nh, bitsPerComponent: 8, bytesPerRow: nw * 4, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) {
+                    ctx.interpolationQuality = .high
+                    ctx.draw(bgRendered, in: CGRect(x: 0, y: 0, width: nw, height: nh))
+                    ctx.draw(rendered, in: CGRect(x: ox, y: oy, width: w, height: h))
+                    if let extended = ctx.makeImage() { rendered = extended }
+                }
+            }
         }
         return UIImage(cgImage: rendered, scale: image.scale, orientation: image.imageOrientation)
     }
@@ -372,6 +413,12 @@ private struct ToneIcon: View {
     }
 }
 
+private enum ToolsTool {
+    case lut
+    case extend
+    case reframe
+}
+
 private enum StylesSegment {
     case palette
     case texture
@@ -395,6 +442,7 @@ struct AdjustPreviewView: View {
     private var appleStyle: AppleStyle { AppleStyle(rawValue: appleStyleRaw) ?? .standard }
     @State private var tab = EditorTab.styles
     @State private var stylesSegment = StylesSegment.palette
+    @State private var toolsTool = ToolsTool.lut
     @State private var compareOn = false
     @State private var showingOriginal = false
     @State private var divider: CGFloat = 0.5
@@ -578,7 +626,7 @@ struct AdjustPreviewView: View {
             } else if tab == .crop {
                 cropControls
             } else if tab == .tools {
-                lutControls
+                toolsControls
             } else if tab == .erase {
                 eraseControls
             }
@@ -721,8 +769,8 @@ struct AdjustPreviewView: View {
         }
     }
 
-    /// Brand marks for the LUT chips, drawn in code (no image assets):
-    /// Ricoh as its RICOH wordmark, Leica as its red dot + Leica wordmark.
+    /// Brand marks for the LUT chips: Ricoh as its RICOH wordmark drawn
+    /// in code, Leica as the user's red-circle Leica script image.
     private func lutChipIcon(for lut: PhotoLUT, selected: Bool) -> some View {
         Group {
             if lut == .ricoh {
@@ -730,12 +778,10 @@ struct AdjustPreviewView: View {
                     .font(.system(size: 13, weight: .heavy))
                     .tracking(1)
             } else if lut == .leica {
-                VStack(spacing: 2) {
-                    Circle().fill(Color(red: 0.89, green: 0.02, blue: 0.08))
-                        .frame(width: 16, height: 16)
-                    Text("Leica")
-                        .font(.system(size: 11, weight: .bold, design: .serif))
-                }
+                Image("LeicaIcon")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 56, height: 56)
             } else {
                 Image(systemName: "slash.circle")
                     .font(.title3)
@@ -967,6 +1013,97 @@ struct AdjustPreviewView: View {
         .buttonStyle(.plain)
     }
 
+    /// Tools tab, all in Chinese: 扩展 + 重构图 on top, then LUT.
+    /// 扩展 = larger canvas, blurred-background fill (not AI).
+    /// 重构图 = crop to a smaller frame, shifted in the chosen direction.
+    private var toolsControls: some View {
+        VStack(spacing: 14) {
+            HStack(spacing: 16) {
+                toolChip(title: "LUT", tool: .lut) {
+                    Image(systemName: "square.stack.3d")
+                        .font(.title3)
+                        .foregroundStyle(.black)
+                }
+                toolChip(title: "扩展", tool: .extend) {
+                    ExtendIcon()
+                }
+                toolChip(title: "重构图", tool: .reframe) {
+                    ReframeIcon()
+                }
+            }
+            .padding(.horizontal, 16)
+            if toolsTool == .extend {
+                VStack(spacing: 8) {
+                    HStack {
+                        Text("扩展幅度").font(.subheadline.weight(.medium)).foregroundStyle(.black)
+                        Spacer()
+                        Text("\(Int(adjustment.extendRatio * 100))%").font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
+                    }
+                    .padding(.horizontal, 16)
+                    Slider(value: $adjustment.extendRatio, in: 0...0.4)
+                        .padding(.horizontal, 16)
+                        .tint(.black)
+                    Text("四周加宽，扩展区用模糊背景填充，不是 AI 生成。拉到 0% 就是原图。")
+                        .font(.footnote).foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 16)
+                }
+            } else if toolsTool == .reframe {
+                VStack(spacing: 8) {
+                    HStack {
+                        Text("缩放").font(.subheadline.weight(.medium)).foregroundStyle(.black)
+                        Spacer()
+                        Text("\(Int(adjustment.reframeScale * 100))%").font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
+                    }
+                    .padding(.horizontal, 16)
+                    Slider(value: $adjustment.reframeScale, in: 0.7...1)
+                        .padding(.horizontal, 16)
+                        .tint(.black)
+                    HStack {
+                        Text("左右").font(.subheadline.weight(.medium)).foregroundStyle(.black)
+                        Spacer()
+                        Text(adjustment.reframeDX.formatted(.number.precision(.fractionLength(2)))).font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
+                    }
+                    .padding(.horizontal, 16)
+                    Slider(value: $adjustment.reframeDX, in: -1...1)
+                        .padding(.horizontal, 16)
+                        .tint(.black)
+                    HStack {
+                        Text("上下").font(.subheadline.weight(.medium)).foregroundStyle(.black)
+                        Spacer()
+                        Text(adjustment.reframeDY.formatted(.number.precision(.fractionLength(2)))).font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
+                    }
+                    .padding(.horizontal, 16)
+                    Slider(value: $adjustment.reframeDY, in: -1...1)
+                        .padding(.horizontal, 16)
+                        .tint(.black)
+                    Text("裁到更小的构图，左右上下滑杆移构图位置。缩放 100% 就是原图。")
+                        .font(.footnote).foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 16)
+                }
+            } else {
+                lutControls
+            }
+        }
+    }
+
+    private func toolChip<Content: View>(title: String, tool: ToolsTool, @ViewBuilder icon: () -> Content) -> some View {
+        let selected = toolsTool == tool
+        return Button { toolsTool = tool } label: {
+            VStack(spacing: 8) {
+                icon()
+                    .frame(width: 68, height: 68)
+                    .background(selected ? Color.white : Color.black.opacity(0.08), in: Circle())
+                    .shadow(color: selected ? .black.opacity(0.15) : .clear, radius: 8, y: 2)
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundStyle(.black)
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
     /// Erase, directly in photo editing: a tab in the bottom pill,
     /// with an 打开消除 button that opens the same EraseView used
     /// from the Apple Intelligence page. It works on this photo and
@@ -1141,5 +1278,39 @@ private struct Triangle: Shape {
         path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
         path.closeSubpath()
         return path
+    }
+}
+
+/// Extend icon, like the second screenshot: a square with a hatched
+/// (striped) border, meaning the canvas is extended outward.
+private struct ExtendIcon: View {
+    var body: some View {
+        ZStack {
+            Rectangle()
+                .stroke(Color.black, style: StrokeStyle(lineWidth: 2, dash: [4, 3]))
+                .frame(width: 34, height: 34)
+            Rectangle()
+                .stroke(Color.black, lineWidth: 2)
+                .frame(width: 20, height: 20)
+        }
+    }
+}
+
+/// Reframe icon, like the second screenshot: three arrows, one up and
+/// two down-outward, meaning the framing is moved.
+private struct ReframeIcon: View {
+    var body: some View {
+        ZStack {
+            Image(systemName: "arrow.up")
+                .font(.headline)
+                .offset(y: -14)
+            Image(systemName: "arrow.down.left")
+                .font(.headline)
+                .offset(x: -14, y: 12)
+            Image(systemName: "arrow.down.right")
+                .font(.headline)
+                .offset(x: 14, y: 12)
+        }
+        .foregroundStyle(.black)
     }
 }
