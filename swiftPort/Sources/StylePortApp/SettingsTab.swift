@@ -116,9 +116,6 @@ struct SettingsTab: View {
                     } label: {
                         Label("About Floating light", systemImage: "info.circle")
                     }
-                    Link(destination: AppSettings.repositoryURL) {
-                        Label { Text("Source Code on GitHub") } icon: { GitHubMark() }
-                    }
                 } header: {
                     Text("About")
                 }
@@ -177,9 +174,6 @@ struct AboutView: View {
                 Text("Experimental, unofficial software, not affiliated with Apple. Keep your original photos.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
-                Link(destination: AppSettings.repositoryURL) {
-                    Label { Text("github.com/nathanatgit/Shalielie") } icon: { GitHubMark() }
-                }
             }
         }
         .readableWidth()
@@ -254,17 +248,6 @@ struct PrivacyView: View {
         .readableWidth()
         .navigationTitle("Privacy")
         .navigationBarTitleDisplayMode(.inline)
-    }
-}
-
-/// GitHub's mark (from Primer Octicons), tinted like the SF Symbols beside it.
-private struct GitHubMark: View {
-    var body: some View {
-        Image("GitHubMark")
-            .resizable()
-            .scaledToFit()
-            .frame(width: 20, height: 20)
-            .accessibilityHidden(true)
     }
 }
 
