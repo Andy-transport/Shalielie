@@ -41,8 +41,6 @@ struct EraseView: View {
     @State private var currentStroke: EraseStroke?
     @State private var brush: CGFloat = 28
     @State private var erasing = false
-    @State private var aiErasing = false
-    @State private var downloadingModel = false
     @State private var saving = false
     @State private var message: String?
     @State private var complianceBlocked = false
@@ -69,11 +67,6 @@ struct EraseView: View {
             Text(message ?? "")
         }
         .onChange(of: erasing) { _, value in
-            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
-                eraseAnimationAngle = value ? 360 : 0
-            }
-        }
-        .onChange(of: aiErasing) { _, value in
             withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
                 eraseAnimationAngle = value ? 360 : 0
             }
@@ -153,12 +146,10 @@ struct EraseView: View {
                             }
                         }
                         .stroke(Color.red.opacity(0.55), style: StrokeStyle(lineWidth: brush, lineCap: .round, lineJoin: .round))
-                        // Apple-style colourful animation while erasing:
-                        // a rainbow gradient that shimmers over the painted
-                        // area, plus a soft colourful glow over the photo.
-                        // It runs while the erase (normal or AI) is working,
-                        // then fades when the result appears.
-                        if erasing || aiErasing {
+                        // HDR erase animation, like the user's reference:
+                        // a bright white stroke with a soft HDR bloom
+                        // glow, instead of the previous rainbow gradient.
+                        if erasing {
                             Path { path in
                                 for stroke in strokes {
                                     guard let first = stroke.points.first else { continue }
@@ -169,23 +160,26 @@ struct EraseView: View {
                                 }
                             }
                             .stroke(
-                                AngularGradient(
-                                    gradient: Gradient(colors: [.pink, .orange, .yellow, .green, .blue, .purple, .pink]),
-                                    center: .center,
-                                    angle: .degrees(eraseAnimationAngle)
-                                ),
+                                Color.white,
+                                style: StrokeStyle(lineWidth: brush * 2.0, lineCap: .round, lineJoin: .round)
+                            )
+                            .blur(radius: 16)
+                            .opacity(0.9)
+                            Path { path in
+                                for stroke in strokes {
+                                    guard let first = stroke.points.first else { continue }
+                                    path.move(to: CGPoint(x: first.x * displayWidth, y: first.y * displayHeight))
+                                    for point in stroke.points.dropFirst() {
+                                        path.addLine(to: CGPoint(x: point.x * displayWidth, y: point.y * displayHeight))
+                                    }
+                                }
+                            }
+                            .stroke(
+                                Color.white,
                                 style: StrokeStyle(lineWidth: brush, lineCap: .round, lineJoin: .round)
                             )
-                            .opacity(0.95)
-                            LinearGradient(
-                                colors: [.pink.opacity(0.28), .yellow.opacity(0.28), .green.opacity(0.28), .blue.opacity(0.28), .purple.opacity(0.28)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                            .hueRotation(.degrees(eraseAnimationAngle))
-                            .frame(width: displayWidth, height: displayHeight)
-                            .blur(radius: 24)
-                            .opacity(0.55)
+                            .shadow(color: .white, radius: 12)
+                            .opacity(1)
                         }
                     }
                     .frame(width: size.width, height: size.height)
@@ -243,7 +237,7 @@ struct EraseView: View {
                 .padding(.horizontal, 16)
                 .tint(.white)
             if strokes.isEmpty && currentStroke == nil && !complianceBlocked && !complianceScanning {
-                Text("还没涂抹：先在照片上涂抹要消除的东西，消除和 AI 消除按钮才会变亮。")
+                Text("还没涂抹：先在照片上涂抹要消除的东西，消除按钮才会变亮。")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -289,20 +283,7 @@ struct EraseView: View {
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 16)
-            Button {
-                Task { await applyAIErase() }
-            } label: {
-                Label(aiErasing ? "AI 消除中…" : (downloadingModel ? "正在下载 AI 模型…" : "AI 消除"), systemImage: "sparkles")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Color.white.opacity(0.15), in: Capsule())
-                    .foregroundStyle(.white)
-            }
-            .disabled(strokes.isEmpty || aiErasing || erasing || downloadingModel || current == nil || complianceBlocked || complianceScanning)
-            .opacity(strokes.isEmpty || aiErasing || erasing || downloadingModel || current == nil || complianceBlocked || complianceScanning ? 0.5 : 1)
-            .padding(.horizontal, 16)
-            Text("普通消除是本机扩散填充，小面积、背景简单的地方效果最好；AI 消除用 LaMa 模型生成填充，首次使用时下载模型（约 60MB 以上），照片不出手机。完成后存为新照片，不改原图。")
+            Text("消除用 LaMa 模型生成填充，打开 Apple智能时首次下载模型，照片不出手机。模型未就绪时用本机扩散填充。完成后存为新照片，不改原图。")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -333,15 +314,31 @@ struct EraseView: View {
         }
     }
 
+    /// Erase, with AI integrated: if the LaMa model is ready (it is
+    /// downloaded when Apple Intelligence is first turned on), use
+    /// LaMa generation; otherwise fall back to on-device diffusion.
+    /// There is no separate AI button any more.
     private func applyErase() async {
         guard let image = current, !strokes.isEmpty, !erasing else { return }
         guard !complianceBlocked else { return }
         erasing = true
         defer { erasing = false }
         let strokes = strokes
-        let result = await Task.detached(priority: .userInitiated) {
-            inpaint(image: image, strokes: strokes)
-        }.value
+        var result: UIImage?
+        if Self.isModelReady {
+            do {
+                result = try await Task.detached(priority: .userInitiated) {
+                    try aiInpaint(image: image, strokes: strokes)
+                }.value
+            } catch {
+                result = nil
+            }
+        }
+        if result == nil {
+            result = await Task.detached(priority: .userInitiated) {
+                inpaint(image: image, strokes: strokes)
+            }.value
+        }
         guard let result else {
             message = "消除失败，请再试一次。"
             return
@@ -381,10 +378,11 @@ struct EraseView: View {
 
     /// LaMaFP16_512 from the open-source Inpaint-iOS project (GPL-3.0,
     /// based on advimman/lama). The model is NOT bundled in the IPA:
-    /// on first AI erase it is downloaded to Documents, three files
-    /// totalling roughly 60MB+, and reused afterwards. If the download
-    /// only yields a tiny placeholder file (e.g. a Git LFS pointer),
-    /// that is treated as a failure with a clear message, not a crash.
+    /// it is downloaded to Documents when Apple Intelligence is first
+    /// turned on, three files totalling roughly 60MB+, and reused
+    /// afterwards. If the download only yields a tiny placeholder file
+    /// (e.g. a Git LFS pointer), that is treated as a failure with a
+    /// clear message, not a crash.
     static var modelDirectory: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("LaMaFP16_512.mlpackage")
@@ -399,7 +397,13 @@ struct EraseView: View {
         ]
     }
 
-    private func downloadModelIfNeeded() async throws {
+    static var isModelReady: Bool {
+        let weightURL = modelDirectory.appendingPathComponent("Data/com.apple.CoreML/weights/weight.bin")
+        let size = (try? FileManager.default.attributesOfItem(atPath: weightURL.path)[.size] as? Int) ?? 0
+        return size > 10_000_000
+    }
+
+    static func downloadModelIfNeeded() async throws {
         let directory = Self.modelDirectory
         let weightURL = directory.appendingPathComponent("Data/com.apple.CoreML/weights/weight.bin")
         if FileManager.default.fileExists(atPath: weightURL.path) {
@@ -421,35 +425,6 @@ struct EraseView: View {
         guard size > 10_000_000 else {
             try? FileManager.default.removeItem(at: directory)
             throw NSError(domain: "EraseView", code: 1, userInfo: [NSLocalizedDescriptionKey: "模型文件下载到的不是完整权重（可能是占位文件），AI 消除暂不可用，请重试或用普通消除。"])
-        }
-    }
-
-    private func applyAIErase() async {
-        guard let image = current, !strokes.isEmpty, !aiErasing, !erasing else { return }
-        guard !complianceBlocked else { return }
-        aiErasing = true
-        defer { aiErasing = false }
-        do {
-            if !FileManager.default.fileExists(atPath: Self.modelDirectory.path) {
-                downloadingModel = true
-                defer { downloadingModel = false }
-                try await downloadModelIfNeeded()
-            } else {
-                try await downloadModelIfNeeded()
-            }
-            let strokes = strokes
-            let result = try await Task.detached(priority: .userInitiated) {
-                try aiInpaint(image: image, strokes: strokes)
-            }.value
-            guard let result else {
-                message = "AI 消除失败，请再试一次，或用普通消除。"
-                return
-            }
-                history.append(image)
-            current = result
-            self.strokes.removeAll()
-        } catch {
-            message = "AI 消除失败：\(error.localizedDescription)"
         }
     }
 }

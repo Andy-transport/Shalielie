@@ -15,6 +15,8 @@ struct AppleIntelligenceView: View {
     @State private var showingErase = false
     @State private var loadingPhoto = false
     @State private var activationGlow = false
+    @State private var downloadingModel = false
+    @State private var modelDownloadFailed = false
 
     var body: some View {
         ZStack {
@@ -33,6 +35,19 @@ struct AppleIntelligenceView: View {
                 }
                 .padding(.vertical, 4)
                 Toggle("Apple智能", isOn: $enabled)
+                if enabled && downloadingModel {
+                    Text("正在下载 LaMa 模型…")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else if enabled && modelDownloadFailed {
+                    Text("LaMa 模型下载失败，消除时会用本机扩散填充；重新打开开关可再试一次。")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                } else if enabled && EraseView.isModelReady {
+                    Text("LaMa 模型已就绪。")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Section {
@@ -57,10 +72,16 @@ struct AppleIntelligenceView: View {
                             .background(Color.accentColor, in: Capsule())
                             .foregroundStyle(.white)
                     }
-                    .disabled(loadingPhoto)
+                    .disabled(loadingPhoto || !enabled)
                 }
+                .opacity(enabled ? 1 : 0.5)
                 .padding(.vertical, 8)
-                Text("选一张照片，手指涂抹不要的东西：普通消除用本机扩散填充，AI 消除用 LaMa 模型生成填充（首次使用时下载模型，照片不出手机）。完成后存为新照片，不改原图。合规：涉及敏感标识的照片不得消除，消除页会先做合规审查。")
+                if !enabled {
+                    Text("需打开 Apple智能才能用消除。")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                Text("选一张照片，手指涂抹不要的东西：普通消除用本机扩散填充，消除用 LaMa 模型生成填充（打开 Apple智能时首次下载模型，照片不出手机）。完成后存为新照片，不改原图。合规：涉及敏感标识的照片不得消除，消除页会先做合规审查。")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             } header: {
@@ -77,9 +98,35 @@ struct AppleIntelligenceView: View {
                     try? await Task.sleep(for: .seconds(3))
                     activationGlow = false
                 }
+                // First time Apple Intelligence is turned on, download
+                // the LaMa model, so Erase is ready when it is used.
+                if !EraseView.isModelReady {
+                    Task {
+                        downloadingModel = true
+                        modelDownloadFailed = false
+                        do {
+                            try await EraseView.downloadModelIfNeeded()
+                        } catch {
+                            modelDownloadFailed = true
+                        }
+                        downloadingModel = false
+                    }
+                }
             }
         }
         .onAppear {
+            if enabled && !EraseView.isModelReady && !downloadingModel {
+                Task {
+                    downloadingModel = true
+                    modelDownloadFailed = false
+                    do {
+                        try await EraseView.downloadModelIfNeeded()
+                    } catch {
+                        modelDownloadFailed = true
+                    }
+                    downloadingModel = false
+                }
+            }
             // Sound and animation start in the same moment: play the
             // Siri sound and show the edge glow together for 3 seconds.
             activationGlow = true

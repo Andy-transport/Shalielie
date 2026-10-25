@@ -340,7 +340,7 @@ struct PrivacyView: View {
                 Feature(
                     symbol: "brain",
                     title: "本地智能",
-                    text: "照片本地消除，首次使用需下载模型。"
+                    text: "照片本地消除，打开 Apple智能时首次下载模型。"
                 )
             }
         }

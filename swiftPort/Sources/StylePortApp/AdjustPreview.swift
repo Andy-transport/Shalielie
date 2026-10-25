@@ -432,6 +432,7 @@ struct AdjustPreviewView: View {
     @State private var adjusted: UIImage?
     @State private var adjustment = PhotoAdjustment()
     @AppStorage(AppSettings.photographicStyleEnabledKey) private var photographicStyleEnabled = true
+    @AppStorage("appleIntelligenceEnabled") private var appleIntelligenceEnabled = true
     @AppStorage(AppSettings.appleStyleKey) private var appleStyleRaw = "standard"
 
     private var appleStyle: AppleStyle { AppleStyle(rawValue: appleStyleRaw) ?? .standard }
@@ -1099,7 +1100,14 @@ struct AdjustPreviewView: View {
                     .foregroundStyle(.white)
             }
             .buttonStyle(.plain)
+            .disabled(!appleIntelligenceEnabled)
+            .opacity(appleIntelligenceEnabled ? 1 : 0.5)
             .padding(.horizontal, 16)
+            if !appleIntelligenceEnabled {
+                Text("需打开 Apple智能才能用消除。")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
             Text("普通消除用本机扩散填充，AI 消除用 LaMa 模型生成填充。合规：涉及敏感标识的照片不得消除。")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
