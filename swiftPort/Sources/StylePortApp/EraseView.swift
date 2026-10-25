@@ -242,6 +242,13 @@ struct EraseView: View {
             Slider(value: $brush, in: 10...80)
                 .padding(.horizontal, 16)
                 .tint(.white)
+            if strokes.isEmpty && currentStroke == nil && !complianceBlocked && !complianceScanning {
+                Text("还没涂抹：先在照片上涂抹要消除的东西，消除和 AI 消除按钮才会变亮。")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 16)
+            }
             HStack(spacing: 12) {
                 Button {
                     strokes.removeAll()
@@ -278,6 +285,7 @@ struct EraseView: View {
                         .foregroundStyle(.black)
                 }
                 .disabled(strokes.isEmpty || erasing || current == nil || complianceBlocked || complianceScanning)
+                .opacity(strokes.isEmpty || erasing || current == nil || complianceBlocked || complianceScanning ? 0.5 : 1)
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 16)
@@ -292,6 +300,7 @@ struct EraseView: View {
                     .foregroundStyle(.white)
             }
             .disabled(strokes.isEmpty || aiErasing || erasing || downloadingModel || current == nil || complianceBlocked || complianceScanning)
+            .opacity(strokes.isEmpty || aiErasing || erasing || downloadingModel || current == nil || complianceBlocked || complianceScanning ? 0.5 : 1)
             .padding(.horizontal, 16)
             Text("普通消除是本机扩散填充，小面积、背景简单的地方效果最好；AI 消除用 LaMa 模型生成填充，首次使用时下载模型（约 60MB 以上），照片不出手机。完成后存为新照片，不改原图。")
                 .font(.footnote)
