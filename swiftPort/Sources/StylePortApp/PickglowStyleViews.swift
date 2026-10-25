@@ -1,6 +1,19 @@
+import AVFoundation
 import Photos
 import SwiftUI
 import UIKit
+
+/// Play a bundled sound asset once. Previously defined in the deleted
+/// Apple Intelligence page; moved here because the home speaker switch
+/// still uses it as its test sound when turned on.
+private var bundledSoundPlayer: AVAudioPlayer?
+
+func playBundledSound(_ name: String) {
+    guard let asset = NSDataAsset(name: name),
+          let player = try? AVAudioPlayer(data: asset.data) else { return }
+    bundledSoundPlayer = player
+    player.play()
+}
 
 /// Pickglow-style welcome screen. Every row is a real action, not a picture:
 /// 选择照片 goes to photo selection, 添加风格 goes to the library grid where
