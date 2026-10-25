@@ -245,11 +245,6 @@ struct FeaturesView: View {
         List {
             Section {
                 Feature(
-                    symbol: "camera.filters",
-                    title: "Photographic Styles palette",
-                    text: "Adds the style palette introduced with iPhone 16 to HEIC photos from earlier iPhones, so you can change the style in Photos and change it back."
-                )
-                Feature(
                     symbol: "circle.grid.3x3",
                     title: "Texture & Grain",
                     text: "Adds the iOS 27 Texture and Grain controls, and Soft Skin for portraits with face data. Photos from iPhone 16 and 17 that already have a style get just these."

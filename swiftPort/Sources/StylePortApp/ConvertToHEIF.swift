@@ -12,8 +12,8 @@ import UniformTypeIdentifiers
 /// the output is a normal HEIF file saved back to Photos, and Photos will
 /// show its thumbnail normally. It does NOT give a converted photo the
 /// iPhone HDR tile structure that "Add Photographic Style" needs, so a
-/// converted HEIF still cannot gain the style palette -- that only works
-/// on original iPhone HEICs. What it does fix, on-device, is the
+/// converted HEIF still cannot be styled in Photos the way an
+/// original iPhone HEIC can. What it does fix, on-device, is the
 /// "no embedded thumbnail" case: a re-saved HEIC copy is decoded and
 /// re-encoded as a clean HEIF instead of being rejected for a missing
 /// thumbnail item.
@@ -44,7 +44,7 @@ struct ConvertToHEIFView: View {
                     Text("在 iPhone 本机把 RAW、JPG、PNG 转成 HEIF，存回照片 App，不用 Mac 或 Windows 命令行工具。")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    Text("无内嵌缩略图的 HEIC 副本也会走同一条路：先解码原图，再由 iOS 编码器重新生成一份干净的 HEIF，照片 App 能正常显示缩略图。注意：转出的普通 HEIF 没有 iPhone 原图的 HDR 结构，所以仍不能用「添加摄影风格」加调色板，调色板只支持 iPhone 原图 HEIC。")
+                    Text("无内嵌缩略图的 HEIC 副本也会走同一条路：先解码原图，再由 iOS 编码器重新生成一份干净的 HEIF，照片 App 能正常显示缩略图。注意：转出的普通 HEIF 没有 iPhone 原图的 HDR 结构。")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
@@ -78,7 +78,7 @@ struct ConvertToHEIFView: View {
                     Button {
                         Task { await syntheticAll() }
                     } label: {
-                        Text(synthesizing ? "合成 HDR 中…" : "合成 HDR HEIF（调色板 + 质感）")
+                        Text(synthesizing ? "合成 HDR 中…" : "合成 HDR HEIF（质感）")
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
@@ -86,7 +86,7 @@ struct ConvertToHEIFView: View {
                     }
                     .buttonStyle(.plain)
                     .disabled(converting || synthesizing)
-                    Text("实验版 v1：把原图缩放到 4032×3024 横构图，切成 48 张主图瓦片 + 12 张平增益图瓦片 + 416×312 缩略图，拼成 iPhone HDR HEIF，再加调色板和质感（标准 / 柔肤 / 光晕 / 胶片 / 颗粒）。在照片 App 编辑里应出现调色板和质感两个页签。增益图是平值，HDR 亮度可能与原图有差异；竖构图会被裁成横构图。请实测后告诉我调色板是否出现、亮暗是否正常。")
+                    Text("实验版 v1：把原图缩放到 4032×3024 横构图，切成 48 张主图瓦片 + 12 张平增益图瓦片 + 416×312 缩略图，拼成 iPhone HDR HEIF，再加质感（标准 / 柔肤 / 光晕 / 胶片 / 颗粒）。在照片 App 编辑里应出现质感页签。增益图是平值，HDR 亮度可能与原图有差异；竖构图会被裁成横构图。请实测后告诉我质感是否出现、亮暗是否正常。")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                     }

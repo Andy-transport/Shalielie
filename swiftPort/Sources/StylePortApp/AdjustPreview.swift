@@ -76,7 +76,6 @@ struct PhotoAdjustment: Equatable {
     var textureIntensity: Double = 0
     var lut: PhotoLUT = .none
     var lutIntensity: Double = 1
-    var paletteIntensity: Double = 1
     /// Centre crop aspect ratio (width / height), nil = original.
     var cropAspect: Double? = nil
     /// Extend: fraction of width/height added on each side (0 = none).
@@ -88,7 +87,7 @@ struct PhotoAdjustment: Equatable {
 
     var isDefault: Bool {
         brightness == 0 && contrast == 1 && saturation == 1 && warmth == 0
-            && texture == .standard && textureIntensity == 0 && lut == .none && paletteIntensity == 1
+            && texture == .standard && textureIntensity == 0 && lut == .none
             && cropAspect == nil && extendRatio == 0 && reframeScale == 1
             && reframeDX == 0 && reframeDY == 0
     }
@@ -100,13 +99,13 @@ struct PhotoAdjustment: Equatable {
         controls.setValue(output, forKey: kCIInputImageKey)
         controls.setValue(NSNumber(value: brightness), forKey: kCIInputBrightnessKey)
         controls.setValue(NSNumber(value: contrast), forKey: kCIInputContrastKey)
-        controls.setValue(NSNumber(value: 1 + (saturation - 1) * paletteIntensity), forKey: kCIInputSaturationKey)
+        controls.setValue(NSNumber(value: saturation), forKey: kCIInputSaturationKey)
         guard let controlled = controls.outputImage else { return nil }
         output = controlled
-        if warmth * paletteIntensity != 0, let temperature = CIFilter(name: "CITemperatureAndTint") {
+        if warmth != 0, let temperature = CIFilter(name: "CITemperatureAndTint") {
             temperature.setValue(output, forKey: kCIInputImageKey)
             temperature.setValue(
-                CIVector(x: CGFloat(6500 + warmth * paletteIntensity * 2500), y: 0),
+                CIVector(x: CGFloat(6500 + warmth * 2500), y: 0),
                 forKey: "inputNeutral"
             )
             temperature.setValue(CIVector(x: 0, y: 0), forKey: "inputTargetNeutral")
@@ -274,26 +273,23 @@ enum CubeLUT {
 
 
 private enum EditorTab: String, CaseIterable {
-    case styles
     case tone
     case lut
-    case erase
+    case styles
 
     var title: String {
         switch self {
-        case .styles: return "质感"
         case .tone: return "影调"
         case .lut: return "LUT"
-        case .erase: return "消除"
+        case .styles: return "质感"
         }
     }
 
     var systemImage: String {
         switch self {
-        case .styles: return "circle.grid.3x3"
         case .tone: return ""
         case .lut: return "square.stack.3d"
-        case .erase: return ""
+        case .styles: return "circle.grid.3x3"
         }
     }
 }
@@ -333,15 +329,10 @@ struct AdjustPreviewView: View {
     @State private var saving = false
     @State private var message: String?
     @State private var showingShare = false
+    @State private var panelVisible = false
+    @State private var showingEraseDirect = false
     @State private var showingInfo = false
-    @State private var showingErase = false
-    @State private var modelReady = false
-    @State private var modelDownloading = false
-    @State private var modelProgress: Double = 0
-    @State private var modelDownloaded: Int64 = 0
-    @State private var modelTotal: Int64 = 0
-    @State private var modelSpeed: Double = 0
-    @State private var modelError: String?
+    @State private var textureTicksVisible = false
 
     var body: some View {
         ZStack {
@@ -376,6 +367,9 @@ struct AdjustPreviewView: View {
         }
         .sheet(isPresented: $showingShare) {
             if let adjusted { AdjustedShareSheet(image: adjusted) }
+        }
+        .fullScreenCover(isPresented: $showingEraseDirect) {
+            EraseView(asset: asset)
         }
         .task {
             original = await loadOriginal()
@@ -426,6 +420,12 @@ struct AdjustPreviewView: View {
                     .foregroundStyle(.secondary)
                 Spacer()
                 HStack(spacing: 16) {
+                    Button { showingEraseDirect = true } label: {
+                        Image("EraseIcon")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 24, height: 24)
+                    }
                     Button { if adjusted != nil { showingShare = true } } label: {
                         Image(systemName: "square.and.arrow.up")
                     }
@@ -495,21 +495,22 @@ struct AdjustPreviewView: View {
 
     private var bottomPanel: some View {
         VStack(spacing: 16) {
-            // Current style name, centred like Photos ("STANDARD").
-            Text(bottomStyleName)
-                .font(.title3.weight(.medium))
-                .tracking(2)
-                .foregroundStyle(.primary)
-                .padding(.top, 8)
+            // Panel content is NOT shown synchronously with the pill:
+            // tapping a pill item opens its page (panel) below.
+            if panelVisible {
+                Text(bottomStyleName)
+                    .font(.title3.weight(.medium))
+                    .tracking(2)
+                    .foregroundStyle(.primary)
+                    .padding(.top, 8)
 
-            if tab == .styles {
-                stylesControls
-            } else if tab == .tone {
-                toneControls
-            } else if tab == .lut {
-                lutControls
-            } else if tab == .erase {
-                eraseControls
+                if tab == .styles {
+                    stylesControls
+                } else if tab == .tone {
+                    toneControls
+                } else if tab == .lut {
+                    lutControls
+                }
             }
 
             // Photos-style bottom pill: icon + label per tab, selected
@@ -517,15 +518,10 @@ struct AdjustPreviewView: View {
             HStack(spacing: 0) {
                 ForEach(EditorTab.allCases, id: \.self) { item in
                     let selected = item == tab
-                    Button { tab = item } label: {
+                    Button { tab = item; panelVisible = true } label: {
                         VStack(spacing: 4) {
                             ZStack(alignment: .top) {
-                                if item == .erase {
-                                    Image("EraseIcon")
-                                        .resizable()
-                                        .scaledToFit()
-                                        .frame(width: 28, height: 28)
-                                } else if item == .tone {
+                                if item == .tone {
                                     ToneIcon()
                                 } else {
                                     Image(systemName: item.systemImage)
@@ -549,11 +545,10 @@ struct AdjustPreviewView: View {
                     .buttonStyle(.plain)
                 }
             }
-            // Photos-style dark pill: dark glass with white / grey icons
-            // and a yellow triangle on the selected tab, regardless of
-            // the system appearance. Size is unchanged: same padding,
-            // icon size, font size and full-width layout as before.
-            .environment(\.colorScheme, .dark)
+            // Photos-style glass pill: Liquid Glass on iOS 26+, material
+            // fallback below, adapting to the system light/dark appearance.
+            // Size is unchanged: same padding, icon size, font size and
+            // full-width layout as before.
             .floatingGlass()
             .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
             .padding(.horizontal, 16)
@@ -567,7 +562,7 @@ struct AdjustPreviewView: View {
                 .buttonStyle(.plain)
                 .disabled(adjustment.isDefault)
                 Spacer()
-                Text("质感、调色、LUT 全部可直接使用。完成后存为新照片。")
+                Text("影调、LUT、质感全部可直接使用。完成后存为新照片。")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.trailing)
@@ -580,10 +575,9 @@ struct AdjustPreviewView: View {
 
     private var bottomStyleName: String {
         switch tab {
-        case .styles: return "质感"
         case .tone: return "影调"
         case .lut: return "LUT"
-        case .erase: return "消除"
+        case .styles: return "质感"
         }
     }
 
@@ -623,6 +617,7 @@ struct AdjustPreviewView: View {
                             Button {
                                 adjustment.texture = texture
                                 if adjustment.textureIntensity == 0 { adjustment.textureIntensity = 0.5 }
+                                textureTicksVisible = true
                             } label: {
                                 VStack(spacing: 8) {
                                     textureChipIcon(for: texture)
@@ -631,8 +626,8 @@ struct AdjustPreviewView: View {
                                         .foregroundStyle(adjustment.texture == texture ? .black : .primary)
                                         .shadow(color: adjustment.texture == texture ? .black.opacity(0.15) : .clear, radius: 8, y: 2)
                                     Text(texture.title)
-                                        .font(.subheadline)
-                                        .foregroundStyle(.primary)
+                                        .font(adjustment.texture == texture ? .subheadline.weight(.semibold) : .subheadline)
+                                        .foregroundStyle(adjustment.texture == texture ? .primary : .secondary)
                                     // Mini intensity bar under the selected chip only:
                                     // 10 ticks mirroring the main tick bar's intensity.
                                     // Filled ticks are yellow, the tick at the current
@@ -652,16 +647,19 @@ struct AdjustPreviewView: View {
                 }
                 .padding(.horizontal, 16)
             }
-            HStack {
-                Text(adjustment.texture.title).font(.subheadline.weight(.medium)).foregroundStyle(.primary)
-                Spacer()
-                Text("\(Int(adjustment.textureIntensity * 100))")
-                    .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
-            }
-            .padding(.horizontal, 16)
-            textureTickSlider
+            if textureTicksVisible {
+                HStack {
+                    Text(adjustment.texture.title).font(.title3.weight(.medium)).foregroundStyle(.primary)
+                    Spacer()
+                    Text("\(Int(adjustment.textureIntensity * 100))")
+                        .font(.title3).foregroundStyle(.secondary).monospacedDigit()
+                }
                 .padding(.horizontal, 16)
+                textureTickSlider
+                    .padding(.horizontal, 16)
+            }
         }
+        .onAppear { textureTicksVisible = false }
     }
 
     /// Compact intensity bar shown under the selected texture chip:
@@ -734,120 +732,6 @@ struct AdjustPreviewView: View {
         .frame(width: 68, height: 68)
         .background(selected ? Color.primary : Color.primary.opacity(0.08), in: Circle())
         .foregroundStyle(selected ? Color(uiColor: .systemBackground) : .primary)
-    }
-
-    /// Erase tab: direct, no Apple Intelligence gate. The capsule button
-    /// opens EraseView for the current photo. Model download status and
-    /// speed are shown here, so the user can see the local model download
-    /// instead of it hiding in Settings.
-    private var eraseControls: some View {
-        VStack(spacing: 12) {
-            Image("EraseIcon")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 48, height: 48)
-            Text("照片消除：手指涂抹不要的东西，再点消除填充。")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 16)
-            if modelReady {
-                Text("本地大模型已就绪")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-            } else if modelDownloading {
-                ProgressView(value: modelProgress)
-                    .padding(.horizontal, 16)
-                Text(modelDownloadText)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 16)
-            } else if let modelError {
-                Text(modelError)
-                    .font(.footnote)
-                    .foregroundStyle(.red)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 16)
-            } else {
-                Text("本地大模型未下载时也能直接消除（本机填充），下好模型后用模型填充。")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 16)
-            }
-            Button {
-                showingErase = true
-            } label: {
-                Text("消除")
-                    .font(.headline)
-                    .padding(.horizontal, 28)
-                    .padding(.vertical, 12)
-                    .background(Color(uiColor: .systemGray5), in: Capsule())
-                    .foregroundStyle(.black)
-            }
-            .buttonStyle(.plain)
-            if !modelReady && !modelDownloading {
-                Button {
-                    startModelDownload()
-                } label: {
-                    Text("下载本地大模型")
-                        .font(.subheadline.weight(.medium))
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
-                        .background(Color(uiColor: .systemGray5), in: Capsule())
-                        .foregroundStyle(.black)
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.vertical, 8)
-        .onAppear { modelReady = EraseView.isModelReady }
-        .fullScreenCover(isPresented: $showingErase) {
-            EraseView(asset: asset)
-        }
-    }
-
-    private var modelDownloadText: String {
-        let pct = Int(modelProgress * 100)
-        let speed = String(format: "%.1f MB/s", modelSpeed / 1_000_000)
-        let downloaded = String(format: "%.1f MB", Double(modelDownloaded) / 1_000_000)
-        if modelTotal > 0 {
-            let total = String(format: "%.1f MB", Double(modelTotal) / 1_000_000)
-            return "下载中 \(pct)% · \(speed) · 已下 \(downloaded) / \(total)"
-        }
-        return "下载中 \(pct)% · \(speed) · 已下 \(downloaded)"
-    }
-
-    private func startModelDownload() {
-        modelDownloading = true
-        modelError = nil
-        modelProgress = 0
-        Task {
-            do {
-                try await EraseView.downloadModelIfNeeded(
-                    progress: { value in
-                        Task { @MainActor in self.modelProgress = value }
-                    },
-                    detail: { downloaded, total, speed in
-                        Task { @MainActor in
-                            self.modelDownloaded = downloaded
-                            self.modelTotal = total
-                            self.modelSpeed = speed
-                        }
-                    }
-                )
-                await MainActor.run {
-                    self.modelReady = EraseView.isModelReady
-                    self.modelDownloading = false
-                }
-            } catch {
-                await MainActor.run {
-                    self.modelError = "模型下载失败：\(error.localizedDescription)，可直接消除或重试。"
-                    self.modelDownloading = false
-                }
-            }
-        }
     }
 
     private var lutControls: some View {

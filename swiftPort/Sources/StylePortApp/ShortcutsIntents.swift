@@ -8,7 +8,7 @@ import UniformTypeIdentifiers
 struct AddPhotographicStyleIntent: AppIntent {
     static var title: LocalizedStringResource = "Add Photographic Style"
     static var description = IntentDescription(
-        "Adds the Photographic Styles palette to HEIC photos, or Texture & Grain to photos that already have a style. Live Photos found in the library keep their motion when saved to Photos.",
+        "Adds Texture & Grain to photos that already have a style. Live Photos found in the library keep their motion when saved to Photos.",
         categoryName: "Photos"
     )
     static var openAppWhenRun = false

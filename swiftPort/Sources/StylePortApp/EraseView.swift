@@ -45,7 +45,13 @@ struct EraseView: View {
     @State private var message: String?
     @State private var complianceBlocked = false
     @State private var complianceScanning = true
-    @State private var eraseAnimationAngle: Double = 0
+    @State private var modelReady = false
+    @State private var modelDownloading = false
+    @State private var modelProgress: Double = 0
+    @State private var modelDownloaded: Int64 = 0
+    @State private var modelTotal: Int64 = 0
+    @State private var modelSpeed: Double = 0
+    @State private var modelError: String?
 
     var body: some View {
         ZStack {
@@ -57,7 +63,6 @@ struct EraseView: View {
             }
         }
         .presentationBackground(Color.black)
-        .preferredColorScheme(.dark)
         .alert(
             "消除",
             isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })
@@ -65,11 +70,6 @@ struct EraseView: View {
             Button("确定") { message = nil }
         } message: {
             Text(message ?? "")
-        }
-        .onChange(of: erasing) { _, value in
-            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
-                eraseAnimationAngle = value ? 360 : 0
-            }
         }
         .task {
             if let initialImage {
@@ -86,6 +86,7 @@ struct EraseView: View {
                 }.value
             }
             complianceScanning = false
+            modelReady = Self.isModelReady
         }
     }
 
@@ -146,41 +147,6 @@ struct EraseView: View {
                             }
                         }
                         .stroke(Color.red.opacity(0.55), style: StrokeStyle(lineWidth: brush, lineCap: .round, lineJoin: .round))
-                        // HDR erase animation, like the user's reference:
-                        // a bright white stroke with a soft HDR bloom
-                        // glow, instead of the previous rainbow gradient.
-                        if erasing {
-                            Path { path in
-                                for stroke in strokes {
-                                    guard let first = stroke.points.first else { continue }
-                                    path.move(to: CGPoint(x: first.x * displayWidth, y: first.y * displayHeight))
-                                    for point in stroke.points.dropFirst() {
-                                        path.addLine(to: CGPoint(x: point.x * displayWidth, y: point.y * displayHeight))
-                                    }
-                                }
-                            }
-                            .stroke(
-                                Color.white,
-                                style: StrokeStyle(lineWidth: brush * 2.0, lineCap: .round, lineJoin: .round)
-                            )
-                            .blur(radius: 16)
-                            .opacity(0.9)
-                            Path { path in
-                                for stroke in strokes {
-                                    guard let first = stroke.points.first else { continue }
-                                    path.move(to: CGPoint(x: first.x * displayWidth, y: first.y * displayHeight))
-                                    for point in stroke.points.dropFirst() {
-                                        path.addLine(to: CGPoint(x: point.x * displayWidth, y: point.y * displayHeight))
-                                    }
-                                }
-                            }
-                            .stroke(
-                                Color.white,
-                                style: StrokeStyle(lineWidth: brush, lineCap: .round, lineJoin: .round)
-                            )
-                            .shadow(color: .white, radius: 12)
-                            .opacity(1)
-                        }
                     }
                     .frame(width: size.width, height: size.height)
                     .gesture(
@@ -213,6 +179,38 @@ struct EraseView: View {
 
     private var controls: some View {
         VStack(spacing: 14) {
+            if modelReady {
+                Text("本地大模型已就绪")
+                    .font(.footnote).foregroundStyle(.secondary)
+            } else if modelDownloading {
+                ProgressView(value: modelProgress)
+                    .padding(.horizontal, 16)
+                Text(modelDownloadText)
+                    .font(.footnote).foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 16)
+            } else if let modelError {
+                Text(modelError)
+                    .font(.footnote).foregroundStyle(.red)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 16)
+            } else {
+                Button {
+                    startModelDownload()
+                } label: {
+                    Text("下载本地大模型")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
+                        .background(Color.white, in: Capsule())
+                        .foregroundStyle(.black)
+                }
+                .padding(.horizontal, 16)
+                Text("未下载时也能直接消除（本机填充）。")
+                    .font(.footnote).foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 16)
+            }
             if complianceScanning {
                 Text("正在做合规审查…")
                     .font(.footnote).foregroundStyle(.secondary)
@@ -343,12 +341,51 @@ struct EraseView: View {
             message = "消除失败，请再试一次。"
             return
         }
-        // Let the colourful animation play briefly before revealing the result,
-        // like Apple's Clean Up shimmer, instead of swapping instantly.
-        try? await Task.sleep(for: .milliseconds(700))
         history.append(image)
         current = result
         self.strokes.removeAll()
+    }
+
+    private var modelDownloadText: String {
+        let pct = Int(modelProgress * 100)
+        let speed = String(format: "%.1f MB/s", modelSpeed / 1_000_000)
+        let downloaded = String(format: "%.1f MB", Double(modelDownloaded) / 1_000_000)
+        if modelTotal > 0 {
+            let total = String(format: "%.1f MB", Double(modelTotal) / 1_000_000)
+            return "下载中 \(pct)% · \(speed) · 已下 \(downloaded) / \(total)"
+        }
+        return "下载中 \(pct)% · \(speed) · 已下 \(downloaded)"
+    }
+
+    private func startModelDownload() {
+        modelDownloading = true
+        modelError = nil
+        modelProgress = 0
+        Task {
+            do {
+                try await Self.downloadModelIfNeeded(
+                    progress: { value in
+                        Task { @MainActor in self.modelProgress = value }
+                    },
+                    detail: { downloaded, total, speed in
+                        Task { @MainActor in
+                            self.modelDownloaded = downloaded
+                            self.modelTotal = total
+                            self.modelSpeed = speed
+                        }
+                    }
+                )
+                await MainActor.run {
+                    self.modelReady = Self.isModelReady
+                    self.modelDownloading = false
+                }
+            } catch {
+                await MainActor.run {
+                    self.modelError = "模型下载失败：\(error.localizedDescription)，可直接消除或重试。"
+                    self.modelDownloading = false
+                }
+            }
+        }
     }
 
     private func saveCopy() async {
