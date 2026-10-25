@@ -30,16 +30,17 @@
 		B20000000000000000000006 /* AssetGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000006 /* AssetGrid.swift */; };
 		B20000000000000000000007 /* BackupBinTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000007 /* BackupBinTab.swift */; };
 		B20000000000000000000008 /* BackupStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000008 /* BackupStore.swift */; };
-		B20000000000000000000009 /* LibraryActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000009 /* LibraryActions.swift */; };
-		B2000000000000000000000A /* LibraryTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000A /* LibraryTab.swift */; };
-		B2000000000000000000000B /* LivePhotoStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000B /* LivePhotoStyler.swift */; };
-		B2000000000000000000000C /* ModernUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000C /* ModernUI.swift */; };
-		B2000000000000000000000D /* PhotoLibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000D /* PhotoLibraryService.swift */; };
-		B2000000000000000000000E /* PickglowStyleViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000E /* PickglowStyleViews.swift */; };
-		B2000000000000000000000F /* PortQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000F /* PortQueue.swift */; };
-		B20000000000000000000010 /* SettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000010 /* SettingsTab.swift */; };
-		B20000000000000000000011 /* ShortcutsIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000011 /* ShortcutsIntents.swift */; };
-		B20000000000000000000012 /* StylePortApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000012 /* StylePortApp.swift */; };
+		B20000000000000000000009 /* ConvertToHEIF.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000009 /* ConvertToHEIF.swift */; };
+		B2000000000000000000000A /* LibraryActions.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000A /* LibraryActions.swift */; };
+		B2000000000000000000000B /* LibraryTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000B /* LibraryTab.swift */; };
+		B2000000000000000000000C /* LivePhotoStyler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000C /* LivePhotoStyler.swift */; };
+		B2000000000000000000000D /* ModernUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000D /* ModernUI.swift */; };
+		B2000000000000000000000E /* PhotoLibraryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000E /* PhotoLibraryService.swift */; };
+		B2000000000000000000000F /* PickglowStyleViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0000000000000000000000F /* PickglowStyleViews.swift */; };
+		B20000000000000000000010 /* PortQueue.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000010 /* PortQueue.swift */; };
+		B20000000000000000000011 /* SettingsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000011 /* SettingsTab.swift */; };
+		B20000000000000000000012 /* ShortcutsIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000012 /* ShortcutsIntents.swift */; };
+		B20000000000000000000013 /* StylePortApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A00000000000000000000013 /* StylePortApp.swift */; };
 		B30000000000000000000001 /* LivePhotoApertureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00000000000000000000001 /* LivePhotoApertureTests.swift */; };
 		B30000000000000000000002 /* StylePortCoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D00000000000000000000002 /* StylePortCoreTests.swift */; };
 		B40000000000000000000001 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000001 /* PrivacyInfo.xcprivacy */; };
@@ -108,16 +109,17 @@
 		A00000000000000000000006 /* AssetGrid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AssetGrid.swift; sourceTree = "<group>"; };
 		A00000000000000000000007 /* BackupBinTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupBinTab.swift; sourceTree = "<group>"; };
 		A00000000000000000000008 /* BackupStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupStore.swift; sourceTree = "<group>"; };
-		A00000000000000000000009 /* LibraryActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryActions.swift; sourceTree = "<group>"; };
-		A0000000000000000000000A /* LibraryTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryTab.swift; sourceTree = "<group>"; };
-		A0000000000000000000000B /* LivePhotoStyler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePhotoStyler.swift; sourceTree = "<group>"; };
-		A0000000000000000000000C /* ModernUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernUI.swift; sourceTree = "<group>"; };
-		A0000000000000000000000D /* PhotoLibraryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibraryService.swift; sourceTree = "<group>"; };
-		A0000000000000000000000E /* PickglowStyleViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickglowStyleViews.swift; sourceTree = "<group>"; };
-		A0000000000000000000000F /* PortQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortQueue.swift; sourceTree = "<group>"; };
-		A00000000000000000000010 /* SettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsTab.swift; sourceTree = "<group>"; };
-		A00000000000000000000011 /* ShortcutsIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsIntents.swift; sourceTree = "<group>"; };
-		A00000000000000000000012 /* StylePortApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StylePortApp.swift; sourceTree = "<group>"; };
+		A00000000000000000000009 /* ConvertToHEIF.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConvertToHEIF.swift; sourceTree = "<group>"; };
+		A0000000000000000000000A /* LibraryActions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryActions.swift; sourceTree = "<group>"; };
+		A0000000000000000000000B /* LibraryTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryTab.swift; sourceTree = "<group>"; };
+		A0000000000000000000000C /* LivePhotoStyler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePhotoStyler.swift; sourceTree = "<group>"; };
+		A0000000000000000000000D /* ModernUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModernUI.swift; sourceTree = "<group>"; };
+		A0000000000000000000000E /* PhotoLibraryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLibraryService.swift; sourceTree = "<group>"; };
+		A0000000000000000000000F /* PickglowStyleViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickglowStyleViews.swift; sourceTree = "<group>"; };
+		A00000000000000000000010 /* PortQueue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PortQueue.swift; sourceTree = "<group>"; };
+		A00000000000000000000011 /* SettingsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsTab.swift; sourceTree = "<group>"; };
+		A00000000000000000000012 /* ShortcutsIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsIntents.swift; sourceTree = "<group>"; };
+		A00000000000000000000013 /* StylePortApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StylePortApp.swift; sourceTree = "<group>"; };
 		D00000000000000000000001 /* LivePhotoApertureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePhotoApertureTests.swift; sourceTree = "<group>"; };
 		D00000000000000000000002 /* StylePortCoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StylePortCoreTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
@@ -184,16 +186,17 @@
 				A00000000000000000000006 /* AssetGrid.swift */,
 				A00000000000000000000007 /* BackupBinTab.swift */,
 				A00000000000000000000008 /* BackupStore.swift */,
-				A00000000000000000000009 /* LibraryActions.swift */,
-				A0000000000000000000000A /* LibraryTab.swift */,
-				A0000000000000000000000B /* LivePhotoStyler.swift */,
-				A0000000000000000000000C /* ModernUI.swift */,
-				A0000000000000000000000D /* PhotoLibraryService.swift */,
-				A0000000000000000000000E /* PickglowStyleViews.swift */,
-				A0000000000000000000000F /* PortQueue.swift */,
-				A00000000000000000000010 /* SettingsTab.swift */,
-				A00000000000000000000011 /* ShortcutsIntents.swift */,
-				A00000000000000000000012 /* StylePortApp.swift */,
+				A00000000000000000000009 /* ConvertToHEIF.swift */,
+				A0000000000000000000000A /* LibraryActions.swift */,
+				A0000000000000000000000B /* LibraryTab.swift */,
+				A0000000000000000000000C /* LivePhotoStyler.swift */,
+				A0000000000000000000000D /* ModernUI.swift */,
+				A0000000000000000000000E /* PhotoLibraryService.swift */,
+				A0000000000000000000000F /* PickglowStyleViews.swift */,
+				A00000000000000000000010 /* PortQueue.swift */,
+				A00000000000000000000011 /* SettingsTab.swift */,
+				A00000000000000000000012 /* ShortcutsIntents.swift */,
+				A00000000000000000000013 /* StylePortApp.swift */,
 				A10000000000000000000001 /* PrivacyInfo.xcprivacy */,
 			);
 			path = Sources/StylePortApp;
@@ -359,16 +362,17 @@
 				B20000000000000000000006 /* AssetGrid.swift in Sources */,
 				B20000000000000000000007 /* BackupBinTab.swift in Sources */,
 				B20000000000000000000008 /* BackupStore.swift in Sources */,
-				B20000000000000000000009 /* LibraryActions.swift in Sources */,
-				B2000000000000000000000A /* LibraryTab.swift in Sources */,
-				B2000000000000000000000B /* LivePhotoStyler.swift in Sources */,
-				B2000000000000000000000C /* ModernUI.swift in Sources */,
-				B2000000000000000000000D /* PhotoLibraryService.swift in Sources */,
-				B2000000000000000000000E /* PickglowStyleViews.swift in Sources */,
-				B2000000000000000000000F /* PortQueue.swift in Sources */,
-				B20000000000000000000010 /* SettingsTab.swift in Sources */,
-				B20000000000000000000011 /* ShortcutsIntents.swift in Sources */,
-				B20000000000000000000012 /* StylePortApp.swift in Sources */,
+				B20000000000000000000009 /* ConvertToHEIF.swift in Sources */,
+				B2000000000000000000000A /* LibraryActions.swift in Sources */,
+				B2000000000000000000000B /* LibraryTab.swift in Sources */,
+				B2000000000000000000000C /* LivePhotoStyler.swift in Sources */,
+				B2000000000000000000000D /* ModernUI.swift in Sources */,
+				B2000000000000000000000E /* PhotoLibraryService.swift in Sources */,
+				B2000000000000000000000F /* PickglowStyleViews.swift in Sources */,
+				B20000000000000000000010 /* PortQueue.swift in Sources */,
+				B20000000000000000000011 /* SettingsTab.swift in Sources */,
+				B20000000000000000000012 /* ShortcutsIntents.swift in Sources */,
+				B20000000000000000000013 /* StylePortApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
