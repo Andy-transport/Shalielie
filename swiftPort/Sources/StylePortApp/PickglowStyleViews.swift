@@ -29,7 +29,7 @@ struct WelcomeView: View {
                     .font(.subheadline.weight(.medium))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-                    .background(Color(uiColor: .secondarySystemBackground), in: Capsule())
+                    .floatingGlass()
                     .buttonStyle(.plain)
             }
             .padding(.horizontal, 20)
@@ -40,7 +40,7 @@ struct WelcomeView: View {
                     Image(systemName: "circle.grid.3x3.fill")
                         .font(.largeTitle)
                         .frame(width: 96, height: 96)
-                        .background(Color(uiColor: .secondarySystemBackground), in: Circle())
+                        .glassCircle()
                         .padding(.top, 28)
 
                     VStack(alignment: .leading, spacing: 8) {
@@ -76,8 +76,7 @@ struct WelcomeView: View {
                             action: openPhotosApp
                         )
                     }
-                    .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-                    .shadow(color: .black.opacity(0.04), radius: 12, y: 4)
+                    .glassCard(24)
                 }
                 .padding(.horizontal, 20)
                 .frame(maxWidth: 640)
@@ -95,7 +94,7 @@ struct WelcomeView: View {
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(Color(uiColor: .secondarySystemBackground), in: Capsule())
+                        .floatingGlass()
                 }
                 .buttonStyle(.plain)
             }
@@ -119,7 +118,7 @@ struct WelcomeView: View {
                 Image(systemName: systemImage)
                     .font(.title3)
                     .frame(width: 56, height: 56)
-                    .background(Color(uiColor: .secondarySystemBackground), in: Circle())
+                    .glassCircle()
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title).font(.headline)
                     Text(subtitle).font(.subheadline).foregroundStyle(.secondary).lineSpacing(2)
@@ -172,7 +171,7 @@ struct PickglowHomeView: View {
                         Image(systemName: "gearshape")
                             .font(.title3)
                             .frame(width: 48, height: 48)
-                            .background(Color(uiColor: .systemBackground), in: Circle())
+                            .glassCircle()
                     }
                     .buttonStyle(.plain)
                 }
@@ -226,8 +225,7 @@ struct PickglowHomeView: View {
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .background(Color(uiColor: .systemBackground), in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-                .shadow(color: .black.opacity(0.04), radius: 12, y: 4)
+                .glassCard()
 
                 HStack(spacing: 12) {
                     Button { onSelectPhotos() } label: {
@@ -235,7 +233,7 @@ struct PickglowHomeView: View {
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(Color(uiColor: .systemBackground), in: Capsule())
+                            .floatingGlass()
                     }
                     .buttonStyle(.plain)
                     Button { onImportFiles() } label: {
@@ -243,7 +241,7 @@ struct PickglowHomeView: View {
                             .font(.headline)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
-                            .background(Color(uiColor: .systemBackground), in: Capsule())
+                            .floatingGlass()
                     }
                     .buttonStyle(.plain)
                 }
@@ -253,7 +251,7 @@ struct PickglowHomeView: View {
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(Color(uiColor: .systemBackground), in: Capsule())
+                        .floatingGlass()
                 }
                 .buttonStyle(.plain)
 

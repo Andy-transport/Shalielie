@@ -85,6 +85,26 @@ extension View {
         }
     }
 
+    /// Liquid Glass card on iOS 26+, material fallback on older devices.
+    @ViewBuilder
+    func glassCard(_ cornerRadius: CGFloat = 28) -> some View {
+        if #available(iOS 26.0, *) {
+            self.glassEffect(.regular, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        } else {
+            self.background(.regularMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+        }
+    }
+
+    /// Liquid Glass circle on iOS 26+, material fallback on older devices.
+    @ViewBuilder
+    func glassCircle() -> some View {
+        if #available(iOS 26.0, *) {
+            self.glassEffect(.regular, in: Circle())
+        } else {
+            self.background(.regularMaterial, in: Circle())
+        }
+    }
+
     /// Use the system's Liquid Glass on iOS 26+, with material fallbacks on older devices.
     @ViewBuilder
     func floatingGlass() -> some View {
