@@ -27,8 +27,8 @@ enum PhotoTexture: String, CaseIterable, Identifiable {
     var systemImage: String {
         switch self {
         case .standard: return "slash.circle"
-        case .softSkin: return "person"
-        case .halo: return "circle.dashed"
+        case .softSkin: return "person.fill"
+        case .halo: return "circle.dotted"
         case .film: return "film"
         case .grain: return "circle.grid.3x3"
         }
@@ -76,10 +76,11 @@ struct PhotoAdjustment: Equatable {
     var textureIntensity: Double = 0
     var lut: PhotoLUT = .none
     var lutIntensity: Double = 1
+    var paletteIntensity: Double = 1
 
     var isDefault: Bool {
         brightness == 0 && contrast == 1 && saturation == 1 && warmth == 0
-            && texture == .standard && textureIntensity == 0 && lut == .none
+            && texture == .standard && textureIntensity == 0 && lut == .none && paletteIntensity == 1
     }
 
     func apply(to image: UIImage) -> UIImage? {
@@ -89,13 +90,13 @@ struct PhotoAdjustment: Equatable {
         controls.setValue(output, forKey: kCIInputImageKey)
         controls.setValue(NSNumber(value: brightness), forKey: kCIInputBrightnessKey)
         controls.setValue(NSNumber(value: contrast), forKey: kCIInputContrastKey)
-        controls.setValue(NSNumber(value: saturation), forKey: kCIInputSaturationKey)
+        controls.setValue(NSNumber(value: 1 + (saturation - 1) * paletteIntensity), forKey: kCIInputSaturationKey)
         guard let controlled = controls.outputImage else { return nil }
         output = controlled
-        if warmth != 0, let temperature = CIFilter(name: "CITemperatureAndTint") {
+        if warmth * paletteIntensity != 0, let temperature = CIFilter(name: "CITemperatureAndTint") {
             temperature.setValue(output, forKey: kCIInputImageKey)
             temperature.setValue(
-                CIVector(x: CGFloat(6500 + warmth * 2500), y: 0),
+                CIVector(x: CGFloat(6500 + warmth * paletteIntensity * 2500), y: 0),
                 forKey: "inputNeutral"
             )
             temperature.setValue(CIVector(x: 0, y: 0), forKey: "inputTargetNeutral")
@@ -555,28 +556,55 @@ struct AdjustPreviewView: View {
         .padding(.horizontal, 8)
     }
 
+    /// Texture chip icons matching the Photos reference: filled person,
+    /// dotted circle for halo, film strip, and a 5x5 dot grid for grain
+    /// (instead of the 3x3 system grid).
+    private func textureChipIcon(for texture: PhotoTexture) -> some View {
+        Group {
+            if texture == .grain {
+                VStack(spacing: 4) {
+                    ForEach(0..<5, id: \.self) { _ in
+                        HStack(spacing: 4) {
+                            ForEach(0..<5, id: \.self) { _ in
+                                Circle().frame(width: 3, height: 3)
+                            }
+                        }
+                    }
+                }
+            } else {
+                Image(systemName: texture.systemImage)
+                    .font(.title3)
+            }
+        }
+    }
+
     private var textureControls: some View {
         VStack(spacing: 14) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 16) {
-                    ForEach(PhotoTexture.allCases) { texture in
-                        let selected = adjustment.texture == texture
-                        Button {
-                            adjustment.texture = texture
-                            if adjustment.textureIntensity == 0 { adjustment.textureIntensity = 0.5 }
-                        } label: {
-                            VStack(spacing: 8) {
-                                Image(systemName: texture.systemImage)
-                                    .font(.title3)
-                                    .frame(width: 68, height: 68)
-                                    .background(selected ? Color.white : Color.white.opacity(0.15), in: Circle())
-                                    .foregroundStyle(selected ? .black : .white)
-                                Text(texture.title)
-                                    .font(.subheadline)
-                                    .foregroundStyle(.white)
+                    ForEach(Array(PhotoTexture.allCases.enumerated()), id: \.element) { _, texture in
+                        Group {
+                            if texture == .grain {
+                                Rectangle()
+                                    .fill(Color.white.opacity(0.3))
+                                    .frame(width: 1, height: 44)
                             }
+                            Button {
+                                adjustment.texture = texture
+                                if adjustment.textureIntensity == 0 { adjustment.textureIntensity = 0.5 }
+                            } label: {
+                                VStack(spacing: 8) {
+                                    textureChipIcon(for: texture)
+                                        .frame(width: 68, height: 68)
+                                        .background(adjustment.texture == texture ? Color.white : Color.white.opacity(0.15), in: Circle())
+                                        .foregroundStyle(adjustment.texture == texture ? .black : .white)
+                                    Text(texture.title)
+                                        .font(.subheadline)
+                                        .foregroundStyle(.white)
+                                }
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -680,6 +708,7 @@ struct AdjustPreviewView: View {
                             Button {
                                 appleStyleRaw = style.rawValue
                                 let values = style.preset
+                                adjustment.paletteIntensity = 1
                                 adjustment.brightness = values.0
                                 adjustment.contrast = values.1
                                 adjustment.saturation = values.2
@@ -762,7 +791,23 @@ struct AdjustPreviewView: View {
                     .font(.subheadline.weight(.medium)).foregroundStyle(.white)
             }
             .padding(.horizontal, 16)
-            Text("上下拖改浓淡，左右拖改冷暖；调色页签里的暖色和饱和度会同步变化。")
+            HStack {
+                Text("强度").font(.subheadline.weight(.medium)).foregroundStyle(.white)
+                Spacer()
+                Text("\(Int(adjustment.paletteIntensity * 100))")
+                    .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
+            }
+            .padding(.horizontal, 16)
+            Slider(
+                value: Binding(
+                    get: { adjustment.paletteIntensity },
+                    set: { adjustment.paletteIntensity = $0 }
+                ),
+                in: 0...1
+            )
+            .padding(.horizontal, 16)
+            .tint(.white)
+            Text("上下拖改浓淡，左右拖改冷暖；调色页签里的暖色和饱和度会同步变化。拉杆拉到 0 是原图效果，拉到 100 是完整风格。")
                 .font(.footnote).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 16)
