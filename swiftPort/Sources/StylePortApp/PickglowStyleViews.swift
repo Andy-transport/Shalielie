@@ -282,20 +282,6 @@ struct PickglowHomeView: View {
             .frame(maxWidth: 720)
             .frame(maxWidth: .infinity)
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            HStack {
-                Spacer()
-                Button { showingSettings = true } label: {
-                    Image(systemName: "gearshape")
-                        .font(.title3)
-                        .frame(width: 48, height: 48)
-                        .glassCircle()
-                }
-                .buttonStyle(.plain)
-            }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 8)
-        }
         .background(Color(uiColor: .systemGroupedBackground))
         .opacity(appeared ? 1 : 0)
         .offset(y: appeared ? 0 : 16)

@@ -408,18 +408,28 @@ struct EraseView: View {
     private final class ModelDownloadDelegate: NSObject, URLSessionDownloadDelegate {
         var totalBytes: Int64 = 0
         var completedBytes: Int64 = 0
+        var fileCount: Int = 1
+        var completedFiles: Int = 0
         var onProgress: ((Double) -> Void)?
         var continuation: CheckedContinuation<URL, Error>?
 
         func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
-            guard totalBytes > 0 else { return }
-            let overall = completedBytes + totalBytesWritten
-            let progress = min(1, Double(overall) / Double(totalBytes))
+            let progress: Double
+            if totalBytes > 0 {
+                let overall = completedBytes + totalBytesWritten
+                progress = min(1, Double(overall) / Double(totalBytes))
+            } else {
+                // HEAD gave no total size: fall back to per-file progress
+                // so the Settings icon still moves instead of never appearing.
+                let fileFraction = totalBytesExpectedToWrite > 0 ? Double(totalBytesWritten) / Double(totalBytesExpectedToWrite) : 0
+                progress = min(1, (Double(completedFiles) + fileFraction) / Double(max(1, fileCount)))
+            }
             Task { @MainActor in self.onProgress?(progress) }
         }
 
         func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
             completedBytes += downloadTask.countOfBytesReceived
+            completedFiles += 1
             continuation?.resume(returning: location)
             continuation = nil
         }
@@ -437,9 +447,13 @@ struct EraseView: View {
         let weightURL = directory.appendingPathComponent("Data/com.apple.CoreML/weights/weight.bin")
         if FileManager.default.fileExists(atPath: weightURL.path) {
             let size = (try? FileManager.default.attributesOfItem(atPath: weightURL.path)[.size] as? Int) ?? 0
-            if size > 10_000_000 { return }
+            if size > 10_000_000 {
+                UserDefaults.standard.set(-1.0, forKey: "lamaModelDownloadProgress")
+                return
+            }
             try? FileManager.default.removeItem(at: directory)
         }
+        UserDefaults.standard.set(0.0, forKey: "lamaModelDownloadProgress")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         // Total size first, via HEAD, so the % is real, not guessed.
         var total: Int64 = 0
@@ -454,7 +468,11 @@ struct EraseView: View {
         }
         let delegate = ModelDownloadDelegate()
         delegate.totalBytes = total
-        delegate.onProgress = progress
+        delegate.fileCount = Self.modelFiles.count
+        delegate.onProgress = { value in
+            progress?(value)
+            UserDefaults.standard.set(value, forKey: "lamaModelDownloadProgress")
+        }
         let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
         defer { session.finishTasksAndInvalidate() }
         for (relative, url) in Self.modelFiles {
@@ -472,8 +490,10 @@ struct EraseView: View {
         let size = (try? FileManager.default.attributesOfItem(atPath: weightURL.path)[.size] as? Int) ?? 0
         guard size > 10_000_000 else {
             try? FileManager.default.removeItem(at: directory)
+            UserDefaults.standard.set(-1.0, forKey: "lamaModelDownloadProgress")
             throw NSError(domain: "EraseView", code: 1, userInfo: [NSLocalizedDescriptionKey: "模型文件下载到的不是完整权重（可能是占位文件），AI 消除暂不可用，请重试或用普通消除。"])
         }
+        UserDefaults.standard.set(-1.0, forKey: "lamaModelDownloadProgress")
     }
 }
 

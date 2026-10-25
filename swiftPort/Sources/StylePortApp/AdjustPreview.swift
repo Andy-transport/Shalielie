@@ -354,7 +354,6 @@ struct AdjustPreviewView: View {
             }
         }
         .presentationBackground(Color(uiColor: .systemBackground))
-        .preferredColorScheme(.light)
         .alert(
             "调整",
             isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })
@@ -396,7 +395,7 @@ struct AdjustPreviewView: View {
                     .font(.subheadline.weight(.semibold))
                     .padding(.horizontal, 18)
                     .padding(.vertical, 10)
-                    .foregroundStyle(.black)
+                    .foregroundStyle(.primary)
                     .floatingGlass()
                     .buttonStyle(.plain)
                 Spacer()
@@ -406,13 +405,13 @@ struct AdjustPreviewView: View {
                     }
                 } label: {
                     HStack {
-                        if saving { ProgressView().tint(.black) }
+                        if saving { ProgressView().tint(.primary) }
                         Text("完成")
                     }
                     .font(.subheadline.weight(.semibold))
                     .padding(.horizontal, 18)
                     .padding(.vertical, 10)
-                    .foregroundStyle(adjusted == nil || saving ? Color.secondary : Color.black)
+                    .foregroundStyle(adjusted == nil || saving ? Color.secondary : Color.primary)
                     .floatingGlass()
                 }
                 .buttonStyle(.plain)
@@ -444,7 +443,7 @@ struct AdjustPreviewView: View {
                     }
                 }
                 .font(.headline)
-                .foregroundStyle(.black)
+                .foregroundStyle(.primary)
                 .padding(.horizontal, 18)
                 .padding(.vertical, 10)
                 .floatingGlass()
@@ -468,7 +467,7 @@ struct AdjustPreviewView: View {
             } else if let original {
                 Image(uiImage: original).resizable().scaledToFit()
             } else {
-                ProgressView().tint(.black)
+                ProgressView().tint(.primary)
             }
         }
         .frame(maxWidth: .infinity)
@@ -482,16 +481,16 @@ struct AdjustPreviewView: View {
                     .font(.subheadline.weight(.semibold))
                     .padding(.horizontal, 18)
                     .padding(.vertical, 10)
-                    .background(compareOn ? Color.black : Color.black.opacity(0.08), in: Capsule())
-                    .foregroundStyle(compareOn ? .white : .black)
+                    .background(compareOn ? Color.primary : Color.primary.opacity(0.08), in: Capsule())
+                    .foregroundStyle(compareOn ? Color(uiColor: .systemBackground) : .primary)
             }
             .buttonStyle(.plain)
             Text("按住看原图")
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, 18)
                 .padding(.vertical, 10)
-                .background(showingOriginal ? Color.black : Color.black.opacity(0.08), in: Capsule())
-                .foregroundStyle(showingOriginal ? .white : .black)
+                .background(showingOriginal ? Color.primary : Color.primary.opacity(0.08), in: Capsule())
+                .foregroundStyle(showingOriginal ? Color(uiColor: .systemBackground) : .primary)
                 .contentShape(Capsule())
                 .gesture(
                     DragGesture(minimumDistance: 0)
@@ -508,7 +507,7 @@ struct AdjustPreviewView: View {
             Text(bottomStyleName)
                 .font(.title3.weight(.medium))
                 .tracking(2)
-                .foregroundStyle(.black)
+                .foregroundStyle(.primary)
                 .padding(.top, 8)
 
             if tab == .styles {
@@ -552,13 +551,18 @@ struct AdjustPreviewView: View {
                             Text(item.title)
                                 .font(.caption.weight(.medium))
                         }
-                        .foregroundStyle(selected ? .black : .secondary)
+                        .foregroundStyle(selected ? .primary : .secondary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 10)
                     }
                     .buttonStyle(.plain)
                 }
             }
+            // Photos-style dark pill: dark glass with white / grey icons
+            // and a yellow triangle on the selected tab, regardless of
+            // the system appearance. Size is unchanged: same padding,
+            // icon size, font size and full-width layout as before.
+            .environment(\.colorScheme, .dark)
             .floatingGlass()
             .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
             .padding(.horizontal, 16)
@@ -621,7 +625,7 @@ struct AdjustPreviewView: View {
                         Group {
                             if texture == .grain {
                                 Rectangle()
-                                    .fill(Color.black.opacity(0.2))
+                                    .fill(Color.primary.opacity(0.2))
                                     .frame(width: 1, height: 44)
                             }
                             Button {
@@ -631,12 +635,23 @@ struct AdjustPreviewView: View {
                                 VStack(spacing: 8) {
                                     textureChipIcon(for: texture)
                                         .frame(width: 68, height: 68)
-                                        .background(adjustment.texture == texture ? Color.white : Color.black.opacity(0.08), in: Circle())
-                                        .foregroundStyle(.black)
+                                        .background(adjustment.texture == texture ? Color.white : Color.primary.opacity(0.08), in: Circle())
+                                        .foregroundStyle(adjustment.texture == texture ? .black : .primary)
                                         .shadow(color: adjustment.texture == texture ? .black.opacity(0.15) : .clear, radius: 8, y: 2)
                                     Text(texture.title)
                                         .font(.subheadline)
-                                        .foregroundStyle(.black)
+                                        .foregroundStyle(.primary)
+                                    // Mini intensity bar under the selected chip only:
+                                    // 10 ticks mirroring the main tick bar's intensity.
+                                    // Filled ticks are yellow, the tick at the current
+                                    // value is 30% taller and yellow, the rest are grey.
+                                    // Unselected chips reserve the same height so the
+                                    // row does not jump when the selection changes.
+                                    if adjustment.texture == texture {
+                                        textureMiniBar(intensity: adjustment.textureIntensity)
+                                    } else {
+                                        Color.clear.frame(width: 57, height: 13)
+                                    }
                                 }
                             }
                             .buttonStyle(.plain)
@@ -646,7 +661,7 @@ struct AdjustPreviewView: View {
                 .padding(.horizontal, 16)
             }
             HStack {
-                Text(adjustment.texture.title).font(.subheadline.weight(.medium)).foregroundStyle(.black)
+                Text(adjustment.texture.title).font(.subheadline.weight(.medium)).foregroundStyle(.primary)
                 Spacer()
                 Text("\(Int(adjustment.textureIntensity * 100))")
                     .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
@@ -657,10 +672,29 @@ struct AdjustPreviewView: View {
         }
     }
 
+    /// Compact intensity bar shown under the selected texture chip:
+    /// 10 ticks, filled ticks yellow, the tick at the current value
+    /// 30% taller and yellow, the rest grey. It mirrors the main
+    /// tick bar's intensity and is not itself a control.
+    private func textureMiniBar(intensity: Double) -> some View {
+        let filled = Int((intensity * 10).rounded())
+        let current = min(9, max(0, filled))
+        return HStack(spacing: 3) {
+            ForEach(0..<10, id: \.self) { i in
+                let isCurrent = i == current
+                RoundedRectangle(cornerRadius: 1, style: .continuous)
+                    .fill(isCurrent || i < filled ? Color.yellow : Color.primary.opacity(0.25))
+                    .frame(width: 3, height: isCurrent ? 13 : 10)
+            }
+        }
+        .frame(height: 13)
+    }
+
     /// Texture intensity as a tick bar, no slider: 125 ticks in total.
     /// Colours are grey-yellow: the tick at the current value is
-    /// taller and yellow, the rest are short and grey. Dragging
-    /// across the bar snaps the intensity to the nearest step.
+    /// 30% taller than the rest and yellow, the rest are short and
+    /// grey. Dragging across the bar snaps the intensity to the
+    /// nearest step.
     private var textureTickSlider: some View {
         GeometryReader { geometry in
             let spacing: CGFloat = 1
@@ -670,11 +704,11 @@ struct AdjustPreviewView: View {
                 ForEach(0..<125, id: \.self) { i in
                     let isCurrent = i == current
                     RoundedRectangle(cornerRadius: 1, style: .continuous)
-                        .fill(isCurrent ? Color.yellow : Color.black.opacity(0.25))
-                        .frame(width: tickWidth, height: isCurrent ? 28 : 16)
+                        .fill(isCurrent ? Color.yellow : Color.primary.opacity(0.25))
+                        .frame(width: tickWidth, height: isCurrent ? 21 : 16)
                 }
             }
-            .frame(height: 28)
+            .frame(height: 21)
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
@@ -706,8 +740,8 @@ struct AdjustPreviewView: View {
             }
         }
         .frame(width: 68, height: 68)
-        .background(selected ? Color.black : Color.black.opacity(0.08), in: Circle())
-        .foregroundStyle(selected ? .white : .black)
+        .background(selected ? Color.primary : Color.primary.opacity(0.08), in: Circle())
+        .foregroundStyle(selected ? Color(uiColor: .systemBackground) : .primary)
     }
 
     private var lutControls: some View {
@@ -724,7 +758,7 @@ struct AdjustPreviewView: View {
                                 lutChipIcon(for: lut, selected: selected)
                                 Text(lut.title)
                                     .font(.subheadline)
-                                    .foregroundStyle(.black)
+                                    .foregroundStyle(.primary)
                             }
                         }
                         .buttonStyle(.plain)
@@ -733,7 +767,7 @@ struct AdjustPreviewView: View {
                 .padding(.horizontal, 16)
             }
             HStack {
-                Text(adjustment.lut.title).font(.subheadline.weight(.medium)).foregroundStyle(.black)
+                Text(adjustment.lut.title).font(.subheadline.weight(.medium)).foregroundStyle(.primary)
                 Spacer()
                 Text("\(Int(adjustment.lutIntensity * 100))")
                     .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
@@ -747,7 +781,7 @@ struct AdjustPreviewView: View {
                 in: 0...1
             )
             .padding(.horizontal, 16)
-            .tint(.black)
+            .tint(.primary)
         }
     }
 
@@ -767,7 +801,6 @@ struct AdjustPreviewView: View {
                 toolChip(title: "LUT", tool: .lut) {
                     Image(systemName: "square.stack.3d")
                         .font(.title3)
-                        .foregroundStyle(.black)
                 }
                 unavailableToolChip(title: "扩展") {
                     ExtendIcon()
@@ -780,8 +813,8 @@ struct AdjustPreviewView: View {
                         .font(.headline)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 10)
-                        .background(Color.black.opacity(0.08), in: Capsule())
-                        .foregroundStyle(.black)
+                        .background(Color.primary.opacity(0.08), in: Capsule())
+                        .foregroundStyle(.primary)
                 }
                 .buttonStyle(.plain)
                 .disabled(!appleIntelligenceEnabled)
@@ -805,7 +838,7 @@ struct AdjustPreviewView: View {
             VStack(spacing: 8) {
                 icon()
                     .frame(width: 68, height: 68)
-                    .background(Color.black.opacity(0.08), in: Circle())
+                    .background(Color.primary.opacity(0.08), in: Circle())
                     .foregroundStyle(.secondary)
                 Text(title)
                     .font(.subheadline)
@@ -823,11 +856,12 @@ struct AdjustPreviewView: View {
             VStack(spacing: 8) {
                 icon()
                     .frame(width: 68, height: 68)
-                    .background(selected ? Color.white : Color.black.opacity(0.08), in: Circle())
+                    .background(selected ? Color.white : Color.primary.opacity(0.08), in: Circle())
+                    .foregroundStyle(selected ? .black : .primary)
                     .shadow(color: selected ? .black.opacity(0.15) : .clear, radius: 8, y: 2)
                 Text(title)
                     .font(.subheadline)
-                    .foregroundStyle(.black)
+                    .foregroundStyle(.primary)
             }
         }
         .buttonStyle(.plain)
@@ -847,12 +881,12 @@ struct AdjustPreviewView: View {
     private func editorSlider(title: String, value: Binding<Double>, range: ClosedRange<Double>) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(title).font(.subheadline.weight(.medium)).foregroundStyle(.black)
+                Text(title).font(.subheadline.weight(.medium)).foregroundStyle(.primary)
                 Spacer()
                 Text(value.wrappedValue.formatted(.number.precision(.fractionLength(2))))
                     .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
             }
-            Slider(value: value, in: range).tint(.black)
+            Slider(value: value, in: range).tint(.primary)
         }
     }
 

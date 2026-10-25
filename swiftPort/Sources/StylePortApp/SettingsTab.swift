@@ -87,7 +87,7 @@ struct SettingsTab: View {
                 } header: {
                     Text("Style")
                 } footer: {
-                    Text("Analyzing measures the photo's own tones instead of using the reference photo's. Texture & Grain adds the iOS 27 controls, and Soft Skin when the photo has the face data for it.")
+                    Text("分析会测量照片自身的色调，而不是参考照片的色调。质感与颗粒会加入 iOS 27 的控制项，照片有人脸数据时还会加入柔肤。")
                 }
 
                 Section("Photos & Backups") {

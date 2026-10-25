@@ -23,7 +23,7 @@ struct LibraryTab: View {
     @AppStorage(AppSettings.welcomeSeenKey) private var welcomeSeen = false
     /// Pickglow-style start screen: the full grid is only shown after the
     /// person chooses to browse it, so launch never dumps all photos at once.
-    @State private var libraryRevealed = false
+    @Binding var libraryRevealed: Bool
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -80,6 +80,9 @@ struct LibraryTab: View {
                 status = now
                 if libraryRevealed, now == .authorized || now == .limited { model.load() }
             }
+        }
+        .onChange(of: libraryRevealed) { _, revealed in
+            if revealed, status == .authorized || status == .limited { model.load() }
         }
         .onChange(of: sort) { _, sort in model.setSort(sort, ascending: ascending) }
         .onChange(of: ascending) { _, ascending in model.setSort(sort, ascending: ascending) }
