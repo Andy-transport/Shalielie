@@ -274,15 +274,6 @@ struct AssetDetailView: View {
     private func controls(_ asset: PHAsset) -> some View {
         VStack(spacing: 10) {
             styleButton
-            Button { showingAdjust = true } label: {
-                HStack(spacing: 8) {
-                    Image(systemName: "slider.horizontal.3")
-                    Text("Adjust & Preview").lineLimit(1)
-                }
-                .font(.subheadline.weight(.semibold)).padding(.horizontal, 16).padding(.vertical, 10)
-            }
-            .buttonStyle(.bordered)
-            .disabled(busy || running)
             HStack(spacing: 12) {
                 Button { prepareShare(asset) } label: {
                     if busy { ProgressView().frame(width: 44, height: 48) }
@@ -297,12 +288,9 @@ struct AssetDetailView: View {
                     Button { withAnimation(motion) { showingInfo.toggle() } } label: {
                         controlIcon(showingInfo ? "info.circle.fill" : "info.circle")
                     }.accessibilityLabel("Info")
-                    Menu {
-                        Button("Adjust & Preview…") { showingAdjust = true }
-                        Divider()
-                        Button("Adjust Date & Time…") { editor = .date }
-                        Button("Adjust Location…") { editor = .location }
-                    } label: { controlIcon("slider.horizontal.3") }.accessibilityLabel("Adjust")
+                    Button { showingAdjust = true } label: { controlIcon("slider.horizontal.3") }
+                        .accessibilityLabel("Adjust & Preview")
+                        .disabled(busy || running)
                 }
                 .padding(.horizontal, 8).floatingGlass()
                 Spacer(minLength: 0)
