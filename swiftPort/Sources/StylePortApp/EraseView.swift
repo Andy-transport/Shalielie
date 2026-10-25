@@ -639,11 +639,12 @@ private func aiInpaint(image: UIImage, strokes: [EraseStroke]) throws -> UIImage
 /// Best-effort on-device compliance pre-check, not a legal identifier:
 /// a photo with a large strong-red area plus a compact yellow element
 /// (the pattern used by the protected symbols) is treated as suspect and its
-/// elimination is blocked. A plain red flag with no yellow element, or
-/// a small emblem, will not be caught by this scan, so the user
-/// declaration in EraseView is the second layer. False positives are
-/// possible on ordinary red-and-yellow photos; that is the conservative
-/// trade-off for this rule.
+/// elimination is blocked. A plain red symbol with no yellow element, or a
+/// small symbol, will not be caught by this scan. Colour heuristics also
+/// cannot reliably identify people or specific buildings, so those cases
+/// are covered by the rule in principle but are not reliably caught
+/// automatically. False positives are possible on ordinary red-and-yellow
+/// photos; that is the conservative trade-off for this rule.
 private func flagHeuristicSuspect(image: UIImage) -> Bool {
     guard let cgImage = image.cgImage else { return false }
     let size = 256
@@ -680,9 +681,9 @@ private func flagHeuristicSuspect(image: UIImage) -> Bool {
     let total = size * size
     let redRatio = Double(redCount) / Double(total)
     let yellowRatio = Double(yellowCount) / Double(total)
-    guard redRatio > 0.10, yellowRatio > 0.003, yellowCount > 0 else { return false }
+    guard redRatio > 0.08, yellowRatio > 0.002, yellowCount > 0 else { return false }
     let yellowWidth = Double(yellowMaxX - yellowMinX + 1) / Double(size)
     let yellowHeight = Double(yellowMaxY - yellowMinY + 1) / Double(size)
     // Stars / emblem gold sit in a compact area, not spread over the whole photo.
-    return yellowWidth < 0.6 && yellowHeight < 0.6
+    return yellowWidth < 0.7 && yellowHeight < 0.7
 }
