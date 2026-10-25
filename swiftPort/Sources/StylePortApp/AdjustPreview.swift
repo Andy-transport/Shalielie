@@ -336,7 +336,9 @@ private enum EditorTab: String, CaseIterable {
     }
 }
 
-/// Pickglow-style dark editor: photo on top, 质感 / 调色 panel below.
+/// Photos-style light editor: white background, Cancel/Done pills
+/// on top, photo in the middle, style name and a bottom pill for
+/// 质感 / 调色 / LUT / 调色盘, like the iPhone Photos STYLES editor.
 /// Every control works: texture chips, intensity, tone sliders, compare,
 /// press-and-hold original, reset, share, info, and 完成 (save a new copy).
 struct AdjustPreviewView: View {
@@ -366,7 +368,7 @@ struct AdjustPreviewView: View {
             // Previously only the VStack had a black background, so the
             // sheet's light background showed as a white band above the
             // top bar and clipped its buttons.
-            Color.black.ignoresSafeArea()
+            Color(uiColor: .systemBackground).ignoresSafeArea()
             VStack(spacing: 0) {
                 topBar
                 photoArea
@@ -374,8 +376,8 @@ struct AdjustPreviewView: View {
                 bottomPanel
             }
         }
-        .presentationBackground(Color.black)
-        .preferredColorScheme(.dark)
+        .presentationBackground(Color(uiColor: .systemBackground))
+        .preferredColorScheme(.light)
         .alert(
             "调整",
             isPresented: Binding(get: { message != nil }, set: { if !$0 { message = nil } })
@@ -411,55 +413,65 @@ struct AdjustPreviewView: View {
     }
 
     private var topBar: some View {
-        HStack {
-            Button { dismiss() } label: {
-                Image(systemName: "xmark")
-                    .font(.headline)
-                    .frame(width: 48, height: 48)
-                    .background(Color.white.opacity(0.15), in: Circle())
+        VStack(spacing: 12) {
+            HStack {
+                Button("取消") { dismiss() }
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 10)
+                    .background(Color.black.opacity(0.08), in: Capsule())
+                    .foregroundStyle(.black)
+                    .buttonStyle(.plain)
+                Spacer()
+                Button {
+                    Task {
+                        if await saveAdjustedCopy() { dismiss() }
+                    }
+                } label: {
+                    HStack {
+                        if saving { ProgressView().tint(.black) }
+                        Text("完成")
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, 10)
+                    .background(Color.black.opacity(0.08), in: Capsule())
+                    .foregroundStyle(adjusted == nil || saving ? .secondary : .black)
+                }
+                .buttonStyle(.plain)
+                .disabled(adjusted == nil || saving)
             }
-            Spacer()
-            VStack(spacing: 2) {
-                Text(tab.title)
-                    .font(.headline)
-                Text(tab == .texture
-                     ? (adjustment.texture == .standard ? "未添加质感" : adjustment.texture.title)
-                     : tab == .lut
-                     ? (adjustment.lut == .none ? "未使用 LUT" : adjustment.lut.title)
-                     : tab == .palette
-                     ? "\(appleStyle.title) · 冷暖 · 浓淡，拖动白点实时调"
-                     : "亮度 · 对比度 · 饱和度 · 暖色")
-                    .font(.caption)
+            HStack {
+                Spacer()
+                Text(tab == .palette ? "STYLES" : tab.title)
+                    .font(.title3.weight(.medium))
+                    .tracking(2)
                     .foregroundStyle(.secondary)
-            }
-            Spacer()
-            HStack(spacing: 12) {
-                Button { showingErase = true } label: {
-                    Image(systemName: "eraser.fill")
-                        .font(.headline)
-                        .frame(width: 48, height: 48)
+                Spacer()
+                HStack(spacing: 16) {
+                    Button { showingErase = true } label: {
+                        Image(systemName: "eraser.fill")
+                    }
+                    .accessibilityLabel("消除不要的东西")
+                    Button { if adjusted != nil { showingShare = true } } label: {
+                        Image(systemName: "square.and.arrow.up")
+                    }
+                    .disabled(adjusted == nil)
+                    Button { showingInfo = true } label: {
+                        Image(systemName: "info.circle")
+                    }
                 }
-                .glassCircle()
-                .accessibilityLabel("消除不要的东西")
-                Button { if adjusted != nil { showingShare = true } } label: {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.headline)
-                        .frame(width: 48, height: 48)
-                        .background(Color.white.opacity(0.15), in: Circle())
-                }
-                .disabled(adjusted == nil)
-                Button { showingInfo = true } label: {
-                    Image(systemName: "info.circle")
-                        .font(.headline)
-                        .frame(width: 48, height: 48)
-                        .background(Color.white.opacity(0.15), in: Circle())
-                }
+                .font(.headline)
+                .foregroundStyle(.black)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 10)
+                .background(Color.white, in: Capsule())
+                .shadow(color: .black.opacity(0.12), radius: 8, y: 2)
             }
         }
-        .foregroundStyle(.white)
         .padding(.horizontal, 16)
         .padding(.top, 12)
-        .padding(.bottom, 12)
+        .padding(.bottom, 4)
     }
 
     private var photoArea: some View {
@@ -475,13 +487,11 @@ struct AdjustPreviewView: View {
             } else if let original {
                 Image(uiImage: original).resizable().scaledToFit()
             } else {
-                ProgressView().tint(.white)
+                ProgressView().tint(.black)
             }
         }
         .frame(maxWidth: .infinity)
         .frame(height: 360)
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .padding(.horizontal, 16)
     }
 
     private var compareBar: some View {
@@ -491,16 +501,16 @@ struct AdjustPreviewView: View {
                     .font(.subheadline.weight(.semibold))
                     .padding(.horizontal, 18)
                     .padding(.vertical, 10)
-                    .background(compareOn ? Color.white : Color.white.opacity(0.15), in: Capsule())
-                    .foregroundStyle(compareOn ? .black : .white)
+                    .background(compareOn ? Color.black : Color.black.opacity(0.08), in: Capsule())
+                    .foregroundStyle(compareOn ? .white : .black)
             }
             .buttonStyle(.plain)
             Text("按住看原图")
                 .font(.subheadline.weight(.semibold))
                 .padding(.horizontal, 18)
                 .padding(.vertical, 10)
-                .background(showingOriginal ? Color.white : Color.white.opacity(0.15), in: Capsule())
-                .foregroundStyle(showingOriginal ? .black : .white)
+                .background(showingOriginal ? Color.black : Color.black.opacity(0.08), in: Capsule())
+                .foregroundStyle(showingOriginal ? .white : .black)
                 .contentShape(Capsule())
                 .gesture(
                     DragGesture(minimumDistance: 0)
@@ -513,14 +523,12 @@ struct AdjustPreviewView: View {
 
     private var bottomPanel: some View {
         VStack(spacing: 16) {
-            Capsule().fill(Color.white.opacity(0.3)).frame(width: 44, height: 4).padding(.top, 10)
-            Picker("编辑", selection: $tab) {
-                ForEach(EditorTab.allCases, id: \.self) { tab in
-                    Label(tab.title, systemImage: tab.systemImage).tag(tab)
-                }
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 16)
+            // Current style name, centred like Photos ("STANDARD").
+            Text(bottomStyleName)
+                .font(.title3.weight(.medium))
+                .tracking(2)
+                .foregroundStyle(.black)
+                .padding(.top, 8)
 
             if tab == .texture {
                 textureControls
@@ -532,46 +540,65 @@ struct AdjustPreviewView: View {
                 toneControls
             }
 
-            HStack(spacing: 12) {
+            // Photos-style bottom pill: icon + label per tab, selected
+            // tab gets a small yellow triangle marker above its icon.
+            HStack(spacing: 0) {
+                ForEach(EditorTab.allCases, id: \.self) { item in
+                    let selected = item == tab
+                    Button { tab = item } label: {
+                        VStack(spacing: 4) {
+                            ZStack(alignment: .top) {
+                                Image(systemName: item.systemImage)
+                                    .font(.title3)
+                                    .frame(height: 28)
+                                if selected {
+                                    Triangle()
+                                        .fill(Color.yellow)
+                                        .frame(width: 10, height: 8)
+                                        .offset(y: -8)
+                                }
+                            }
+                            Text(item.title)
+                                .font(.caption.weight(.medium))
+                        }
+                        .foregroundStyle(selected ? .black : .secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .background(Color.white, in: Capsule())
+            .shadow(color: .black.opacity(0.12), radius: 10, y: 2)
+            .padding(.horizontal, 16)
+
+            HStack {
                 Button { adjustment = PhotoAdjustment() } label: {
                     Label("恢复", systemImage: "arrow.uturn.backward")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                        .background(Color.white.opacity(0.15), in: Capsule())
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.secondary)
                 }
                 .buttonStyle(.plain)
                 .disabled(adjustment.isDefault)
-                Button {
-                    Task {
-                        if await saveAdjustedCopy() { dismiss() }
-                    }
-                } label: {
-                    HStack {
-                        if saving { ProgressView().tint(.black) }
-                        else { Image(systemName: "checkmark") }
-                        Text("完成")
-                    }
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Color.white, in: Capsule())
-                    .foregroundStyle(.black)
-                }
-                .buttonStyle(.plain)
-                .disabled(adjusted == nil || saving)
+                Spacer()
+                Text("质感、调色、LUT 与调色盘全部可直接使用。完成后存为新照片。")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.trailing)
             }
             .padding(.horizontal, 16)
-            Text("质感、调色、LUT（理光、Leica）与调色盘全部可直接使用。完成后存为新照片，不改摄影风格数据。")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 16)
+            .padding(.bottom, 16)
         }
-        .background(Color(white: 0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .padding(.horizontal, 8)
+        .background(Color(uiColor: .systemBackground))
+    }
+
+    private var bottomStyleName: String {
+        switch tab {
+        case .palette: return appleStyle.title
+        case .texture: return adjustment.texture.title
+        case .lut: return adjustment.lut.title
+        case .tone: return "调整"
+        }
     }
 
     /// Texture chip icons matching the Photos reference: filled person,
@@ -604,7 +631,7 @@ struct AdjustPreviewView: View {
                         Group {
                             if texture == .grain {
                                 Rectangle()
-                                    .fill(Color.white.opacity(0.3))
+                                    .fill(Color.black.opacity(0.2))
                                     .frame(width: 1, height: 44)
                             }
                             Button {
@@ -614,11 +641,11 @@ struct AdjustPreviewView: View {
                                 VStack(spacing: 8) {
                                     textureChipIcon(for: texture)
                                         .frame(width: 68, height: 68)
-                                        .background(adjustment.texture == texture ? Color.white : Color.white.opacity(0.15), in: Circle())
-                                        .foregroundStyle(adjustment.texture == texture ? .black : .white)
+                                        .background(adjustment.texture == texture ? Color.black : Color.black.opacity(0.08), in: Circle())
+                                        .foregroundStyle(adjustment.texture == texture ? .white : .black)
                                     Text(texture.title)
                                         .font(.subheadline)
-                                        .foregroundStyle(.white)
+                                        .foregroundStyle(.black)
                                 }
                             }
                             .buttonStyle(.plain)
@@ -628,7 +655,7 @@ struct AdjustPreviewView: View {
                 .padding(.horizontal, 16)
             }
             HStack {
-                Text(adjustment.texture.title).font(.subheadline.weight(.medium)).foregroundStyle(.white)
+                Text(adjustment.texture.title).font(.subheadline.weight(.medium)).foregroundStyle(.black)
                 Spacer()
                 Text("\(Int(adjustment.textureIntensity * 100))")
                     .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
@@ -642,7 +669,7 @@ struct AdjustPreviewView: View {
                 in: 0...1
             )
             .padding(.horizontal, 16)
-            .tint(.white)
+            .tint(.black)
         }
     }
 
@@ -667,8 +694,8 @@ struct AdjustPreviewView: View {
             }
         }
         .frame(width: 68, height: 68)
-        .background(selected ? Color.white : Color.white.opacity(0.15), in: Circle())
-        .foregroundStyle(selected ? .black : .white)
+        .background(selected ? Color.black : Color.black.opacity(0.08), in: Circle())
+        .foregroundStyle(selected ? .white : .black)
     }
 
     private var lutControls: some View {
@@ -685,7 +712,7 @@ struct AdjustPreviewView: View {
                                 lutChipIcon(for: lut, selected: selected)
                                 Text(lut.title)
                                     .font(.subheadline)
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(.black)
                             }
                         }
                         .buttonStyle(.plain)
@@ -694,7 +721,7 @@ struct AdjustPreviewView: View {
                 .padding(.horizontal, 16)
             }
             HStack {
-                Text(adjustment.lut.title).font(.subheadline.weight(.medium)).foregroundStyle(.white)
+                Text(adjustment.lut.title).font(.subheadline.weight(.medium)).foregroundStyle(.black)
                 Spacer()
                 Text("\(Int(adjustment.lutIntensity * 100))")
                     .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
@@ -708,7 +735,7 @@ struct AdjustPreviewView: View {
                 in: 0...1
             )
             .padding(.horizontal, 16)
-            .tint(.white)
+            .tint(.black)
         }
     }
 
@@ -735,14 +762,14 @@ struct AdjustPreviewView: View {
                                 VStack(spacing: 8) {
                                     Text(style.title)
                                         .font(.caption.weight(.medium))
-                                        .foregroundStyle(.white)
+                                        .foregroundStyle(.black)
                                         .padding(.horizontal, 10)
                                         .padding(.vertical, 4)
-                                        .background(Color.white.opacity(0.25), in: Capsule())
+                                        .background(Color.black.opacity(0.08), in: Capsule())
                                     AppleStylePaletteIcon(style: style, size: 56)
                                         .overlay(
                                             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                                .stroke(style.rawValue == appleStyleRaw ? Color.white : Color.clear, lineWidth: 2)
+                                                .stroke(style.rawValue == appleStyleRaw ? Color.black : Color.clear, lineWidth: 2)
                                         )
                                 }
                             }
@@ -803,14 +830,14 @@ struct AdjustPreviewView: View {
             .padding(.horizontal, 16)
             HStack {
                 Text("冷暖 \(adjustment.warmth.formatted(.number.precision(.fractionLength(2))))")
-                    .font(.subheadline.weight(.medium)).foregroundStyle(.white)
+                    .font(.subheadline.weight(.medium)).foregroundStyle(.black)
                 Spacer()
                 Text("浓淡 \(adjustment.saturation.formatted(.number.precision(.fractionLength(2))))")
-                    .font(.subheadline.weight(.medium)).foregroundStyle(.white)
+                    .font(.subheadline.weight(.medium)).foregroundStyle(.black)
             }
             .padding(.horizontal, 16)
             HStack {
-                Text("强度").font(.subheadline.weight(.medium)).foregroundStyle(.white)
+                Text("强度").font(.subheadline.weight(.medium)).foregroundStyle(.black)
                 Spacer()
                 Text("\(Int(adjustment.paletteIntensity * 100))")
                     .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
@@ -824,7 +851,7 @@ struct AdjustPreviewView: View {
                 in: 0...1
             )
             .padding(.horizontal, 16)
-            .tint(.white)
+            .tint(.black)
             Text("上下拖改浓淡，左右拖改冷暖；调色页签里的暖色和饱和度会同步变化。拉杆拉到 0 是原图效果，拉到 100 是完整风格。")
                 .font(.footnote).foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -845,12 +872,12 @@ struct AdjustPreviewView: View {
     private func editorSlider(title: String, value: Binding<Double>, range: ClosedRange<Double>) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             HStack {
-                Text(title).font(.subheadline.weight(.medium)).foregroundStyle(.white)
+                Text(title).font(.subheadline.weight(.medium)).foregroundStyle(.black)
                 Spacer()
                 Text(value.wrappedValue.formatted(.number.precision(.fractionLength(2))))
                     .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
             }
-            Slider(value: value, in: range).tint(.white)
+            Slider(value: value, in: range).tint(.black)
         }
     }
 
@@ -961,4 +988,17 @@ private struct AdjustedShareSheet: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ controller: UIActivityViewController, context: Context) {}
+}
+
+/// Small downward-pointing triangle marker above the selected tab in
+/// the Photos-style bottom pill.
+private struct Triangle: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: rect.midX, y: rect.maxY))
+        path.addLine(to: CGPoint(x: rect.minX, y: rect.minY))
+        path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY))
+        path.closeSubpath()
+        return path
+    }
 }
