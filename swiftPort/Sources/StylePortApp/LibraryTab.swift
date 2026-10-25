@@ -16,6 +16,10 @@ struct LibraryTab: View {
     )
     @State private var status = PhotoLibraryService.status
     @State private var importingFiles = false
+    @AppStorage(AppSettings.welcomeSeenKey) private var welcomeSeen = false
+    /// Pickglow-style start screen: the full grid is only shown after the
+    /// person chooses to browse it, so launch never dumps all photos at once.
+    @State private var libraryRevealed = false
     @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
@@ -24,26 +28,34 @@ struct LibraryTab: View {
                 .navigationTitle("Library")
                 // Large title in the button row, as in Photos, instead of a band of its own.
                 .toolbarTitleDisplayMode(.inlineLarge)
+                .toolbar(libraryRevealed ? .visible : .hidden, for: .navigationBar)
                 .toolbar {
+                    if libraryRevealed {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("首页") { libraryRevealed = false }
+                        }
+                    }
                     ToolbarItemGroup(placement: .topBarTrailing) {
-                        if status == .authorized || status == .limited {
+                        if libraryRevealed, status == .authorized || status == .limited {
                             SortMenu()
                         }
-                        Menu {
-                            if status == .limited {
-                                Button {
-                                    LimitedLibrary.presentPicker()
-                                } label: {
-                                    Label("Select More Photos…", systemImage: "photo.badge.plus")
+                        if libraryRevealed {
+                            Menu {
+                                if status == .limited {
+                                    Button {
+                                        LimitedLibrary.presentPicker()
+                                    } label: {
+                                        Label("Select More Photos…", systemImage: "photo.badge.plus")
+                                    }
                                 }
-                            }
-                            Button {
-                                importingFiles = true
+                                Button {
+                                    importingFiles = true
+                                } label: {
+                                    Label("Import HEIC (and MOV) Files…", systemImage: "folder")
+                                }
                             } label: {
-                                Label("Import HEIC (and MOV) Files…", systemImage: "folder")
+                                Label("Add", systemImage: "plus")
                             }
-                        } label: {
-                            Label("Add", systemImage: "plus")
                         }
                     }
                 }
@@ -57,7 +69,8 @@ struct LibraryTab: View {
         }
         .task {
             status = await PhotoLibraryService.requestAccess()
-            if status == .authorized || status == .limited { model.load() }
+            // Start screen first: do not load the grid until the person
+            // chooses to browse it.
         }
         .onChange(of: scenePhase) { _, phase in
             // Access can change in Settings while the app is in the background.
@@ -65,34 +78,45 @@ struct LibraryTab: View {
             let now = PhotoLibraryService.status
             if now != status {
                 status = now
-                if now == .authorized || now == .limited { model.load() }
+                if libraryRevealed, now == .authorized || now == .limited { model.load() }
             }
         }
         .onChange(of: sort) { _, sort in model.setSort(sort, ascending: ascending) }
         .onChange(of: ascending) { _, ascending in model.setSort(sort, ascending: ascending) }
+        .fullScreenCover(isPresented: Binding(get: { !welcomeSeen }, set: { if !$0 { welcomeSeen = true } })) {
+            WelcomeView(
+                onSkip: { welcomeSeen = true },
+                onContinue: { welcomeSeen = true },
+                onSelectPhotos: { selectPhotos(); welcomeSeen = true },
+                onBrowseAll: { reveal(); welcomeSeen = true }
+            )
+        }
+    }
+
+    private func reveal() {
+        libraryRevealed = true
+        if status == .authorized || status == .limited { model.load() }
+    }
+
+    private func selectPhotos() {
+        if status == .limited { LimitedLibrary.presentPicker() }
+        reveal()
     }
 
     @ViewBuilder
     private var content: some View {
         switch status {
         case .authorized, .limited:
-            AssetGridView(model: model) {
-                if status == .limited {
-                    ContentUnavailableView {
-                        Label("No Photos Selected", systemImage: "photo.badge.plus")
-                    } description: {
-                        Text("Palettify only sees the photos you choose. Select the photos you want to style.")
-                    } actions: {
-                        Button("Select Photos…") { LimitedLibrary.presentPicker() }
-                            .buttonStyle(.borderedProminent)
-                    }
-                } else {
-                    ContentUnavailableView(
-                        "No Photos",
-                        systemImage: "photo",
-                        description: Text("Photos you take or save appear here.")
-                    )
-                }
+            if libraryRevealed {
+                gridContent
+            } else {
+                PickglowHomeView(
+                    status: status,
+                    photoCount: model.assets.count,
+                    onSelectPhotos: selectPhotos,
+                    onImportFiles: { importingFiles = true },
+                    onBrowseAll: reveal
+                )
             }
         case .notDetermined:
             ProgressView()
@@ -104,6 +128,27 @@ struct LibraryTab: View {
             } actions: {
                 Button("Open Settings") { LimitedLibrary.openSettings() }
                     .buttonStyle(.borderedProminent)
+            }
+        }
+    }
+
+    private var gridContent: some View {
+        AssetGridView(model: model) {
+            if status == .limited {
+                ContentUnavailableView {
+                    Label("No Photos Selected", systemImage: "photo.badge.plus")
+                } description: {
+                    Text("Palettify only sees the photos you choose. Select the photos you want to style.")
+                } actions: {
+                    Button("Select Photos…") { LimitedLibrary.presentPicker() }
+                        .buttonStyle(.borderedProminent)
+                }
+            } else {
+                ContentUnavailableView(
+                    "No Photos",
+                    systemImage: "photo",
+                    description: Text("Photos you take or save appear here.")
+                )
             }
         }
     }
