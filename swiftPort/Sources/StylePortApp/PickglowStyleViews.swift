@@ -182,7 +182,7 @@ struct PickglowHomeView: View {
                         endPoint: .bottomTrailing
                     )
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("PALETTIFY")
+                        Text("风格")
                             .font(.caption.weight(.semibold))
                             .tracking(3)
                             .foregroundStyle(.white.opacity(0.8))
