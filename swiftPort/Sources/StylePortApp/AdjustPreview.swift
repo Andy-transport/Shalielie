@@ -35,6 +35,33 @@ enum PhotoTexture: String, CaseIterable, Identifiable {
     }
 }
 
+/// LUT styles from the user's .cube files: Ricoh (upload.cube) and
+/// Leica Eternal (Leica_Eternal.cube). Both are 33-size 3D LUTs, applied
+/// with CIColorCube; NSDataAsset loads them from the asset catalog.
+enum PhotoLUT: String, CaseIterable, Identifiable {
+    case none
+    case ricoh
+    case leica
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .none: return "原图"
+        case .ricoh: return "理光"
+        case .leica: return "Leica"
+        }
+    }
+
+    var assetName: String? {
+        switch self {
+        case .none: return nil
+        case .ricoh: return "RicohLUT"
+        case .leica: return "LeicaLUT"
+        }
+    }
+}
+
 /// Tone + texture adjustments, rendered live with Core Image.
 ///
 /// This is a local preview adjustment, deliberately separate from the
@@ -47,10 +74,12 @@ struct PhotoAdjustment: Equatable {
     var warmth: Double = 0
     var texture: PhotoTexture = .standard
     var textureIntensity: Double = 0
+    var lut: PhotoLUT = .none
+    var lutIntensity: Double = 1
 
     var isDefault: Bool {
         brightness == 0 && contrast == 1 && saturation == 1 && warmth == 0
-            && texture == .standard && textureIntensity == 0
+            && texture == .standard && textureIntensity == 0 && lut == .none
     }
 
     func apply(to image: UIImage) -> UIImage? {
@@ -72,12 +101,39 @@ struct PhotoAdjustment: Equatable {
             temperature.setValue(CIVector(x: 0, y: 0), forKey: "inputTargetNeutral")
             if let warmed = temperature.outputImage { output = warmed }
         }
+        if lut != .none, lutIntensity > 0 {
+            output = applyLUT(output, lut: lut, intensity: lutIntensity)
+        }
         if texture != .standard, textureIntensity > 0 {
             output = applyTexture(output, intensity: textureIntensity)
         }
         let context = CIContext(options: nil)
         guard let rendered = context.createCGImage(output, from: output.extent) else { return nil }
         return UIImage(cgImage: rendered, scale: image.scale, orientation: image.imageOrientation)
+    }
+
+    private func applyLUT(_ input: CIImage, lut: PhotoLUT, intensity: Double) -> CIImage {
+        guard let assetName = lut.assetName,
+              let asset = NSDataAsset(name: assetName),
+              let cube = CubeLUT.parse(asset.data),
+              let filter = CIFilter(name: "CIColorCube") else { return input }
+        filter.setValue(input, forKey: kCIInputImageKey)
+        filter.setValue(cube.size, forKey: "inputCubeDimension")
+        filter.setValue(cube.data, forKey: "inputCubeData")
+        guard let lutOutput = filter.outputImage else { return input }
+        if intensity >= 1 { return lutOutput }
+        // Blend LUT output over the original by its alpha, for intensity < 1.
+        guard let matrix = CIFilter(name: "CIColorMatrix"),
+              let composite = CIFilter(name: "CISourceOverCompositing") else { return lutOutput }
+        matrix.setValue(lutOutput, forKey: kCIInputImageKey)
+        matrix.setValue(CIVector(x: 1, y: 0, z: 0, w: 0), forKey: "inputRVector")
+        matrix.setValue(CIVector(x: 0, y: 1, z: 0, w: 0), forKey: "inputGVector")
+        matrix.setValue(CIVector(x: 0, y: 0, z: 1, w: 0), forKey: "inputBVector")
+        matrix.setValue(CIVector(x: 0, y: 0, z: 0, w: CGFloat(intensity)), forKey: "inputAVector")
+        guard let faded = matrix.outputImage else { return lutOutput }
+        composite.setValue(faded, forKey: kCIInputImageKey)
+        composite.setValue(input, forKey: kCIInputBackgroundImageKey)
+        return composite.outputImage ?? lutOutput
     }
 
     private func applyTexture(_ input: CIImage, intensity: Double) -> CIImage {
@@ -130,14 +186,109 @@ struct PhotoAdjustment: Equatable {
     }
 }
 
+/// Minimal .cube parser: LUT_3D_SIZE + size^3 RGB triples, red fastest.
+/// Returns CIColorCube data (RGBA floats, alpha 1) in the same order.
+enum CubeLUT {
+    static func parse(_ data: Data) -> (size: Int, data: Data)? {
+        guard let text = String(data: data, encoding: .utf8) else { return nil }
+        var size = 0
+        var triples: [(Float, Float, Float)] = []
+        for rawLine in text.split(separator: "\n") {
+            let line = rawLine.trimmingCharacters(in: .whitespaces)
+            if line.isEmpty || line.hasPrefix("#") || line.hasPrefix("TITLE") { continue }
+            if line.hasPrefix("LUT_3D_SIZE") {
+                size = Int(line.split(separator: " ").last ?? "") ?? 0
+                continue
+            }
+            if line.hasPrefix("LUT") || line.hasPrefix("DOMAIN") { continue }
+            let parts = line.split(separator: " ")
+            guard parts.count == 3,
+                  let r = Float(parts[0]), let g = Float(parts[1]), let b = Float(parts[2]) else { continue }
+            triples.append((r, g, b))
+        }
+        guard size > 0, triples.count == size * size * size else { return nil }
+        var floats: [Float] = []
+        floats.reserveCapacity(triples.count * 4)
+        for (r, g, b) in triples { floats.append(contentsOf: [r, g, b, 1]) }
+        return (size, floats.withUnsafeBytes { Data($0) })
+    }
+}
+
+/// Apple photographic-style palettes from the user's screenshots:
+/// the six squares shown in Photos (Standard plus the five undertone
+/// palettes). Apple's own internal style data is private, so these are
+/// look-alike presets: each one sets brightness / contrast / saturation /
+/// warmth to match that palette's feel, and gives the draggable palette
+/// square that palette's gradient. The user can still drag the dot to
+/// fine-tune afterwards.
+enum AppleStyle: String, CaseIterable, Identifiable {
+    case standard
+    case amber
+    case roseGold
+    case gold
+    case neutral
+    case cool
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .standard: return "标准"
+        case .amber: return "琥珀色"
+        case .roseGold: return "玫瑰金"
+        case .gold: return "金色"
+        case .neutral: return "中性"
+        case .cool: return "冷调"
+        }
+    }
+
+    var gradientTop: Color {
+        switch self {
+        case .standard: return Color(red: 0.75, green: 0.82, blue: 0.88)
+        case .amber: return Color(red: 0.95, green: 0.65, blue: 0.45)
+        case .roseGold: return Color(red: 0.90, green: 0.65, blue: 0.60)
+        case .gold: return Color(red: 0.98, green: 0.75, blue: 0.20)
+        case .neutral: return Color(red: 0.85, green: 0.82, blue: 0.88)
+        case .cool: return Color(red: 0.65, green: 0.82, blue: 0.95)
+        }
+    }
+
+    var gradientBottom: Color {
+        switch self {
+        case .standard: return Color(red: 0.15, green: 0.22, blue: 0.28)
+        case .amber: return Color(red: 0.35, green: 0.20, blue: 0.12)
+        case .roseGold: return Color(red: 0.35, green: 0.28, blue: 0.25)
+        case .gold: return Color(red: 0.35, green: 0.25, blue: 0.10)
+        case .neutral: return Color(red: 0.25, green: 0.25, blue: 0.30)
+        case .cool: return Color(red: 0.15, green: 0.20, blue: 0.30)
+        }
+    }
+
+    /// Preset tone values (brightness, contrast, saturation, warmth).
+    var preset: (Double, Double, Double, Double) {
+        switch self {
+        case .standard: return (0, 1, 1, 0)
+        case .amber: return (0.05, 1.05, 1.15, 0.45)
+        case .roseGold: return (0.05, 1.0, 1.10, 0.35)
+        case .gold: return (0.08, 1.05, 1.20, 0.60)
+        case .neutral: return (0, 0.95, 0.90, 0)
+        case .cool: return (0, 1.0, 1.05, -0.50)
+        }
+    }
+}
+
 private enum EditorTab: String, CaseIterable {
     case texture
     case tone
+    case lut
+    case palette
 
     var title: String {
         switch self {
         case .texture: return "质感"
         case .tone: return "调色"
+        case .lut: return "LUT"
+        case .palette: return "调色盘"
         }
     }
 
@@ -145,6 +296,8 @@ private enum EditorTab: String, CaseIterable {
         switch self {
         case .texture: return "sparkles"
         case .tone: return "slider.horizontal.3"
+        case .lut: return "square.stack.3d"
+        case .palette: return "circle.grid.3x3"
         }
     }
 }
@@ -159,6 +312,10 @@ struct AdjustPreviewView: View {
     @State private var original: UIImage?
     @State private var adjusted: UIImage?
     @State private var adjustment = PhotoAdjustment()
+    @AppStorage(AppSettings.photographicStyleEnabledKey) private var photographicStyleEnabled = true
+    @AppStorage(AppSettings.appleStyleKey) private var appleStyleRaw = "standard"
+
+    private var appleStyle: AppleStyle { AppleStyle(rawValue: appleStyleRaw) ?? .standard }
     @State private var tab = EditorTab.texture
     @State private var compareOn = false
     @State private var showingOriginal = false
@@ -218,10 +375,14 @@ struct AdjustPreviewView: View {
             }
             Spacer()
             VStack(spacing: 2) {
-                Text(tab == .texture ? "质感" : "调色")
+                Text(tab.title)
                     .font(.headline)
                 Text(tab == .texture
                      ? (adjustment.texture == .standard ? "未添加质感" : adjustment.texture.title)
+                     : tab == .lut
+                     ? (adjustment.lut == .none ? "未使用 LUT" : adjustment.lut.title)
+                     : tab == .palette
+                     ? "\(appleStyle.title) · 冷暖 · 浓淡，拖动白点实时调"
                      : "亮度 · 对比度 · 饱和度 · 暖色")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -311,6 +472,10 @@ struct AdjustPreviewView: View {
 
             if tab == .texture {
                 textureControls
+            } else if tab == .lut {
+                lutControls
+            } else if tab == .palette {
+                paletteControls
             } else {
                 toneControls
             }
@@ -345,7 +510,7 @@ struct AdjustPreviewView: View {
                 .disabled(adjusted == nil || saving)
             }
             .padding(.horizontal, 16)
-            Text("质感与调色全部可直接使用。完成后存为新照片，不改摄影风格数据。")
+            Text("质感、调色、LUT（理光、Leica）与调色盘全部可直接使用。完成后存为新照片，不改摄影风格数据。")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -399,6 +564,153 @@ struct AdjustPreviewView: View {
             )
             .padding(.horizontal, 16)
             .tint(.white)
+        }
+    }
+
+    private var lutControls: some View {
+        VStack(spacing: 14) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(PhotoLUT.allCases) { lut in
+                        let selected = adjustment.lut == lut
+                        Button {
+                            adjustment.lut = lut
+                            if adjustment.lutIntensity == 0 { adjustment.lutIntensity = 1 }
+                        } label: {
+                            VStack(spacing: 8) {
+                                Image(systemName: lut == .none ? "slash.circle" : "square.stack.3d")
+                                    .font(.title3)
+                                    .frame(width: 68, height: 68)
+                                    .background(selected ? Color.white : Color.white.opacity(0.15), in: Circle())
+                                    .foregroundStyle(selected ? .black : .white)
+                                Text(lut.title)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.white)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 16)
+            }
+            HStack {
+                Text(adjustment.lut.title).font(.subheadline.weight(.medium)).foregroundStyle(.white)
+                Spacer()
+                Text("\(Int(adjustment.lutIntensity * 100))")
+                    .font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
+            }
+            .padding(.horizontal, 16)
+            Slider(
+                value: Binding(
+                    get: { adjustment.lutIntensity },
+                    set: { adjustment.lutIntensity = $0 }
+                ),
+                in: 0...1
+            )
+            .padding(.horizontal, 16)
+            .tint(.white)
+        }
+    }
+
+    /// Truly adjustable palette, like the iPhone style palette: a dot grid
+    /// with a draggable white dot. Horizontal = warmth (left cool, right
+    /// warm), vertical = saturation (top vivid, bottom muted). Dragging
+    /// writes straight into the same warmth/saturation the tone sliders
+    /// show, so the preview updates live and saving keeps the result.
+    private var paletteControls: some View {
+        VStack(spacing: 12) {
+            if photographicStyleEnabled {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(AppleStyle.allCases) { style in
+                            Button {
+                                appleStyleRaw = style.rawValue
+                                let values = style.preset
+                                adjustment.brightness = values.0
+                                adjustment.contrast = values.1
+                                adjustment.saturation = values.2
+                                adjustment.warmth = values.3
+                            } label: {
+                                VStack(spacing: 6) {
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .fill(LinearGradient(colors: [style.gradientTop, style.gradientBottom], startPoint: .top, endPoint: .bottom))
+                                        .frame(width: 56, height: 56)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                                .stroke(style.rawValue == appleStyleRaw ? Color.white : Color.clear, lineWidth: 2)
+                                        )
+                                    Text(style.title)
+                                        .font(.caption.weight(.medium))
+                                        .foregroundStyle(style.rawValue == appleStyleRaw ? .white : .secondary)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                }
+            }
+            GeometryReader { geometry in
+                let size = geometry.size
+                let pointX = CGFloat(adjustment.warmth / 2 + 0.5) * size.width
+                let pointY = CGFloat(0.5 - (adjustment.saturation - 1) / 2) * size.height
+                ZStack {
+                    LinearGradient(
+                        colors: photographicStyleEnabled
+                            ? [appleStyle.gradientTop, appleStyle.gradientBottom]
+                            : [Color(red: 0.55, green: 0.78, blue: 1.0), Color(red: 0.04, green: 0.1, blue: 0.22)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    ForEach(0..<9, id: \.self) { row in
+                        ForEach(0..<9, id: \.self) { col in
+                            Circle()
+                                .fill(Color.white.opacity(0.35))
+                                .frame(width: 5, height: 5)
+                                .position(
+                                    x: size.width * CGFloat(col + 1) / 10,
+                                    y: size.height * CGFloat(row + 1) / 10
+                                )
+                        }
+                    }
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: 36, height: 36)
+                        .shadow(color: .black.opacity(0.4), radius: 6)
+                        .position(x: pointX, y: pointY)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                .gesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { value in
+                            let x = min(max(value.location.x / size.width, 0), 1)
+                            let y = min(max(value.location.y / size.height, 0), 1)
+                            adjustment.warmth = Double(x - 0.5) * 2
+                            adjustment.saturation = 1 + Double(0.5 - y) * 2
+                        }
+                )
+            }
+            .frame(height: 280)
+            .padding(.horizontal, 16)
+            HStack {
+                Text("冷").font(.subheadline).foregroundStyle(.secondary)
+                Spacer()
+                Text("暖").font(.subheadline).foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 16)
+            HStack {
+                Text("冷暖 \(adjustment.warmth.formatted(.number.precision(.fractionLength(2))))")
+                    .font(.subheadline.weight(.medium)).foregroundStyle(.white)
+                Spacer()
+                Text("浓淡 \(adjustment.saturation.formatted(.number.precision(.fractionLength(2))))")
+                    .font(.subheadline.weight(.medium)).foregroundStyle(.white)
+            }
+            .padding(.horizontal, 16)
+            Text("上下拖改浓淡，左右拖改冷暖；调色页签里的暖色和饱和度会同步变化。")
+                .font(.footnote).foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 16)
         }
     }
 

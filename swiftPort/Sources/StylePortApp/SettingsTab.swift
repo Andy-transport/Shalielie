@@ -8,6 +8,8 @@ struct SettingsTab: View {
     @AppStorage(AppSettings.replaceOriginalsKey) private var replaceOriginals = false
     @AppStorage(AppSettings.analyzePhotoKey) private var analyzePhoto = true
     @AppStorage(AppSettings.textureKey) private var texture = true
+    @AppStorage(AppSettings.photographicStyleEnabledKey) private var photographicStyleEnabled = true
+    @AppStorage(AppSettings.appleStyleKey) private var appleStyleRaw = "standard"
     @State private var access = PhotoLibraryService.status
     @Environment(\.scenePhase) private var scenePhase
 
@@ -60,6 +62,40 @@ struct SettingsTab: View {
                     Text("Style")
                 } footer: {
                     Text("Analyzing measures the photo's own tones for the palette instead of using the reference photo's. Texture & Grain adds the iOS 27 controls, and Soft Skin when the photo has the face data for it.")
+                }
+
+                Section {
+                    Toggle("摄影风格", isOn: $photographicStyleEnabled)
+                    if photographicStyleEnabled {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 16) {
+                                ForEach(AppleStyle.allCases) { style in
+                                    Button {
+                                        appleStyleRaw = style.rawValue
+                                    } label: {
+                                        VStack(spacing: 6) {
+                                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                                .fill(LinearGradient(colors: [style.gradientTop, style.gradientBottom], startPoint: .top, endPoint: .bottom))
+                                                .frame(width: 72, height: 72)
+                                                .overlay(
+                                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                                        .stroke(style.rawValue == appleStyleRaw ? Color.white : Color.clear, lineWidth: 2)
+                                                )
+                                            Text(style.title)
+                                                .font(.subheadline.weight(.medium))
+                                                .foregroundStyle(style.rawValue == appleStyleRaw ? .primary : .secondary)
+                                        }
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        }
+                    }
+                } header: {
+                    Text("摄影风格")
+                } footer: {
+                    Text("开启后，调色盘默认用所选风格，拖动白点可再微调；风格是按苹果调色盘复刻的预设，保存为新照片。在 App 内对任意照片都可用，系统相机拍摄时的摄影风格仍受机型限制。")
                 }
 
                 Section("Photos & Backups") {
