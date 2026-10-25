@@ -1013,9 +1013,9 @@ struct AdjustPreviewView: View {
         .buttonStyle(.plain)
     }
 
-    /// Tools tab, all in Chinese: 扩展 + 重构图 on top, then LUT.
-    /// 扩展 = larger canvas, blurred-background fill (not AI).
-    /// 重构图 = crop to a smaller frame, shifted in the chosen direction.
+    /// Tools tab, all in Chinese: LUT is usable; 扩展 + 重构图 are
+    /// shown grey and disabled (暂不可用), like the second screenshot
+    /// where they appear greyed out. Tapping them does nothing.
     private var toolsControls: some View {
         VStack(spacing: 14) {
             HStack(spacing: 16) {
@@ -1024,68 +1024,35 @@ struct AdjustPreviewView: View {
                         .font(.title3)
                         .foregroundStyle(.black)
                 }
-                toolChip(title: "扩展", tool: .extend) {
+                unavailableToolChip(title: "扩展") {
                     ExtendIcon()
                 }
-                toolChip(title: "重构图", tool: .reframe) {
+                unavailableToolChip(title: "重构图") {
                     ReframeIcon()
                 }
             }
             .padding(.horizontal, 16)
-            if toolsTool == .extend {
-                VStack(spacing: 8) {
-                    HStack {
-                        Text("扩展幅度").font(.subheadline.weight(.medium)).foregroundStyle(.black)
-                        Spacer()
-                        Text("\(Int(adjustment.extendRatio * 100))%").font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
-                    }
-                    .padding(.horizontal, 16)
-                    Slider(value: $adjustment.extendRatio, in: 0...0.4)
-                        .padding(.horizontal, 16)
-                        .tint(.black)
-                    Text("四周加宽，扩展区用模糊背景填充，不是 AI 生成。拉到 0% 就是原图。")
-                        .font(.footnote).foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 16)
-                }
-            } else if toolsTool == .reframe {
-                VStack(spacing: 8) {
-                    HStack {
-                        Text("缩放").font(.subheadline.weight(.medium)).foregroundStyle(.black)
-                        Spacer()
-                        Text("\(Int(adjustment.reframeScale * 100))%").font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
-                    }
-                    .padding(.horizontal, 16)
-                    Slider(value: $adjustment.reframeScale, in: 0.7...1)
-                        .padding(.horizontal, 16)
-                        .tint(.black)
-                    HStack {
-                        Text("左右").font(.subheadline.weight(.medium)).foregroundStyle(.black)
-                        Spacer()
-                        Text(adjustment.reframeDX.formatted(.number.precision(.fractionLength(2)))).font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
-                    }
-                    .padding(.horizontal, 16)
-                    Slider(value: $adjustment.reframeDX, in: -1...1)
-                        .padding(.horizontal, 16)
-                        .tint(.black)
-                    HStack {
-                        Text("上下").font(.subheadline.weight(.medium)).foregroundStyle(.black)
-                        Spacer()
-                        Text(adjustment.reframeDY.formatted(.number.precision(.fractionLength(2)))).font(.subheadline).foregroundStyle(.secondary).monospacedDigit()
-                    }
-                    .padding(.horizontal, 16)
-                    Slider(value: $adjustment.reframeDY, in: -1...1)
-                        .padding(.horizontal, 16)
-                        .tint(.black)
-                    Text("裁到更小的构图，左右上下滑杆移构图位置。缩放 100% 就是原图。")
-                        .font(.footnote).foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 16)
-                }
-            } else {
-                lutControls
+            lutControls
+        }
+    }
+
+    /// A greyed-out, disabled tool chip: grey circle, grey icon and text,
+    /// no tap action. Used for 扩展 and 重构图, which are unavailable.
+    private func unavailableToolChip<Content: View>(title: String, @ViewBuilder icon: () -> Content) -> some View {
+        Button {} label: {
+            VStack(spacing: 8) {
+                icon()
+                    .frame(width: 68, height: 68)
+                    .background(Color.black.opacity(0.08), in: Circle())
+                    .foregroundStyle(.secondary)
+                Text(title)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
             }
         }
+        .buttonStyle(.plain)
+        .disabled(true)
+        .opacity(0.6)
     }
 
     private func toolChip<Content: View>(title: String, tool: ToolsTool, @ViewBuilder icon: () -> Content) -> some View {
@@ -1287,10 +1254,10 @@ private struct ExtendIcon: View {
     var body: some View {
         ZStack {
             Rectangle()
-                .stroke(Color.black, style: StrokeStyle(lineWidth: 2, dash: [4, 3]))
+                .stroke(style: StrokeStyle(lineWidth: 2, dash: [4, 3]))
                 .frame(width: 34, height: 34)
             Rectangle()
-                .stroke(Color.black, lineWidth: 2)
+                .stroke(lineWidth: 2)
                 .frame(width: 20, height: 20)
         }
     }
@@ -1311,6 +1278,5 @@ private struct ReframeIcon: View {
                 .font(.headline)
                 .offset(x: 14, y: 12)
         }
-        .foregroundStyle(.black)
     }
 }
