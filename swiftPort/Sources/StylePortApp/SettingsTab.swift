@@ -159,6 +159,7 @@ struct SettingsTab: View {
 }
 
 struct AboutView: View {
+    @Environment(\.openURL) private var openURL
     @State private var authorCopied = false
 
     var body: some View {
@@ -195,8 +196,18 @@ struct AboutView: View {
 
             Section("作者") {
                 Button {
+                    // Direct to the author's Douyin: try the Douyin app first,
+                    // fall back to the Douyin web page. The ID is also copied
+                    // so the user can search if the link lands on search.
                     UIPasteboard.general.string = "351453703"
-                    authorCopied = true
+                    if let appURL = URL(string: "snssdk1128://search?keyword=351453703"),
+                       UIApplication.shared.canOpenURL(appURL) {
+                        openURL(appURL)
+                    } else if let webURL = URL(string: "https://www.douyin.com/search/351453703?type=user") {
+                        openURL(webURL)
+                    } else {
+                        authorCopied = true
+                    }
                 } label: {
                     HStack(spacing: 14) {
                         Image("AuthorAvatar")
@@ -211,7 +222,7 @@ struct AboutView: View {
                                 .foregroundStyle(.secondary)
                         }
                         Spacer()
-                        Image(systemName: "doc.on.doc")
+                        Image(systemName: "chevron.right")
                             .foregroundStyle(.secondary)
                     }
                 }

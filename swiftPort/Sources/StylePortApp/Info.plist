@@ -5,5 +5,9 @@
 	<!-- Merged into the generated Info.plist: keys Xcode has no INFOPLIST_KEY_ setting for. -->
 	<key>UIFileSharingEnabled</key>
 	<true/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>snssdk1128</string>
+	</array>
 </dict>
 </plist>
