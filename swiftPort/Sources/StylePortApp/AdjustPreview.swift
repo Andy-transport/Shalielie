@@ -300,6 +300,17 @@ enum AppleStyle: String, CaseIterable, Identifiable {
         }
     }
 
+    var imageName: String {
+        switch self {
+        case .standard: return "AppleStyleStandard"
+        case .amber: return "AppleStyleAmber"
+        case .roseGold: return "AppleStyleRoseGold"
+        case .gold: return "AppleStyleGold"
+        case .neutral: return "AppleStyleNeutral"
+        case .cool: return "AppleStyleCool"
+        }
+    }
+
     var gradientTop: Color {
         switch self {
         case .standard: return Color(red: 0.75, green: 0.82, blue: 0.88)
@@ -344,27 +355,11 @@ struct AppleStylePaletteIcon: View {
     let size: CGFloat
 
     var body: some View {
-        let values = style.preset
-        let dotX = CGFloat(values.3 / 2 + 0.5) * size
-        let dotY = CGFloat(0.5 - (values.2 - 1) / 2) * size
-        ZStack {
-            LinearGradient(colors: [style.gradientTop, style.gradientBottom], startPoint: .top, endPoint: .bottom)
-            ForEach(0..<9, id: \.self) { row in
-                ForEach(0..<9, id: \.self) { col in
-                    Circle()
-                        .fill(Color.white.opacity(0.35))
-                        .frame(width: max(size / 18, 3), height: max(size / 18, 3))
-                        .position(x: size * CGFloat(col + 1) / 10, y: size * CGFloat(row + 1) / 10)
-                }
-            }
-            Circle()
-                .fill(Color.white)
-                .frame(width: size * 0.22, height: size * 0.22)
-                .shadow(color: .black.opacity(0.35), radius: 3)
-                .position(x: dotX, y: dotY)
-        }
-        .frame(width: size, height: size)
-        .clipShape(RoundedRectangle(cornerRadius: size * 0.22, style: .continuous))
+        Image(style.imageName)
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: size * 0.22, style: .continuous))
     }
 }
 
