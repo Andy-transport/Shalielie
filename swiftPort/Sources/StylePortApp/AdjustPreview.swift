@@ -636,6 +636,15 @@ struct AdjustPreviewView: View {
                             ZStack(alignment: .top) {
                                 if item == .tone {
                                     ToneIcon()
+                                } else if item == .tools {
+                                    // Tools icon: user's woven-loops image, tinted
+                                    // consistent blue (template rendering).
+                                    Image("ToolsIcon")
+                                        .renderingMode(.template)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 28, height: 28)
+                                        .foregroundStyle(Color.blue)
                                 } else {
                                     Image(systemName: item.systemImage)
                                         .font(.title3)

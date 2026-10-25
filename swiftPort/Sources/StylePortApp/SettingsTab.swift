@@ -340,6 +340,11 @@ struct PrivacyView: View {
                     title: "Backups are yours",
                     text: "The Backup Bin lives in the app's own storage on this device and is deleted with the app."
                 )
+                Feature(
+                    symbol: "brain",
+                    title: "本地智能",
+                    text: "照片本地消除，首次使用需下载模型。"
+                )
             }
         }
         .readableWidth()
