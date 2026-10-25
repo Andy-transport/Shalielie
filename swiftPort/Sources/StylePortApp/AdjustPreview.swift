@@ -521,7 +521,7 @@ struct AdjustPreviewView: View {
                     .font(.subheadline.weight(.semibold))
                     .padding(.horizontal, 18)
                     .padding(.vertical, 10)
-                    .foregroundStyle(adjusted == nil || saving ? .secondary : .black)
+                    .foregroundStyle(adjusted == nil || saving ? Color.secondary : Color.black)
                     .floatingGlass()
                 }
                 .buttonStyle(.plain)
