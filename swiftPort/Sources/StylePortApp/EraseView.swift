@@ -320,9 +320,6 @@ struct EraseView: View {
             message = "保存失败：\(error.localizedDescription)"
         }
     }
-}
-
-
     // MARK: - AI erase (LaMa, on-device)
 
     /// LaMaFP16_512 from the open-source Inpaint-iOS project (GPL-3.0,
@@ -398,6 +395,7 @@ struct EraseView: View {
             message = "AI 消除失败：\(error.localizedDescription)"
         }
     }
+}
 
 /// Diffusion inpainting: masked pixels are filled layer by layer from
 /// already-filled neighbours, so each masked pixel is written once.
