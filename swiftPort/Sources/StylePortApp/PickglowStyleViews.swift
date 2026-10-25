@@ -257,11 +257,6 @@ struct PickglowHomeView: View {
                 }
                 .buttonStyle(.plain)
 
-                Button("浏览全部照片") { onBrowseAll() }
-                    .font(.subheadline.weight(.semibold))
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-
                 // Home-page permissions: photo access status, plus a
                 // speaker row. iOS has no separate speaker permission
                 // dialog, so this row is the app's speaker switch:
