@@ -1,4 +1,5 @@
 import CoreImage
+import StylePortCore
 import ImageIO
 import Photos
 import SwiftUI
@@ -20,6 +21,7 @@ struct ConvertToHEIFView: View {
     @State private var importing = false
     @State private var files: [URL] = []
     @State private var converting = false
+    @State private var synthesizing = false
     @State private var done: [String] = []
     @State private var error: String?
 
@@ -68,7 +70,21 @@ struct ConvertToHEIFView: View {
                                 .foregroundStyle(.white)
                         }
                         .buttonStyle(.plain)
-                        .disabled(converting)
+                        .disabled(converting || synthesizing)
+                    Button {
+                        Task { await syntheticAll() }
+                    } label: {
+                        Text(synthesizing ? "合成 HDR 中…" : "合成 HDR HEIF（调色板 + 质感）")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Color(uiColor: .secondarySystemBackground), in: Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(converting || synthesizing)
+                    Text("实验版 v1：把原图缩放到 4032×3024 横构图，切成 48 张主图瓦片 + 12 张平增益图瓦片 + 416×312 缩略图，拼成 iPhone HDR HEIF，再加调色板和质感（标准 / 柔肤 / 光晕 / 胶片 / 颗粒）。在照片 App 编辑里应出现调色板和质感两个页签。增益图是平值，HDR 亮度可能与原图有差异；竖构图会被裁成横构图。请实测后告诉我调色板是否出现、亮暗是否正常。")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                     }
 
                     if !done.isEmpty {
@@ -141,6 +157,73 @@ struct ConvertToHEIFView: View {
         }
         done = saved
         files = []
+    }
+
+    private func syntheticAll() async {
+        synthesizing = true
+        defer { synthesizing = false }
+        do {
+            try await PhotoLibraryService().requireAddAccess()
+        } catch {
+            self.error = error.localizedDescription
+            return
+        }
+        var saved: [String] = []
+        for file in files {
+            do {
+                let source = try Self.decodeCGImage(file: file)
+                guard let main = HEVCStillEncoder.resized(source, to: CGSize(width: 4032, height: 3024)) else {
+                    throw LibraryError.saveFailed("无法缩放到 4032×3024")
+                }
+                let mainTiles = HEVCStillEncoder.tiles(of: main, columns: 8, rows: 6, tileSize: 512)
+                guard mainTiles.count == 48 else {
+                    throw LibraryError.saveFailed("主图瓦片应为 48 张，实际 \(mainTiles.count) 张")
+                }
+                let primaryTiles = try mainTiles.map { try HEVCStillEncoder.encode($0) }
+                let gainColor = CIImage(color: CIColor(red: 0.5, green: 0.5, blue: 0.5))
+                    .cropped(to: CGRect(x: 0, y: 0, width: 2016, height: 1512))
+                guard let gainImage = CIContext().createCGImage(gainColor, from: CGRect(x: 0, y: 0, width: 2016, height: 1512)) else {
+                    throw LibraryError.saveFailed("无法生成增益图")
+                }
+                let gainTiles = HEVCStillEncoder.tiles(of: gainImage, columns: 4, rows: 3, tileSize: 512)
+                guard gainTiles.count == 12 else {
+                    throw LibraryError.saveFailed("增益图瓦片应为 12 张，实际 \(gainTiles.count) 张")
+                }
+                let hdrTiles = try gainTiles.map { try HEVCStillEncoder.encode($0) }
+                guard let thumbImage = HEVCStillEncoder.resized(source, to: CGSize(width: 416, height: 312)) else {
+                    throw LibraryError.saveFailed("无法生成缩略图")
+                }
+                let thumbnail = try HEVCStillEncoder.encode(thumbImage)
+                let data = try SyntheticHDRPort.port(primaryTiles: primaryTiles, hdrTiles: hdrTiles, thumbnail: thumbnail)
+                let base = (file.lastPathComponent as NSString).deletingPathExtension
+                let output = try TemporaryFiles.newDirectory().appendingPathComponent(base + "_HDRStyle.HEIC")
+                try data.write(to: output)
+                try await saveToPhotos(output)
+                saved.append(output.lastPathComponent)
+            } catch {
+                self.error = "\(file.lastPathComponent)：\(error.localizedDescription)"
+                return
+            }
+        }
+        done = saved
+        files = []
+    }
+
+    private static func decodeCGImage(file: URL) throws -> CGImage {
+        let ext = file.pathExtension.lowercased()
+        let isRaw = ["dng", "cr2", "cr3", "nef", "arw", "raf", "orf", "rw2"].contains(ext)
+        if isRaw {
+            guard let ciImage = CIImage(contentsOf: file),
+                  let cgImage = CIContext().createCGImage(ciImage, from: ciImage.extent) else {
+                throw LibraryError.assetUnavailable
+            }
+            return cgImage
+        }
+        guard let source = CGImageSourceCreateWithURL(file as CFURL, nil),
+              let cgImage = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
+            throw LibraryError.assetUnavailable
+        }
+        return cgImage
     }
 
     private func saveToPhotos(_ url: URL) async throws {
