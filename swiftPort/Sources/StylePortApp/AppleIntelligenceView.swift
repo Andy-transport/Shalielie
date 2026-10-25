@@ -1,3 +1,4 @@
+import AVFoundation
 import PhotosUI
 import SwiftUI
 import UIKit
@@ -68,6 +69,9 @@ struct AppleIntelligenceView: View {
             } footer: {
                 Text("也可以在照片详情页的调整编辑器里点橡皮图标打开同一个消除页。")
             }
+        }
+        .onChange(of: enabled) { _, value in
+            if value { playBundledSound("SiriChime") }
         }
         .navigationTitle("Apple智能与Siri")
         .navigationBarTitleDisplayMode(.inline)
@@ -178,5 +182,20 @@ private struct SiriOrb: View {
                 breathing = true
             }
         }
+    }
+}
+
+/// Play a short bundled sound (NSDataAsset from Assets.xcassets).
+/// Kept in a static player so it is not released mid-play.
+/// Respects the silent switch (default audio session).
+private var bundledSoundPlayer: AVAudioPlayer?
+
+func playBundledSound(_ name: String) {
+    guard let asset = NSDataAsset(name: name) else { return }
+    do {
+        bundledSoundPlayer = try AVAudioPlayer(data: asset.data)
+        bundledSoundPlayer?.play()
+    } catch {
+        // Sound is cosmetic; never block the feature on audio failure.
     }
 }
