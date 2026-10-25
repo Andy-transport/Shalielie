@@ -64,25 +64,6 @@ struct RootView: View {
             }
         }
         .environmentObject(photoDetailState)
-        // No bottom pill anymore: tabs switch by a horizontal swipe on
-        // the content itself. Simultaneous so vertical grid scrolling
-        // still works, and disabled while a photo viewer is open so a
-        // swipe there pages photos instead of switching tabs.
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 30)
-                .onEnded { value in
-                    guard !photoDetailState.isPresented else { return }
-                    let delta = value.translation
-                    guard abs(delta.width) > abs(delta.height) else { return }
-                    withAnimation {
-                        if delta.width < -30 {
-                            selectTab(min(2, selectedTab + 1))
-                        } else if delta.width > 30 {
-                            selectTab(max(0, selectedTab - 1))
-                        }
-                    }
-                }
-        )
         .safeAreaInset(edge: .bottom, spacing: 0) {
             VStack(spacing: 12) {
                 if let status = queue.statusLine {
@@ -96,8 +77,31 @@ struct RootView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
                 if showingBottomBar {
-                    HStack {
-                        Spacer()
+                    HStack(spacing: 14) {
+                        HStack(spacing: 36) {
+                            tabButton(title: "图库", systemImage: "photo.stack", tab: 0)
+                            tabButton(title: "相簿", systemImage: "square.stack", tab: 1)
+                            tabButton(title: "备份", systemImage: "archivebox", tab: 2)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 18)
+                        .floatingGlass()
+                        .contentShape(Capsule())
+                        // High priority: a swipe starting on a tab button must
+                        // switch tabs instead of being swallowed by the button.
+                        // A plain tap still fires the button (drag fails first).
+                        .highPriorityGesture(
+                            DragGesture(minimumDistance: 30)
+                                .onEnded { value in
+                                    withAnimation {
+                                        if value.translation.width < -30 {
+                                            selectTab(min(2, selectedTab + 1))
+                                        } else if value.translation.width > 30 {
+                                            selectTab(max(0, selectedTab - 1))
+                                        }
+                                    }
+                                }
+                        )
                         Button { showingSettings = true } label: {
                             Image(systemName: "person.fill")
                                 .font(.title2)
@@ -129,6 +133,23 @@ struct RootView: View {
         if tab == 0 { libraryRevealed = true }
     }
 
+    private func tabButton(title: String, systemImage: String, tab: Int) -> some View {
+        Button {
+            selectTab(tab)
+        } label: {
+            VStack(spacing: 2) {
+                Image(systemName: systemImage)
+                    .font(.title)
+                Text(title)
+                    .font(.subheadline)
+            }
+            .foregroundStyle(selectedTab == tab ? Color.accentColor : Color.primary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(selectedTab == tab ? Color.accentColor.opacity(0.25) : Color.clear, in: Capsule())
+        }
+        .buttonStyle(.plain)
+    }
 }
 
 private struct ActivityCapsule: View {
