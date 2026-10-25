@@ -293,6 +293,7 @@ private enum EditorTab: String, CaseIterable {
         case .styles: return "circle.grid.3x3"
         case .tone: return ""
         case .lut: return "square.stack.3d"
+        case .erase: return ""
         }
     }
 }
