@@ -47,10 +47,10 @@ targets:
         PRODUCT_NAME: StylePort
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_FILE: Sources/StylePortApp/Info.plist
-        INFOPLIST_KEY_CFBundleDisplayName: 浮光
+        INFOPLIST_KEY_CFBundleDisplayName: Floating light
         INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.photography
-        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: 浮光 reads the original HEIC and Live Photo video of the photos you style, and replaces them when you ask it to.
-        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: 浮光 saves the styled photos to your library.
+        INFOPLIST_KEY_NSPhotoLibraryUsageDescription: Floating light reads the original HEIC and Live Photo video of the photos you style, and replaces them when you ask it to.
+        INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: Floating light saves the styled photos to your library.
         INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
         INFOPLIST_KEY_LSSupportsOpeningDocumentsInPlace: YES
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
