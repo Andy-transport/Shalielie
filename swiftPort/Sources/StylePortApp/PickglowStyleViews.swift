@@ -10,6 +10,7 @@ struct WelcomeView: View {
     var onContinue: () -> Void
     var onSelectPhotos: () -> Void
     var onBrowseAll: () -> Void
+    var onConvert: () -> Void = {}
 
     @State private var photosOpenFailed = false
 
@@ -153,6 +154,7 @@ struct PickglowHomeView: View {
     var onSelectPhotos: () -> Void
     var onImportFiles: () -> Void
     var onBrowseAll: () -> Void
+    var onConvert: () -> Void = {}
 
     @State private var showingSettings = false
 
@@ -175,7 +177,7 @@ struct PickglowHomeView: View {
                     .buttonStyle(.plain)
                 }
 
-                ZStack(alignment: .trailing) {
+                ZStack {
                     LinearGradient(
                         colors: [Color(red: 0.55, green: 0.78, blue: 1.0), Color(red: 0.22, green: 0.48, blue: 0.96), Color(red: 0.04, green: 0.14, blue: 0.45)],
                         startPoint: .topLeading,
@@ -195,12 +197,6 @@ struct PickglowHomeView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(20)
-                    Image("AboutIcon")
-                        .resizable()
-                        .frame(width: 96, height: 96)
-                        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                        .padding(.trailing, 16)
-                        .accessibilityHidden(true)
                 }
                 .frame(height: 180)
                 .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
@@ -251,6 +247,15 @@ struct PickglowHomeView: View {
                     }
                     .buttonStyle(.plain)
                 }
+
+                Button { onConvert() } label: {
+                    Label("转换 HEIF", systemImage: "arrow.triangle.2.circlepath")
+                        .font(.headline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(Color(uiColor: .systemBackground), in: Capsule())
+                }
+                .buttonStyle(.plain)
 
                 Button("浏览全部照片") { onBrowseAll() }
                     .font(.subheadline.weight(.semibold))
