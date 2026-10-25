@@ -218,7 +218,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "关于⌈盘它⌋"
+            "value": "关于⌈浮光⌋"
           }
         }
       }
@@ -405,7 +405,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "用⌈盘它⌋添加摄影风格"
+            "value": "用⌈浮光⌋添加摄影风格"
           }
         }
       }
@@ -2292,7 +2292,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "盘它"
+            "value": "浮光"
           }
         }
       }
@@ -2309,7 +2309,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "⌈盘它⌋只能看到你选择的照片。请选择想要加风格的照片。"
+            "value": "⌈浮光⌋只能看到你选择的照片。请选择想要加风格的照片。"
           }
         }
       }
@@ -2326,7 +2326,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "⌈盘它⌋会读取每张 HEIC 原图及其实况照片视频，并保存加好风格的结果。请在“设置”中允许访问。"
+            "value": "⌈浮光⌋会读取每张 HEIC 原图及其实况照片视频，并保存加好风格的结果。请在“设置”中允许访问。"
           }
         }
       }
@@ -2411,7 +2411,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "为每张 iPhone 照片加上摄影风格"
+            "value": "一切皆有可能"
           }
         }
       }
@@ -2462,7 +2462,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "照片在你的 iPhone 或 iPad 上处理，绝不上传。⌈盘它⌋没有服务器、没有账号、没有数据分析，也没有广告。"
+            "value": "照片在你的 iPhone 或 iPad 上处理，绝不上传。⌈浮光⌋没有服务器、没有账号、没有数据分析，也没有广告。"
           }
         }
       }
@@ -3822,7 +3822,7 @@
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "在有限访问下，⌈盘它⌋只能看到你选择的照片。存储在 iCloud 中的照片会在你加风格时由 iOS 下载。"
+            "value": "在有限访问下，⌈浮光⌋只能看到你选择的照片。存储在 iCloud 中的照片会在你加风格时由 iOS 下载。"
           }
         }
       }
