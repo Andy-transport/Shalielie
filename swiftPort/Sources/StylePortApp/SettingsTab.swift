@@ -225,7 +225,7 @@ struct AboutView: View {
                     Text("Photographic Styles for every iPhone photo")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    Text("Version \(AppSettings.appVersion) · porter \(StylePorter.version)")
+                    Text(verbatim: "Version 1.1.3")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                     Text("该app由Muse和Claud编译")
